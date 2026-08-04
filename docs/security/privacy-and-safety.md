@@ -297,3 +297,13 @@ Guilty Party should maintain a reputation as:
 - User-focused
 
 Trust should be considered part of the product experience.
+
+---
+
+# Related Documents
+
+- [Security model](security-model.md)
+- [Data lifecycle and decision register](data-lifecycle.md)
+- [Session journal boundaries](../architecture/session-journal.md)
+- [AI Stage Manager boundaries](../architecture/ai-stage-manager.md)
+- [Repository security policy](../../SECURITY.md)

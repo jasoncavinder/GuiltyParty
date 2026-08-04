@@ -330,6 +330,9 @@ The following may become protected marks:
 
 Before commercial launch, trademark availability should be evaluated.
 
+See [trademark.md](trademark.md) for the current planning status and unresolved
+clearance work.
+
 ---
 
 # Domain and Handle Strategy
