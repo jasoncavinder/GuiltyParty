@@ -1,0 +1,36 @@
+# Operating system and editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Local configuration and secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs and temporary files
+*.log
+logs/
+.cache/
+.tmp/
+tmp/
+
+# JavaScript tooling
+node_modules/
+coverage/
+.nyc_output/
+dist/
+
+# Rust
+target/
+
+# Swift and Xcode
+.build/
+DerivedData/
+xcuserdata/
+*.xcuserstate

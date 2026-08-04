@@ -1,0 +1,25 @@
+name: Documentation issue
+description: Report missing, unclear, inconsistent, or outdated documentation.
+title: "[Docs]: "
+labels:
+  - documentation
+body:
+  - type: input
+    id: location
+    attributes:
+      label: Document or location
+      description: Link to the document or identify the missing documentation area.
+    validations:
+      required: true
+  - type: textarea
+    id: issue
+    attributes:
+      label: Issue
+      description: Explain what is missing, unclear, inconsistent, or outdated.
+    validations:
+      required: true
+  - type: textarea
+    id: suggestion
+    attributes:
+      label: Suggested improvement
+      description: Describe the correction or organizational improvement without changing product direction.

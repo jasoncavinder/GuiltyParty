@@ -1,0 +1,353 @@
+# Device and Room Model
+
+## Overview
+
+Guilty Party is designed around the assumption that:
+
+- One person may use multiple devices.
+- Multiple people may share a physical location.
+- A single device may serve multiple participants.
+- Devices have different capabilities.
+
+The architecture must model these realities explicitly.
+
+A device is not a person.
+
+A person is not a device.
+
+A room is not merely a collection of network connections.
+
+---
+
+# Core Entities
+
+## User
+
+A user represents a real-world person with an optional Guilty Party account.
+
+A user may have:
+
+- Account credentials
+- Preferences
+- Accessibility settings
+- Payment information
+- Event history
+
+Account creation is optional for basic participation.
+
+---
+
+## Participant
+
+A participant represents a user taking part in a specific session.
+
+A participant has:
+
+- Session identity
+- Assigned character
+- Permissions
+- Current objectives
+- Private information
+- Connected endpoints
+
+A user may participate in many sessions.
+
+A participant exists only within one session.
+
+---
+
+## Character
+
+A character represents the fictional identity being portrayed.
+
+A character contains:
+
+- Public identity
+- Private information
+- Objectives
+- Inventory
+- Relationships
+- Scenario-specific permissions
+
+A character belongs to a scenario version.
+
+A participant controls a character during a session.
+
+---
+
+## Physical Room
+
+A physical room represents a real-world location containing one or more participants and devices.
+
+Examples:
+
+- Living room
+- Office conference room
+- Gaming room
+- Remote participant location
+
+A room contains:
+
+- Participants
+- Endpoints
+- Audio equipment
+- Display devices
+- Network connections
+
+---
+
+# Example Room
+
+A couple participates from their home:
+
+```
+Physical Room:
+  Honolulu Living Room
+Participants:
+  Alice
+  Bob
+Endpoints:
+  Apple TV Stage
+  Alice iPhone Companion
+  Bob iPhone Companion
+Capabilities:
+  Public display
+  Public audio output
+  Private interfaces
+```
+
+
+The system understands that Alice and Bob are separate players even though they share the same Stage.
+
+---
+
+# Endpoint
+
+An endpoint is a connected device.
+
+Examples:
+
+- Browser
+- Phone
+- Tablet
+- Desktop application
+- Smart TV
+- Streaming device
+
+Endpoints advertise capabilities.
+
+---
+
+# Endpoint Capabilities
+
+Capabilities may include:
+
+## Display
+
+Examples:
+
+- Public Stage
+- Private Companion display
+
+---
+
+## Audio Input
+
+Examples:
+
+- Microphone
+- Push-to-talk microphone
+- Voice communication
+
+---
+
+## Audio Output
+
+Examples:
+
+- Television speakers
+- Headphones
+- Phone speaker
+- Bluetooth headset
+
+---
+
+## Video
+
+Examples:
+
+- Camera capture
+- Video playback
+- Stage rendering
+
+---
+
+## Interaction
+
+Examples:
+
+- Touch
+- Keyboard
+- Mouse
+- Remote control
+- Voice input
+
+---
+
+# Endpoint Registration
+
+When an endpoint connects, it should declare:
+
+- Device type
+- Platform
+- Supported capabilities
+- Available permissions
+- Current room association
+
+Example:
+
+```json
+{
+  "type": "smart-tv",
+  "platform": "webos",
+  "capabilities": {
+    "publicDisplay": true,
+    "publicAudio": true,
+    "camera": false,
+    "microphone": false
+  }
+}
+```
+
+---
+
+# Device Pairing
+
+Pairing allows devices to associate with a session.
+
+Primary goals:
+
+- Simple setup
+- No remote-control typing
+- Secure association
+- Support multiple devices
+
+Preferred flow:
+1. Stage displays QR code.
+2. Companion scans code.
+3. User authenticates if needed.
+4. Device joins selected room.
+5. Participant chooses role.
+
+---
+
+# Room Roles
+
+Devices may have roles.
+
+Examples:
+
+## Stage
+
+Public shared display.
+
+Capabilities:
+
+- Display
+- Public audio
+
+---
+
+## Companion
+
+Private player interface.
+
+Capabilities:
+
+- Private display
+- Touch input
+- Private audio
+- Microphone
+
+---
+
+## Host Console
+Administrative control interface.
+
+Capabilities:
+
+- Session control
+- Story management
+- Player assistance
+
+---
+
+# Room Audio Ownership
+
+A room may contain:
+
+- Multiple microphones
+- Multiple speakers
+- Multiple participants
+
+The system must understand room boundaries to avoid:
+
+- Echo
+- Feedback
+- Duplicate audio
+- Delayed self-hearing
+
+Audio routing decisions should consider:
+
+- Physical proximity
+- Active speakers
+- Room membership
+- Endpoint capabilities
+
+---
+
+# Design Principles
+
+## Capability over platform assumptions
+
+Never assume:
+
+"TVs can do X."
+
+Instead:
+
+"Does this endpoint support X?"
+
+---
+
+## Graceful Degradation
+
+A Guilty Party session should remain playable with reduced capability.
+
+Examples:
+
+No smart TV:
+
+- Use browser Stage.
+
+No microphone:
+
+- Use text interaction.
+
+No Companion:
+
+- Use browser fallback.
+
+---
+
+## Future Compatibility
+
+This model supports:
+
+- New television platforms
+- New device types
+- Wearables
+- Mixed reality devices
+- Dedicated event hardware
+
+without changing core session logic.
