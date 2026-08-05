@@ -182,6 +182,16 @@ Do not tightly couple these systems.
 
 # Development Practices
 
+## Git and Version Control
+
+Agents must strictly adhere to the repository's branching and Pull Request policies defined in `CONTRIBUTING.md`.
+
+- **Never commit or push directly to `main` or `dev`.**
+- **Branch from `dev`.** Use descriptive names (`feature/...`, `bugfix/...`).
+- **Create Pull Requests targeting `dev`.** All changes must be reviewed and merged via PR.
+- **Sync with remote.** Ensure local branches are up-to-date with `origin/dev` before starting new work.
+- **Do not bypass branch protections.** Respect GitHub branch protection rules enforcing PRs.
+
 Prefer:
 
 - small vertical slices
