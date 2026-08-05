@@ -7,13 +7,36 @@
     <style>
         body { font-family: system-ui, sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
         .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .controls { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc; }
+        .ai-box { background: #e0f7fa; padding: 10px; border-radius: 4px; margin-top: 20px; }
     </style>
 </head>
 <body>
     <div class="container">
         <h1>Host Console (MVP)</h1>
-        <div id="app"></div>
+        <p id="status">Starting...</p>
+        
+        <div id="data"></div>
+
+        <div class="controls">
+            <h3>Host Actions</h3>
+            <button onclick="advanceScene('scene_1')">Scene 1: The Gala</button>
+            <button onclick="advanceScene('scene_2')">Scene 2: The Discovery</button>
+            <br><br>
+            <button onclick="revealClue('clue_1')">Reveal Clue: Footprints (Public)</button>
+            <button onclick="revealClue('clue_2')">Reveal Clue: Badge (Private)</button>
+            <br><br>
+            <button onclick="simulateParticipant('Simulated Alice')">Simulate Participant: Alice</button>
+            <button onclick="simulateParticipant('Simulated Bob')">Simulate Participant: Bob</button>
+        </div>
+
+        <div class="ai-box">
+            <h3>AI Stage Manager</h3>
+            <button onclick="requestAi()">Request Suggestion</button>
+            <p id="ai">Standing by.</p>
+        </div>
     </div>
     <script type="module" src="app.js"></script>
 </body>
 </html>
+

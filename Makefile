@@ -9,7 +9,7 @@ setup:
 	@echo "Core dependencies OK."
 
 run-server:
-	cd server && cargo run -p gp_server
+	cd server && GP_HOST_TOKEN="host-token-for-local-mvp-testing" GP_AI_ENDPOINT="http://127.0.0.1:1234/v1/chat/completions" GP_AI_MODEL="qwen/qwen3.6-27b" cargo run -p gp_server
 
 run-host:
 	@echo "Serving Host Console at http://localhost:8080"
