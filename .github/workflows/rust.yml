@@ -1,16 +1,18 @@
-name: Rust checks
+name: Prototype checks
 
 on:
   pull_request:
     branches: [dev, main]
     paths:
       - "server/**"
+      - "clients/**"
       - ".github/workflows/rust.yml"
       - "Makefile"
   push:
     branches: [dev, main]
     paths:
       - "server/**"
+      - "clients/**"
       - ".github/workflows/rust.yml"
       - "Makefile"
 
@@ -31,3 +33,5 @@ jobs:
         run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
       - name: Test
         run: cargo test --locked --workspace --all-targets
+      - name: Check browser JavaScript syntax
+        run: node --check ../clients/host/app.js && node --check ../clients/stage/stage.js

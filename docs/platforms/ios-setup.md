@@ -69,5 +69,6 @@ The WebSocket task must be owned by a long-lived observable model rather than a 
 - The Xcode project has not yet been committed.
 - Bonjour/mDNS discovery is not implemented.
 - Pairing UX and token transfer are not implemented.
-- The server currently holds tokens and game state in memory and resets them on restart.
+- Authority tokens remain process-local and are invalid after a server restart.
+- Canonical scenario state is replayed from the configured local JSONL journal; reconnecting a previously joined participant still requires future pairing/recovery work.
 - Plain LAN transport is development-only.

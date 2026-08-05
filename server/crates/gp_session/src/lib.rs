@@ -16,6 +16,32 @@ pub enum JournalFileError {
     },
 }
 
+impl std::fmt::Display for JournalFileError {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Io(error) => write!(formatter, "journal I/O failed: {error}"),
+            Self::Serialize(error) => write!(formatter, "journal serialization failed: {error}"),
+            Self::InvalidJson {
+                line_number,
+                source,
+            } => write!(
+                formatter,
+                "journal line {line_number} is not valid JSON: {source}"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for JournalFileError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Io(error) => Some(error),
+            Self::Serialize(error) => Some(error),
+            Self::InvalidJson { source, .. } => Some(source),
+        }
+    }
+}
+
 impl From<io::Error> for JournalFileError {
     fn from(value: io::Error) -> Self {
         Self::Io(value)

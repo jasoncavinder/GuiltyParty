@@ -14,6 +14,11 @@ The documented initial targets are:
 
 Browser display, casting, and screen mirroring are fallback paths.
 
+## Prototype Notes
+
+- [Browser Host and Stage runbook](browser-prototype.md)
+- [iOS Companion setup status](ios-setup.md)
+
 ## Deferred Targets
 
 Deferred television targets include:

@@ -1,4 +1,4 @@
-.PHONY: setup run-server run-host build-stage test
+.PHONY: setup run-server run-host run-stage build-stage test
 
 setup:
 	@echo "Checking dependencies..."
@@ -9,11 +9,15 @@ setup:
 	@echo "Core dependencies OK."
 
 run-server:
-	cd server && GP_HOST_TOKEN="host-token-for-local-mvp-testing" GP_AI_ENDPOINT="http://127.0.0.1:1234/v1/chat/completions" GP_AI_MODEL="qwen/qwen3.6-27b" cargo run -p gp_server
+	cd server && cargo run -p gp_server
 
 run-host:
 	@echo "Serving Host Console at http://localhost:8080"
 	@python3 -m http.server 8080 -d clients/host
+
+run-stage:
+	@echo "Serving browser-tested Stage at http://localhost:8081"
+	@python3 -m http.server 8081 -d clients/stage
 
 build-stage:
 	@command -v ares-package > /dev/null || (echo "LG webOS CLI command ares-package is required." && exit 1)

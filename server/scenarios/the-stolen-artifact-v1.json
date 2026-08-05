@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "id": "the-stolen-artifact",
+  "version": 1,
+  "title": "The Stolen Artifact",
+  "description": "An original synthetic scenario for local prototype testing.",
+  "characters": [
+    {
+      "id": "char_1",
+      "name": "Alice",
+      "public_description": "A wealthy art collector.",
+      "private_objective": "Hide the fact that you stole the artifact."
+    },
+    {
+      "id": "char_2",
+      "name": "Bob",
+      "public_description": "A private investigator.",
+      "private_objective": "Find out who stole the artifact."
+    }
+  ],
+  "scenes": [
+    {
+      "id": "scene_1",
+      "name": "The Gala",
+      "public_narrative": "Everyone has gathered at the museum gala."
+    },
+    {
+      "id": "scene_2",
+      "name": "The Discovery",
+      "public_narrative": "The artifact is missing. The doors are locked."
+    }
+  ],
+  "clues": [
+    {
+      "id": "clue_1",
+      "name": "Muddy Footprints",
+      "description": "Footprints lead away from the empty pedestal.",
+      "is_public": true,
+      "authorized_characters": []
+    },
+    {
+      "id": "clue_2",
+      "name": "Security Badge",
+      "description": "A badge near the exit belongs to Alice.",
+      "is_public": false,
+      "authorized_characters": ["char_2"]
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "outcome_1",
+      "condition_target_character_id": "char_1",
+      "public_resolution": "Alice is identified as the thief."
+    },
+    {
+      "id": "outcome_2",
+      "condition_target_character_id": "char_2",
+      "public_resolution": "Bob is falsely accused of the theft."
+    }
+  ]
+}
