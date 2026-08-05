@@ -56,7 +56,7 @@ mod tests {
 
     use gp_scenario::{
         journal::{replay, JournalEntry, JournalEvent},
-        schema::{SUPPORTED_SCHEMA_VERSION, Scenario},
+        schema::{Scenario, SUPPORTED_SCHEMA_VERSION},
     };
 
     use super::*;

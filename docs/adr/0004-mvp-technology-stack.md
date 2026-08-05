@@ -26,6 +26,8 @@ In accordance with ADR 0001 and ADR 0003, we must select the specific languages,
 **Reasoning:** Rust enforces memory safety and provides excellent concurrency primitives, essential for a real-time event system. `axum` is a lightweight, ergonomic web framework built on `tokio`. We will structure the server as a Cargo workspace with separate crates representing the modules defined in ADR 0003 (e.g., `gp-identity`, `gp-session`, `gp-scenario`).
 **Tradeoffs:** Node.js/TypeScript was considered for rapid prototyping, but Rust aligns better with the project's long-term performance and security goals, particularly for the scenario engine and deterministic simulation.
 
+The repository pins the exact Rust toolchain and required formatter/linter components in `rust-toolchain.toml` so local and CI checks remain reproducible.
+
 ## Deterministic Scenario Engine and Schema Representation
 
 **Decision:** Pure Rust engine with scenario schemas defined as strict Serde serializable structs (JSON representations).
