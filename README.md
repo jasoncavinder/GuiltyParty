@@ -38,7 +38,7 @@ Public visibility of this repository does not make Guilty Party open source.
 
 ## Prototype Development Status
 
-The repository currently contains an early, local-only server and deterministic scenario-engine slice. It is not a playable MVP, production service, or commercially deployable application.
+The repository currently contains an early local-only server, deterministic scenario engine, versioned synthetic scenario fixture, and browser proof-of-concept Host and Stage surfaces. It is not yet the complete playable MVP, a production service, or commercially deployable software.
 
 Run the current checks with:
 
@@ -55,7 +55,9 @@ GP_HOST_TOKEN='replace-with-a-random-value-at-least-24-characters' make run-serv
 
 Copy the variable names from `.env.example` into your own ignored local configuration if desired; never commit real tokens. The AI adapter is disabled unless both `GP_AI_ENDPOINT` and `GP_AI_MODEL` are set, and it rejects public/remote endpoints.
 
-The Host Console and Stage remain static placeholders. The Stage is not yet packageable because approved original icon assets and `appinfo.json` are not present; `make build-stage` reports that limitation instead of claiming a successful package. See the [iOS setup status](docs/platforms/ios-setup.md) for current LAN protocol details.
+Browser clients receive the server address and Host credential at runtime. The server uses an exact browser-origin allowlist and persists its synthetic session journal under `server/data/` by default. See the [browser prototype runbook](docs/platforms/browser-prototype.md) for setup, replay, and reset instructions.
+
+The Stage has only been exercised as a browser proof of concept. It is not yet packageable because approved original icon assets and `appinfo.json` are not present. The native iOS project and physical-device workflows also remain incomplete; see the [iOS setup status](docs/platforms/ios-setup.md).
 
 ## Documentation
 

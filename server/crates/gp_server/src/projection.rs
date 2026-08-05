@@ -12,12 +12,20 @@ pub enum ProjectionAudience {
 pub struct AuthorizedProjection {
     pub scenario_id: String,
     pub scenario_version: u32,
-    pub active_scene_id: Option<String>,
+    pub scenario_title: String,
+    pub active_scene: Option<ProjectedScene>,
     pub revealed_clues: Vec<ProjectedClue>,
     pub participants: Vec<ProjectedParticipant>,
     pub voting_open: bool,
     pub votes_cast: usize,
     pub outcome: Option<ProjectedOutcome>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ProjectedScene {
+    pub id: String,
+    pub name: String,
+    pub public_narrative: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -32,7 +40,9 @@ pub struct ProjectedParticipant {
     pub participant_id: String,
     pub name: String,
     pub character_name: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub private_objective: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub has_voted: Option<bool>,
 }
 
@@ -114,10 +124,24 @@ pub fn build_projection(state: &GameState, audience: &ProjectionAudience) -> Aut
         public_resolution: outcome.public_resolution.clone(),
     });
 
+    let active_scene = state.active_scene_id.as_ref().and_then(|scene_id| {
+        state
+            .scenario
+            .scenes
+            .iter()
+            .find(|scene| &scene.id == scene_id)
+            .map(|scene| ProjectedScene {
+                id: scene.id.clone(),
+                name: scene.name.clone(),
+                public_narrative: scene.public_narrative.clone(),
+            })
+    });
+
     AuthorizedProjection {
         scenario_id: state.scenario.id.clone(),
         scenario_version: state.scenario.version,
-        active_scene_id: state.active_scene_id.clone(),
+        scenario_title: state.scenario.title.clone(),
+        active_scene,
         revealed_clues,
         participants,
         voting_open: state.voting_open,
@@ -158,7 +182,7 @@ mod tests {
     use gp_scenario::{
         engine::GameState,
         journal::JournalEvent,
-        schema::{Character, Clue, Scenario, SUPPORTED_SCHEMA_VERSION},
+        schema::{Character, Clue, Scenario, Scene, SUPPORTED_SCHEMA_VERSION},
     };
 
     use super::*;
@@ -184,7 +208,11 @@ mod tests {
                     private_objective: "Blake secret".into(),
                 },
             ],
-            scenes: vec![],
+            scenes: vec![Scene {
+                id: "scene".into(),
+                name: "Public Scene".into(),
+                public_narrative: "Public narrative".into(),
+            }],
             clues: vec![
                 Clue {
                     id: "public".into(),
@@ -227,6 +255,9 @@ mod tests {
             JournalEvent::ClueRevealed {
                 clue_id: "private".into(),
             },
+            JournalEvent::SceneAdvanced {
+                scene_id: "scene".into(),
+            },
         ] {
             state.apply(&event).unwrap();
         }
@@ -246,7 +277,10 @@ mod tests {
         assert!(!json.contains("Avery secret"));
         assert!(!json.contains("authorized_characters"));
         assert!(!json.contains("is_public"));
-        assert!(!json.contains("has_voted\":true"));
+        assert!(!json.contains("private_objective"));
+        assert!(!json.contains("has_voted"));
+        assert!(json.contains("Public Scene"));
+        assert!(json.contains("Public narrative"));
     }
 
     #[test]

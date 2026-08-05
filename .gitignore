@@ -28,6 +28,7 @@ dist/
 
 # Rust
 target/
+server/data/
 
 # Swift and Xcode
 .build/

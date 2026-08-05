@@ -34,17 +34,23 @@ The repository pins the exact Rust toolchain and required formatter/linter compo
 **Reasoning:** The scenario engine must be completely deterministic. By writing it in Rust without async or side-effecting dependencies, we can ensure reproducibility. The schema will be defined via Rust structs, heavily validating state transitions.
 **Tradeoffs:** A scriptable engine (e.g., Lua) was considered, but it introduces security and determinism risks. A pure Rust state machine is safer and easier to test via simulation.
 
+The first published prototype scenario is stored as a versioned JSON fixture and embedded into the local server binary at build time. Startup parses and validates that fixture before replaying any session journal.
+
 ## Journal Persistence and Replay
 
 **Decision:** Append-only JSON-lines (`.jsonl`) files on the local filesystem.
 **Reasoning:** The MVP requires a deterministic ordered journal of minimum state transitions. An append-only text file is the simplest, most transparent implementation for a local prototype. Replay involves re-ingesting the file line-by-line into the scenario engine.
 **Tradeoffs:** SQLite was considered, but for the MVP, direct file I/O avoids database setup overhead while perfectly fulfilling the "ordered journal" requirement. We can migrate to a formal database later.
 
+The prototype journal path is operator-configurable. The server replays an existing journal on startup and persists each accepted transition before publishing the corresponding in-memory state update. Prototype reset remains an explicit operator action.
+
 ## HTTP, Realtime, and Contract Representation
 
 **Decision:** HTTP REST for control-plane actions (joining and authority issuance) and WebSockets for realtime control-plane commands and scenario-state projections. The MVP does not implement a media plane. Contracts will be documented as the prototype stabilizes; generating OpenAPI and AsyncAPI descriptions is deferred until the implemented messages are complete enough to justify them.
 **Reasoning:** WebSockets provide low-latency bidirectional communication necessary for live events. Formal contract definitions ensure the iOS and webOS clients remain perfectly aligned with the server.
 **Tradeoffs:** gRPC was considered but introduces unnecessary complexity for webOS and browser clients at this stage.
+
+Browser origins are an exact operator-configured allowlist, applied to HTTP CORS and WebSocket Origin validation. Native clients may omit an Origin header but still require an authority token. Browser clients receive server addresses and host credentials at runtime; credentials are never compiled into public assets.
 
 ## Browser Host Console
 
@@ -95,6 +101,7 @@ The repository pins the exact Rust toolchain and required formatter/linter compo
 - `make setup`: Check the dependencies required by the current slice and report optional platform tooling.
 - `make run-server`: Boot the Rust backend.
 - `make run-host`: Serve the Host Console locally.
+- `make run-stage`: Serve the Stage in a desktop browser for pre-device testing.
 - `make build-stage`: Package the webOS app using `ares-cli`.
 - `make test`: Run all backend and integration tests.
 **Reasoning:** A mono-repo approach with a central `Makefile` provides a unified developer experience.
@@ -114,6 +121,7 @@ The following dependencies are approved for the MVP. All have permissive license
 | **Rust: `reqwest`** | Bounded local AI HTTP adapter | crates.io | MIT / Apache 2.0 |
 | **Rust: `async-trait`** | Object-safe asynchronous AI adapter boundary | crates.io | MIT / Apache 2.0 |
 | **Rust: `uuid`** | Unpredictable prototype authority tokens and synthetic IDs | crates.io | MIT / Apache 2.0 |
+| **Rust: `tower-http`** | Exact-origin CORS enforcement for local browser clients | crates.io | MIT |
 | **JS: `ares-cli`** | LG webOS packaging | npm | Apache 2.0 |
 | **iOS: Foundation**| Networking & WebSockets | Apple | Proprietary (Allowed for iOS targets) |
 | **GitHub: `actions/checkout`** | Read-only CI checkout | GitHub Marketplace | MIT |

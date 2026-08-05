@@ -6,14 +6,58 @@
     <title>Guilty Party - Host Console</title>
     <style>
         body { font-family: system-ui, sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
-        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        button, input { font: inherit; }
+        button { margin: 4px; padding: 8px 12px; }
+        label { display: block; margin: 10px 0; }
+        input { box-sizing: border-box; display: block; margin-top: 4px; max-width: 100%; padding: 8px; width: 32rem; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .controls { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc; }
+        .ai-box { background: #e0f7fa; padding: 10px; border-radius: 4px; margin-top: 20px; }
+        .participant { border: 1px solid #ddd; border-radius: 4px; list-style: none; margin: 8px 0; padding: 10px; }
+        .status-error { color: #9b1c1c; }
+        .status-ok { color: #176b2c; }
     </style>
 </head>
 <body>
-    <div class="container">
+    <main class="container">
         <h1>Host Console (MVP)</h1>
-        <div id="app"></div>
-    </div>
+
+        <form id="connection-form">
+            <label>
+                Server address
+                <input id="server-url" type="url" required autocomplete="url" aria-describedby="server-help">
+            </label>
+            <small id="server-help">Use the Mac's LAN address when opening this page from another device.</small>
+            <label>
+                Host token
+                <input id="host-token" type="password" required minlength="24" autocomplete="off">
+            </label>
+            <button type="submit">Connect as Host</button>
+        </form>
+
+        <p id="status" role="status">Not connected.</p>
+        <section id="data" aria-live="polite"></section>
+
+        <section class="controls" aria-labelledby="host-actions-title">
+            <h2 id="host-actions-title">Host Actions</h2>
+            <button id="scene-1" type="button">Scene 1: The Gala</button>
+            <button id="scene-2" type="button">Scene 2: The Discovery</button>
+            <button id="clue-1" type="button">Reveal Footprints</button>
+            <button id="clue-2" type="button">Reveal Security Badge</button>
+            <button id="open-voting" type="button">Open Voting</button>
+            <button id="close-voting" type="button">Close Voting</button>
+            <h3>Synthetic Browser Simulation</h3>
+            <p>This creates identities for UI testing; it does not emulate a private Companion.</p>
+            <button id="join-alice" type="button">Join Synthetic Alice</button>
+            <button id="join-bob" type="button">Join Synthetic Bob</button>
+        </section>
+
+        <section class="ai-box" aria-labelledby="ai-title">
+            <h2 id="ai-title">AI Stage Manager</h2>
+            <button id="request-ai" type="button">Request Suggestion</button>
+            <p id="ai">Standing by.</p>
+        </section>
+    </main>
     <script type="module" src="app.js"></script>
 </body>
 </html>
