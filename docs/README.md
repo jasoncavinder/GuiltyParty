@@ -29,6 +29,7 @@
 
 - [Agent instructions](../AGENTS.md)
 - [Development plans](../PLANS.md)
+- [MVP prototype builder prompt](prompts/mvp-prototype-agent.md)
 - [Contribution guidance](../CONTRIBUTING.md)
 
 Product documents describe intended outcomes. Architecture documents describe
