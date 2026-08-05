@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
@@ -26,6 +26,8 @@ In accordance with ADR 0001 and ADR 0003, we must select the specific languages,
 **Reasoning:** Rust enforces memory safety and provides excellent concurrency primitives, essential for a real-time event system. `axum` is a lightweight, ergonomic web framework built on `tokio`. We will structure the server as a Cargo workspace with separate crates representing the modules defined in ADR 0003 (e.g., `gp-identity`, `gp-session`, `gp-scenario`).
 **Tradeoffs:** Node.js/TypeScript was considered for rapid prototyping, but Rust aligns better with the project's long-term performance and security goals, particularly for the scenario engine and deterministic simulation.
 
+The repository pins the exact Rust toolchain and required formatter/linter components in `rust-toolchain.toml` so local and CI checks remain reproducible.
+
 ## Deterministic Scenario Engine and Schema Representation
 
 **Decision:** Pure Rust engine with scenario schemas defined as strict Serde serializable structs (JSON representations).
@@ -40,7 +42,7 @@ In accordance with ADR 0001 and ADR 0003, we must select the specific languages,
 
 ## HTTP, Realtime, and Contract Representation
 
-**Decision:** HTTP REST for control plane actions (joining, authentication) and WebSockets for the realtime media plane and scenario state sync. Contracts will be defined via OpenAPI (Swagger) for REST and AsyncAPI for WebSockets.
+**Decision:** HTTP REST for control-plane actions (joining and authority issuance) and WebSockets for realtime control-plane commands and scenario-state projections. The MVP does not implement a media plane. Contracts will be documented as the prototype stabilizes; generating OpenAPI and AsyncAPI descriptions is deferred until the implemented messages are complete enough to justify them.
 **Reasoning:** WebSockets provide low-latency bidirectional communication necessary for live events. Formal contract definitions ensure the iOS and webOS clients remain perfectly aligned with the server.
 **Tradeoffs:** gRPC was considered but introduces unnecessary complexity for webOS and browser clients at this stage.
 
@@ -58,13 +60,13 @@ In accordance with ADR 0001 and ADR 0003, we must select the specific languages,
 
 ## Native iOS Companion Architecture and LAN Networking
 
-**Decision:** Swift and SwiftUI. LAN discovery via Apple's `Network` framework (Bonjour/mDNS) and `URLSession` / `NWConnection` for WebSockets.
-**Reasoning:** Native capabilities are required per ADR 0001. SwiftUI is the modern standard for iOS UIs. Bonjour allows zero-config discovery of the local server on the network.
+**Decision:** Swift and SwiftUI. The first device slice uses explicit LAN addressing and `URLSessionWebSocketTask`. Bonjour/mDNS discovery through Apple's `Network` framework remains the intended follow-up after the server advertises a service.
+**Reasoning:** Native capabilities are required per ADR 0001. Explicit addressing makes the initial transport test honest and debuggable; discovery must not be documented as working before both sides implement it.
 **Tradeoffs:** React Native or Flutter would allow code sharing with Android, but we are prioritizing native performance, platform feel, and Swift as a core language.
 
 ## Local AI Model Adapter and Configuration
 
-**Decision:** A lightweight Rust HTTP client wrapper targeting an OpenAI-compatible local endpoint (e.g., Ollama or llama.cpp). The AI is restricted to a structured, authorized projection of the game state.
+**Decision:** A lightweight Rust HTTP client wrapper targeting an OpenAI-compatible endpoint on loopback or an explicit private LAN IP address (for example, LM Studio, Ollama, or llama.cpp). The model and endpoint are operator configuration, never repository defaults. The AI receives a purpose-specific projection that excludes participant names, objectives, private clues, and authorization policy.
 **Reasoning:** The MVP requires a user-supplied local model. Relying on the ubiquitous OpenAI REST API standard allows users to plug in Ollama, LM Studio, or llama.cpp effortlessly.
 **Tradeoffs:** Native bindings (e.g., `llama-rs`) were considered but would complicate the build process and restrict the user's ability to run the model on a separate dedicated GPU machine on the same LAN.
 
@@ -90,7 +92,7 @@ In accordance with ADR 0001 and ADR 0003, we must select the specific languages,
 └── Makefile          # Root developer commands
 ```
 **Developer Commands (Makefile):**
-- `make setup`: Check dependencies (Cargo, Node, Xcode CLI).
+- `make setup`: Check the dependencies required by the current slice and report optional platform tooling.
 - `make run-server`: Boot the Rust backend.
 - `make run-host`: Serve the Host Console locally.
 - `make build-stage`: Package the webOS app using `ares-cli`.
@@ -106,11 +108,17 @@ The following dependencies are approved for the MVP. All have permissive license
 | **Rust: `tokio`** | Async runtime for server | crates.io | MIT / Apache 2.0 |
 | **Rust: `axum`** | HTTP/WebSocket framework | crates.io | MIT / Apache 2.0 |
 | **Rust: `serde`** | JSON serialization/schema | crates.io | MIT / Apache 2.0 |
-| **Rust: `tracing`**| Logging and observability | crates.io | MIT / Apache 2.0 |
+| **Rust: `serde_json`** | JSON control messages and JSONL journals | crates.io | MIT / Apache 2.0 |
+| **Rust: `tracing`** | Structured logging without private payloads | crates.io | MIT |
+| **Rust: `tracing-subscriber`** | Local log formatting | crates.io | MIT |
+| **Rust: `reqwest`** | Bounded local AI HTTP adapter | crates.io | MIT / Apache 2.0 |
+| **Rust: `async-trait`** | Object-safe asynchronous AI adapter boundary | crates.io | MIT / Apache 2.0 |
+| **Rust: `uuid`** | Unpredictable prototype authority tokens and synthetic IDs | crates.io | MIT / Apache 2.0 |
 | **JS: `ares-cli`** | LG webOS packaging | npm | Apache 2.0 |
 | **iOS: Foundation**| Networking & WebSockets | Apple | Proprietary (Allowed for iOS targets) |
+| **GitHub: `actions/checkout`** | Read-only CI checkout | GitHub Marketplace | MIT |
 
-*Note: No third-party AI frameworks (like LangChain) or heavy frontend frameworks (React/Vue) are included, strictly bounding the prototype's dependency surface.*
+*Note: Transitive Rust dependencies remain locked in `server/Cargo.lock`. Model weights and local-model runtimes are operator-supplied and must be license-reviewed separately before distribution or commercial use. No model artifact is committed. No third-party AI orchestration or frontend framework is included.*
 
 ---
 
@@ -119,7 +127,7 @@ The following dependencies are approved for the MVP. All have permissive license
 **Positive:**
 - Extremely lean dependency tree minimizes licensing risks.
 - Pure Rust engine guarantees determinism.
-- Local-only architecture strictly enforces privacy boundaries.
+- Local-only configuration and server-authorized projections establish the prototype privacy boundary.
 - Native iOS usage aligns with the long-term vision.
 
 **Negative:**

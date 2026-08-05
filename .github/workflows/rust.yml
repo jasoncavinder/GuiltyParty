@@ -1,0 +1,33 @@
+name: Rust checks
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "server/**"
+      - ".github/workflows/rust.yml"
+      - "Makefile"
+  push:
+    branches: [dev, main]
+    paths:
+      - "server/**"
+      - ".github/workflows/rust.yml"
+      - "Makefile"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: server
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+      - name: Lint
+        run: cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
+      - name: Test
+        run: cargo test --locked --workspace --all-targets
