@@ -14,6 +14,6 @@ axum = { version = "0.7", features = ["ws", "macros"] }
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 reqwest = { version = "0.12", features = ["json"] }
+uuid = { version = "1.11", features = ["v4"] }
 gp_scenario = { path = "crates/gp_scenario" }
 gp_session = { path = "crates/gp_session" }
-

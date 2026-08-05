@@ -36,6 +36,27 @@ See the [proprietary license](LICENSE), [project notice](NOTICE.md),
 
 Public visibility of this repository does not make Guilty Party open source.
 
+## Prototype Development Status
+
+The repository currently contains an early, local-only server and deterministic scenario-engine slice. It is not a playable MVP, production service, or commercially deployable application.
+
+Run the current checks with:
+
+```sh
+make setup
+make test
+```
+
+The server requires a process-local host credential and does not load `.env` files automatically:
+
+```sh
+GP_HOST_TOKEN='replace-with-a-random-value-at-least-24-characters' make run-server
+```
+
+Copy the variable names from `.env.example` into your own ignored local configuration if desired; never commit real tokens. The AI adapter is disabled unless both `GP_AI_ENDPOINT` and `GP_AI_MODEL` are set, and it rejects public/remote endpoints.
+
+The Host Console and Stage remain static placeholders. The Stage is not yet packageable because approved original icon assets and `appinfo.json` are not present; `make build-stage` reports that limitation instead of claiming a successful package. See the [iOS setup status](docs/platforms/ios-setup.md) for current LAN protocol details.
+
 ## Documentation
 
 - [Documentation index](docs/)

@@ -1,106 +1,73 @@
 # Guilty Party iOS Companion MVP Setup
 
-This document provides exact, detailed instructions for creating the native iOS Companion app via Xcode.
+This document covers the manually created SwiftUI development project for the first LAN transport slice. It does not claim that the Companion experience or Bonjour discovery is implemented.
 
-Per `ADR 0004`, we are building a native iOS app using Swift and SwiftUI, utilizing the `Network` framework for Bonjour/mDNS discovery and WebSockets.
+## Current Networking Scope
+
+The Rust server listens on port `3000` on the Mac. A physical iPhone must use the Mac's LAN address, such as `192.168.1.20`; `127.0.0.1` on the phone refers to the phone itself.
+
+The current server does not advertise a Bonjour service. Use an explicit address until server-side mDNS and the matching iOS browser are implemented together. Do not add `_guiltyparty._tcp` to `NSBonjourServices` yet because no such service is advertised.
+
+The prototype uses unencrypted `http` and `ws` only on a trusted development LAN. It is not suitable for internet-facing or commercial deployment.
 
 ## 1. Create the Xcode Project
 
-1. Open **Xcode**.
-2. Select **File > New > Project...**
-3. In the template selector, choose **iOS** at the top, then select **App**, and click **Next**.
-4. Configure the project options:
-    - **Product Name:** `GuiltyPartyCompanion`
-    - **Team:** (Select your personal team or leave it as None for now)
-    - **Organization Identifier:** `com.guiltyparty`
-    - **Bundle Identifier:** `com.guiltyparty.GuiltyPartyCompanion` (will auto-populate)
-    - **Interface:** SwiftUI
-    - **Language:** Swift
-    - **Storage:** None
-5. Click **Next**.
-6. When asked where to save the project, navigate to `/Users/jasoncavinder/Projects/GuiltyParty/clients/companion` (create the `companion` folder if needed). Select this folder and click **Create**.
+1. In Xcode, choose **File > New > Project**, then **iOS > App**.
+2. Use product name `GuiltyPartyCompanion`, organization identifier `com.guiltyparty`, SwiftUI, Swift, and no storage layer.
+3. Save the generated project under `clients/companion/`.
+4. Do not add third-party packages.
 
-## 2. Configure Local Network Permissions (Info.plist)
+## 2. Configure Local Network Access
 
-Because the Companion app must connect to the local server (via LAN) and discover it using Bonjour, we must explicitly declare our intentions in the App's properties to satisfy iOS privacy requirements.
+In the Companion target's **Info** settings, add:
 
-1. In Xcode's Project Navigator (left sidebar), click the top-level **GuiltyPartyCompanion** project file.
-2. Select the **GuiltyPartyCompanion** target in the main window.
-3. Go to the **Info** tab.
-4. Hover over any existing key in the "Custom iOS Target Properties" list and click the **+** button that appears to add a new row.
-5. Add the following keys:
-    *   **Key:** `Privacy - Local Network Usage Description` (`NSLocalNetworkUsageDescription`)
-    *   **Type:** `String`
-    *   **Value:** `Guilty Party uses the local network to discover and connect to the Host Server.`
-    *   **Key:** `Bonjour services` (`NSBonjourServices`)
-    *   **Type:** `Array`
-    *   **Value:** Expand the array, add an item: `_guiltyparty._tcp`
+- `NSLocalNetworkUsageDescription` (`Privacy - Local Network Usage Description`): `Guilty Party connects to a host server on your local network.`
+- `NSAppTransportSecurity` (Dictionary) containing `NSAllowsLocalNetworking` (Boolean): `YES`.
 
-## 3. Implement Basic View and Networking Scaffold
+When Bonjour is actually implemented, also add the exact advertised service type to `NSBonjourServices`. Local-network permission and App Transport Security are separate controls; both must match the networking behavior.
 
-By default, Xcode created a `ContentView.swift`. For the MVP scaffold, we will update it to show the App's status and prepare for the `URLSessionWebSocketTask` connection.
+## 3. Use the Authority-Bearing Protocol
 
-Replace the contents of `ContentView.swift` with the following placeholder logic:
+The Companion must first join over HTTP:
 
-```swift
-import SwiftUI
+```http
+POST http://MAC_LAN_ADDRESS:3000/api/join
+Content-Type: application/json
 
-struct ContentView: View {
-    @State private var connectionStatus = "Disconnected"
-    
-    var body: some View {
-        VStack(spacing: 20) {
-            Image(systemName: "magnifyingglass")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            
-            Text("Guilty Party Companion")
-                .font(.title)
-                .bold()
-            
-            Text("Status: \(connectionStatus)")
-                .foregroundColor(connectionStatus == "Connected" ? .green : .red)
-            
-            Button("Connect to Server") {
-                connectToServer()
-            }
-            .buttonStyle(.borderedProminent)
-        }
-        .padding()
-    }
-    
-    private func connectToServer() {
-        // Scaffold: Connect to localhost via WebSocket
-        connectionStatus = "Connecting..."
-        guard let url = URL(string: "ws://127.0.0.1:3000/ws") else { return }
-        
-        let session = URLSession(configuration: .default)
-        let webSocketTask = session.webSocketTask(with: url)
-        
-        webSocketTask.resume()
-        
-        // Simple ping to test connection
-        let message = URLSessionWebSocketTask.Message.string("Companion Joined")
-        webSocketTask.send(message) { error in
-            DispatchQueue.main.async {
-                if let error = error {
-                    self.connectionStatus = "Error: \(error.localizedDescription)"
-                } else {
-                    self.connectionStatus = "Connected"
-                }
-            }
-        }
-    }
-}
-
-#Preview {
-    ContentView()
-}
+{"kind":"participant","display_name":"Synthetic Player"}
 ```
 
-## 4. Run the App
+The response contains a synthetic `participant_id` and an unpredictable, process-local `token`. Keep the token in memory only for this prototype. Connect the retained WebSocket task to:
 
-1. Ensure your Local Server is running (`make run-server` from the root of the repo).
-2. In Xcode, select a Simulator (e.g., iPhone 15) from the device dropdown at the top.
-3. Press the **Play** button (or `Cmd + R`) to build and run the app.
-4. Click "Connect to Server" and verify the status changes to "Connected". (You should also see the connection logged in the Rust server terminal).
+```text
+ws://MAC_LAN_ADDRESS:3000/ws?token=URL_ENCODED_TOKEN
+```
+
+The server sends an authorized projection immediately. The client may request a refresh with:
+
+```json
+{"type":"get_projection"}
+```
+
+The WebSocket task must be owned by a long-lived observable model rather than a local function variable, and it must continuously call `receive` after connecting. Do not log tokens, projection payloads, private objectives, or private clues.
+
+## 4. Run a Device Check
+
+1. Set a host token and start the server from the repository root:
+
+   ```sh
+   GP_HOST_TOKEN='replace-with-a-random-value-at-least-24-characters' make run-server
+   ```
+
+2. Find the Mac's active LAN IPv4 address in **System Settings > Network > Details**.
+3. Confirm the Mac and iPhone are on the same trusted network and that client isolation is disabled.
+4. Join using the HTTP request above, then connect using the returned token.
+5. Verify that an invalid token receives HTTP `401` and that one participant cannot receive another participant's private projection.
+
+## Known Limitations
+
+- The Xcode project has not yet been committed.
+- Bonjour/mDNS discovery is not implemented.
+- Pairing UX and token transfer are not implemented.
+- The server currently holds tokens and game state in memory and resets them on restart.
+- Plain LAN transport is development-only.

@@ -1,52 +1,79 @@
-use std::collections::{HashMap, HashSet};
-use crate::schema::Scenario;
-use crate::journal::JournalEvent;
+use std::collections::{BTreeMap, BTreeSet};
 
-#[derive(Debug, Clone, PartialEq)]
+use crate::{
+    journal::JournalEvent,
+    schema::{Outcome, Scenario, ScenarioValidationError},
+};
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GameState {
     pub scenario: Scenario,
-    pub participants: HashMap<String, ParticipantState>,
-    pub endpoints: HashMap<String, EndpointState>,
+    pub participants: BTreeMap<String, ParticipantState>,
+    pub endpoints: BTreeMap<String, EndpointState>,
     pub active_scene_id: Option<String>,
-    pub revealed_clues: HashSet<String>,
-    pub votes: HashMap<String, String>, // participant_id -> target_character_id
+    pub revealed_clues: BTreeSet<String>,
+    pub voting_open: bool,
+    pub voting_closed: bool,
+    pub votes: BTreeMap<String, String>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ParticipantState {
     pub name: String,
     pub character_id: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EndpointState {
     pub participant_id: String,
     pub capabilities: Vec<String>,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EngineError {
     ParticipantNotFound(String),
+    ParticipantAlreadyExists(String),
+    EndpointAlreadyExists(String),
     CharacterNotFound(String),
+    CharacterAlreadyAssigned(String),
+    ParticipantAlreadyAssigned(String),
     SceneNotFound(String),
     ClueNotFound(String),
+    SceneAlreadyActive(String),
+    ClueAlreadyRevealed(String),
+    VotingAlreadyOpened,
+    VotingNotOpen,
+    VotingAlreadyClosed,
+    ParticipantNotAssigned(String),
+    ParticipantAlreadyVoted(String),
 }
 
 impl GameState {
-    pub fn new(scenario: Scenario) -> Self {
-        Self {
+    pub fn try_new(scenario: Scenario) -> Result<Self, ScenarioValidationError> {
+        scenario.validate()?;
+        Ok(Self {
             scenario,
-            participants: HashMap::new(),
-            endpoints: HashMap::new(),
+            participants: BTreeMap::new(),
+            endpoints: BTreeMap::new(),
             active_scene_id: None,
-            revealed_clues: HashSet::new(),
-            votes: HashMap::new(),
-        }
+            revealed_clues: BTreeSet::new(),
+            voting_open: false,
+            voting_closed: false,
+            votes: BTreeMap::new(),
+        })
     }
 
     pub fn apply(&mut self, event: &JournalEvent) -> Result<(), EngineError> {
         match event {
-            JournalEvent::ParticipantJoined { participant_id, name } => {
+            JournalEvent::ParticipantJoined {
+                participant_id,
+                name,
+            } => {
+                if self.participants.contains_key(participant_id) {
+                    return Err(EngineError::ParticipantAlreadyExists(
+                        participant_id.clone(),
+                    ));
+                }
                 self.participants.insert(
                     participant_id.clone(),
                     ParticipantState {
@@ -55,9 +82,16 @@ impl GameState {
                     },
                 );
             }
-            JournalEvent::EndpointRegistered { endpoint_id, participant_id, capabilities } => {
+            JournalEvent::EndpointRegistered {
+                endpoint_id,
+                participant_id,
+                capabilities,
+            } => {
                 if !self.participants.contains_key(participant_id) {
                     return Err(EngineError::ParticipantNotFound(participant_id.clone()));
+                }
+                if self.endpoints.contains_key(endpoint_id) {
+                    return Err(EngineError::EndpointAlreadyExists(endpoint_id.clone()));
                 }
                 self.endpoints.insert(
                     endpoint_id.clone(),
@@ -67,146 +101,281 @@ impl GameState {
                     },
                 );
             }
-            JournalEvent::CharacterAssigned { participant_id, character_id } => {
-                if !self.participants.contains_key(participant_id) {
-                    return Err(EngineError::ParticipantNotFound(participant_id.clone()));
-                }
-                if !self.scenario.characters.iter().any(|c| &c.id == character_id) {
+            JournalEvent::CharacterAssigned {
+                participant_id,
+                character_id,
+            } => {
+                if !self
+                    .scenario
+                    .characters
+                    .iter()
+                    .any(|character| &character.id == character_id)
+                {
                     return Err(EngineError::CharacterNotFound(character_id.clone()));
                 }
-                if let Some(p) = self.participants.get_mut(participant_id) {
-                    p.character_id = Some(character_id.clone());
+                if self.participants.iter().any(|(id, participant)| {
+                    id != participant_id && participant.character_id.as_ref() == Some(character_id)
+                }) {
+                    return Err(EngineError::CharacterAlreadyAssigned(character_id.clone()));
                 }
+                let participant = self
+                    .participants
+                    .get_mut(participant_id)
+                    .ok_or_else(|| EngineError::ParticipantNotFound(participant_id.clone()))?;
+                if participant.character_id.is_some() {
+                    return Err(EngineError::ParticipantAlreadyAssigned(
+                        participant_id.clone(),
+                    ));
+                }
+                participant.character_id = Some(character_id.clone());
             }
             JournalEvent::SceneAdvanced { scene_id } => {
-                if !self.scenario.scenes.iter().any(|s| &s.id == scene_id) {
+                if !self
+                    .scenario
+                    .scenes
+                    .iter()
+                    .any(|scene| &scene.id == scene_id)
+                {
                     return Err(EngineError::SceneNotFound(scene_id.clone()));
+                }
+                if self.active_scene_id.as_ref() == Some(scene_id) {
+                    return Err(EngineError::SceneAlreadyActive(scene_id.clone()));
                 }
                 self.active_scene_id = Some(scene_id.clone());
             }
             JournalEvent::ClueRevealed { clue_id } => {
-                if !self.scenario.clues.iter().any(|c| &c.id == clue_id) {
+                if !self.scenario.clues.iter().any(|clue| &clue.id == clue_id) {
                     return Err(EngineError::ClueNotFound(clue_id.clone()));
                 }
-                self.revealed_clues.insert(clue_id.clone());
-            }
-            JournalEvent::VoteCast { participant_id, target_character_id } => {
-                if !self.participants.contains_key(participant_id) {
-                    return Err(EngineError::ParticipantNotFound(participant_id.clone()));
+                if !self.revealed_clues.insert(clue_id.clone()) {
+                    return Err(EngineError::ClueAlreadyRevealed(clue_id.clone()));
                 }
-                if !self.scenario.characters.iter().any(|c| &c.id == target_character_id) {
+            }
+            JournalEvent::VotingOpened => {
+                if self.voting_closed {
+                    return Err(EngineError::VotingAlreadyClosed);
+                }
+                if self.voting_open {
+                    return Err(EngineError::VotingAlreadyOpened);
+                }
+                self.voting_open = true;
+            }
+            JournalEvent::VoteCast {
+                participant_id,
+                target_character_id,
+            } => {
+                if !self.voting_open || self.voting_closed {
+                    return Err(EngineError::VotingNotOpen);
+                }
+                let participant = self
+                    .participants
+                    .get(participant_id)
+                    .ok_or_else(|| EngineError::ParticipantNotFound(participant_id.clone()))?;
+                if participant.character_id.is_none() {
+                    return Err(EngineError::ParticipantNotAssigned(participant_id.clone()));
+                }
+                if !self
+                    .scenario
+                    .characters
+                    .iter()
+                    .any(|character| &character.id == target_character_id)
+                {
                     return Err(EngineError::CharacterNotFound(target_character_id.clone()));
                 }
-                self.votes.insert(participant_id.clone(), target_character_id.clone());
+                if self.votes.contains_key(participant_id) {
+                    return Err(EngineError::ParticipantAlreadyVoted(participant_id.clone()));
+                }
+                self.votes
+                    .insert(participant_id.clone(), target_character_id.clone());
+            }
+            JournalEvent::VotingClosed => {
+                if self.voting_closed {
+                    return Err(EngineError::VotingAlreadyClosed);
+                }
+                if !self.voting_open {
+                    return Err(EngineError::VotingNotOpen);
+                }
+                self.voting_open = false;
+                self.voting_closed = true;
             }
         }
         Ok(())
     }
 
-    pub fn resolve_outcome(&self) -> Option<&crate::schema::Outcome> {
-        // Simple resolution: most votes wins
-        let mut vote_counts = HashMap::new();
+    /// Returns no outcome when voting is open, empty, or tied.
+    pub fn resolve_outcome(&self) -> Option<&Outcome> {
+        if !self.voting_closed || self.votes.is_empty() {
+            return None;
+        }
+
+        let mut counts = BTreeMap::<&str, usize>::new();
         for target in self.votes.values() {
-            *vote_counts.entry(target).or_insert(0) += 1;
+            *counts.entry(target).or_default() += 1;
+        }
+        let max_votes = counts.values().copied().max()?;
+        let mut winners = counts
+            .into_iter()
+            .filter_map(|(target, count)| (count == max_votes).then_some(target));
+        let winner = winners.next()?;
+        if winners.next().is_some() {
+            return None;
         }
 
-        let mut max_votes = 0;
-        let mut winning_target = None;
-        for (target, count) in vote_counts {
-            if count > max_votes {
-                max_votes = count;
-                winning_target = Some(target);
-            } else if count == max_votes {
-                // Tie breaker? For the prototype, we can just say the first one to reach it or undefined.
-                // We'll leave it as whoever was checked last that exceeded, meaning ties don't override.
-            }
-        }
-
-        if let Some(winner) = winning_target {
-            self.scenario.outcomes.iter().find(|o| &o.condition_target_character_id == winner)
-        } else {
-            None
-        }
+        self.scenario
+            .outcomes
+            .iter()
+            .find(|outcome| outcome.condition_target_character_id == winner)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::schema::{Character, Scene, Clue, Outcome};
+    use crate::{
+        journal::{replay, JournalEntry},
+        schema::{Character, Clue, Outcome, Scene, SUPPORTED_SCHEMA_VERSION},
+    };
 
-    fn mock_scenario() -> Scenario {
+    fn scenario() -> Scenario {
         Scenario {
+            schema_version: SUPPORTED_SCHEMA_VERSION,
             id: "test-scenario".into(),
+            version: 1,
             title: "Test".into(),
-            description: "A test".into(),
+            description: "Original synthetic test content".into(),
             characters: vec![
                 Character {
                     id: "c1".into(),
-                    name: "Alice".into(),
+                    name: "Avery".into(),
                     public_description: "A chef".into(),
-                    private_objective: "Hide the knife".into(),
+                    private_objective: "Hide the recipe".into(),
                 },
                 Character {
                     id: "c2".into(),
-                    name: "Bob".into(),
-                    public_description: "A butler".into(),
-                    private_objective: "Find the knife".into(),
+                    name: "Blake".into(),
+                    public_description: "A gardener".into(),
+                    private_objective: "Find the recipe".into(),
                 },
             ],
-            scenes: vec![
-                Scene {
-                    id: "s1".into(),
-                    name: "Introduction".into(),
-                    public_narrative: "Welcome".into(),
-                },
-            ],
-            clues: vec![
-                Clue {
-                    id: "clue1".into(),
-                    name: "The Knife".into(),
-                    description: "A sharp knife".into(),
-                    is_public: false,
-                    authorized_characters: vec!["c2".into()],
-                },
-            ],
-            outcomes: vec![
-                Outcome {
-                    id: "o1".into(),
-                    condition_target_character_id: "c1".into(),
-                    public_resolution: "Alice was arrested.".into(),
-                },
-            ],
+            scenes: vec![Scene {
+                id: "s1".into(),
+                name: "Introduction".into(),
+                public_narrative: "Welcome".into(),
+            }],
+            clues: vec![Clue {
+                id: "clue1".into(),
+                name: "The Recipe".into(),
+                description: "A handwritten recipe".into(),
+                is_public: false,
+                authorized_characters: vec!["c2".into()],
+            }],
+            outcomes: vec![Outcome {
+                id: "o1".into(),
+                condition_target_character_id: "c1".into(),
+                public_resolution: "Avery is selected.".into(),
+            }],
         }
+    }
+
+    fn complete_events() -> Vec<JournalEvent> {
+        vec![
+            JournalEvent::ParticipantJoined {
+                participant_id: "p1".into(),
+                name: "Player 1".into(),
+            },
+            JournalEvent::CharacterAssigned {
+                participant_id: "p1".into(),
+                character_id: "c1".into(),
+            },
+            JournalEvent::ParticipantJoined {
+                participant_id: "p2".into(),
+                name: "Player 2".into(),
+            },
+            JournalEvent::CharacterAssigned {
+                participant_id: "p2".into(),
+                character_id: "c2".into(),
+            },
+            JournalEvent::SceneAdvanced {
+                scene_id: "s1".into(),
+            },
+            JournalEvent::ClueRevealed {
+                clue_id: "clue1".into(),
+            },
+            JournalEvent::VotingOpened,
+            JournalEvent::VoteCast {
+                participant_id: "p1".into(),
+                target_character_id: "c1".into(),
+            },
+            JournalEvent::VoteCast {
+                participant_id: "p2".into(),
+                target_character_id: "c1".into(),
+            },
+            JournalEvent::VotingClosed,
+        ]
     }
 
     #[test]
-    fn test_engine_determinism() {
-        let scenario = mock_scenario();
-        let mut state = GameState::new(scenario);
+    fn replay_reconstructs_the_same_state() {
+        let scenario = scenario();
+        let entries: Vec<_> = complete_events()
+            .into_iter()
+            .enumerate()
+            .map(|(index, event)| JournalEntry::new(&scenario, index as u64 + 1, 0, event))
+            .collect();
 
-        let events = vec![
-            JournalEvent::ParticipantJoined { participant_id: "p1".into(), name: "Player 1".into() },
-            JournalEvent::CharacterAssigned { participant_id: "p1".into(), character_id: "c1".into() },
-            JournalEvent::ParticipantJoined { participant_id: "p2".into(), name: "Player 2".into() },
-            JournalEvent::CharacterAssigned { participant_id: "p2".into(), character_id: "c2".into() },
-            JournalEvent::SceneAdvanced { scene_id: "s1".into() },
-            JournalEvent::ClueRevealed { clue_id: "clue1".into() },
-            JournalEvent::VoteCast { participant_id: "p1".into(), target_character_id: "c1".into() },
-            JournalEvent::VoteCast { participant_id: "p2".into(), target_character_id: "c1".into() },
-        ];
+        let first = replay(scenario.clone(), &entries).unwrap();
+        let second = replay(scenario, &entries).unwrap();
 
+        assert_eq!(first, second);
+        assert_eq!(
+            first.resolve_outcome().map(|outcome| &outcome.id),
+            Some(&"o1".into())
+        );
+    }
+
+    #[test]
+    fn ties_have_no_outcome_regardless_of_vote_order() {
+        let mut events = complete_events();
+        events[8] = JournalEvent::VoteCast {
+            participant_id: "p2".into(),
+            target_character_id: "c2".into(),
+        };
+        let mut state = GameState::try_new(scenario()).unwrap();
         for event in events {
-            assert!(state.apply(&event).is_ok());
+            state.apply(&event).unwrap();
         }
+        assert_eq!(state.resolve_outcome(), None);
+    }
 
-        assert_eq!(state.participants.len(), 2);
-        assert_eq!(state.active_scene_id, Some("s1".into()));
-        assert!(state.revealed_clues.contains("clue1"));
+    #[test]
+    fn prevents_character_sharing_and_repeat_votes() {
+        let mut state = GameState::try_new(scenario()).unwrap();
+        for event in complete_events().into_iter().take(3) {
+            state.apply(&event).unwrap();
+        }
+        assert_eq!(
+            state.apply(&JournalEvent::CharacterAssigned {
+                participant_id: "p2".into(),
+                character_id: "c1".into(),
+            }),
+            Err(EngineError::CharacterAlreadyAssigned("c1".into()))
+        );
 
-        let outcome = state.resolve_outcome();
-        assert!(outcome.is_some());
-        assert_eq!(outcome.unwrap().id, "o1");
+        state
+            .apply(&JournalEvent::CharacterAssigned {
+                participant_id: "p2".into(),
+                character_id: "c2".into(),
+            })
+            .unwrap();
+        state.apply(&JournalEvent::VotingOpened).unwrap();
+        let vote = JournalEvent::VoteCast {
+            participant_id: "p1".into(),
+            target_character_id: "c1".into(),
+        };
+        state.apply(&vote).unwrap();
+        assert_eq!(
+            state.apply(&vote),
+            Err(EngineError::ParticipantAlreadyVoted("p1".into()))
+        );
     }
 }
-
