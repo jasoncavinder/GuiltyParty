@@ -1,6 +1,17 @@
 [package]
 name = "gp_server"
 version = "0.1.0"
-edition = "2024"
+edition = "2021"
 
 [dependencies]
+gp_scenario = { workspace = true }
+axum = { workspace = true }
+tokio = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+reqwest = { workspace = true }
+async-trait = "0.1"
+
+
