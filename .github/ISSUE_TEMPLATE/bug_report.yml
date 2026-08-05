@@ -8,6 +8,7 @@ body:
     attributes:
       value: |
         Do not include character secrets, private messages, credentials, personal data, or other sensitive information.
+        Report security vulnerabilities privately through the repository Security tab instead of opening an issue.
   - type: textarea
     id: summary
     attributes:

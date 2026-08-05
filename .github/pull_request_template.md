@@ -8,6 +8,7 @@ List the checks performed.
 
 ## Documentation and architecture
 
+- [ ] I reviewed the applicable guidance in `CONTRIBUTING.md` and `AGENTS.md`.
 - [ ] Relevant documentation is updated, or no documentation change is needed.
 - [ ] Significant architectural decisions include an ADR, or no ADR is needed.
 - [ ] Scenario behavior remains deterministic and reproducible where applicable.

@@ -38,11 +38,16 @@ Public visibility of this repository does not make Guilty Party open source.
 
 ## Documentation
 
+- [Documentation index](docs/)
 - [Product vision](docs/product/vision.md)
 - [Experience model](docs/product/experience-model.md)
 - [Architecture notes](docs/architecture/README.md)
-- [Privacy and safety](docs/security/privacy-and-safety.md)
+- [Security and privacy](docs/security/)
 - [Architectural decision records](docs/adr/)
+- [Platform documentation](docs/platforms/)
+- [Product roadmap](docs/roadmap/)
+- [Contributing](CONTRIBUTING.md)
+- [Security reporting](SECURITY.md)
 
 ---
 

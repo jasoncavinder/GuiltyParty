@@ -124,7 +124,7 @@ The journal provides:
 - replay
 - debugging
 - simulations
-- AI context
+- authorized, minimized AI context
 - recovery after disconnects
 
 ---
@@ -167,16 +167,28 @@ Users should understand when information is captured and why.
 
 ---
 
-# Future Documentation
+# Architecture Documents
 
-Additional documents should define:
+- [Device and room model](device-and-room-model.md)
+- [Device pairing boundaries](device-pairing.md)
+- [Media routing](media-routing.md)
+- [Room audio boundaries](room-audio.md)
+- [Scenario engine](scenario-engine.md)
+- [Scenario schema boundaries](scenario-schema.md)
+- [Session journal boundaries](session-journal.md)
+- [AI Stage Manager boundaries](ai-stage-manager.md)
+- [Creator tool boundaries](creator-tools.md)
 
-- scenario schema
-- media architecture
-- device pairing
-- room audio
-- AI Stage Manager behavior
-- creator tools
-- security model
-- ADR history
-- roadmap
+Related documentation:
+
+- [Security documentation](../security/)
+- [Architectural decision records](../adr/)
+- [Platform documentation](../platforms/)
+- [Product roadmap](../roadmap/)
+
+# Open Architecture Work
+
+These documents define boundaries but intentionally defer concrete implementation
+choices such as schema serialization, authentication, media providers, AI
+providers, retention periods, and platform frameworks. Those choices require
+evidence, human approval, and ADRs where significant.
