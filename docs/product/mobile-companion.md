@@ -34,9 +34,21 @@ A player must establish at least a minimal Guilty Party account before using a
 Companion in a session. Account creation should be low friction and may use
 federated sign-in such as Apple or Google.
 
-This requirement does not settle the identity provider, recovery model, data
-fields, or behavior on an isolated LAN. It also does not add accounts to the
-account-free local MVP.
+An otherwise functional LAN session must not require internet access merely for
+a player to join:
+
+- with internet access, the player uses a normal Guilty Party account
+- a previously authenticated player may use a securely cached,
+  offline-verifiable account session
+- a new player without internet access may receive a host-approved provisional
+  account scoped to that session
+- when connectivity returns, the product offers to link the provisional
+  account to a permanent account
+
+The provisional account provides session identity without granting unrelated
+account capabilities. This requirement does not settle the identity provider,
+minimum permanent-account data, credential design, linking mechanics, or
+recovery model. It also does not add accounts to the account-free local MVP.
 
 ### MC-PROD-004: Move Between Personal Devices
 

@@ -40,19 +40,42 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-001: Account Entry on an Isolated LAN
+### MC-ID-002: Minimum Permanent-Account Data
 
 **Status:** Active
 
-**Why first:** The answer constrains sign-in, convention demos, pairing,
-recovery, credential storage, and transport security.
+**Why next:** Data minimization must constrain identity-provider selection,
+recovery, client storage, privacy disclosures, and account linking.
 
-**Decision question:** What should happen when a player reaches a Guilty Party
-session on an isolated LAN but has no usable signed-in account session and
-cannot reach Apple, Google, or a Guilty Party identity service?
+**Decision question:** What is the minimum information a permanent Guilty Party
+player account must contain beyond its internal authentication identifier?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
+
+## Accepted Decision History
+
+### MC-ID-001: Account Entry on an Isolated LAN
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** A functional LAN session does not require internet access merely
+to join. A previously authenticated player may use a securely cached,
+offline-verifiable account session. A new player without internet access may
+receive a host-approved provisional account scoped to that session. When
+connectivity returns, the product offers to link it to a permanent account.
+
+**Rationale:** This preserves minimal participant identity, convention
+walk-ins, and isolated-LAN operation without making a remote identity provider
+a runtime dependency.
+
+**Consequences:** Credential design, provisional-account expiry and recovery,
+linking mechanics, and permanent account requirements remain separate
+decisions.
+
+**Recorded in:** [MC-PROD-003](../product/mobile-companion.md#mc-prod-003-minimal-account-required)
 
 ## Deliberately Deferred Decisions
 
@@ -73,12 +96,13 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-002 | Open | Minimal account fields, approved identity methods, and account recovery model | MC-ID-001 |
-| MC-ID-003 | Open | Pairing invitation scope, expiry, consumption, retry, and revocation rules | MC-ID-001, MC-ID-002 |
+| MC-ID-009 | Open | Approved permanent-account sign-in methods and provider requirements | MC-ID-002 |
+| MC-ID-010 | Open | Permanent-account recovery methods and support boundaries | MC-ID-002, MC-ID-009 |
+| MC-ID-003 | Open | Pairing invitation scope, expiry, consumption, retry, and revocation rules | MC-ID-001, MC-ID-002, MC-ID-009 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
-| MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-002, MC-NET-006 |
+| MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-003, MC-ID-008 |
-| MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-002, MC-ID-003 |
+| MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-003, MC-ID-010 |
 | MC-ID-008 | Open | Whether several personal endpoints may be connected and which one may actively receive private content or submit actions | MC-ID-007 |
 
 ### Control-Plane Networking
