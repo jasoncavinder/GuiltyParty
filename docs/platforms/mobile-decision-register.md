@@ -40,22 +40,61 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-024: Server-Side Credential Storage
+### MC-ID-007: Independent Identity Recovery
 
 **Status:** Active
 
-**Why next:** Native and browser client-storage boundaries are accepted. The
-server now needs a matching boundary for authentication verifiers, account
-sessions, refresh authority, and gameplay-session resumption.
+**Why next:** Account, client, and server credential boundaries are accepted.
+Moving between devices now requires explicit rules for recovering the durable
+account, the session-specific participant, and the newly connecting endpoint
+without confusing them or duplicating participation.
 
-**Decision question:** What credential verifier and session-authority material
-may the server retain, and how must it be protected, rotated, revoked, and kept
-separate from scenario data?
+**Decision question:** When a player reconnects or changes devices, which proof
+recovers the account and existing participant, when must a new endpoint identity
+be created, and which relationships may never be inferred from device identity
+alone?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-024: Server-Side Credential Storage
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Permanent account authority retains only WebAuthn public-key
+credential records, Apple and Google issuer-and-subject bindings, the encrypted
+verified recovery email, and minimal security, acceptance, and revocation
+metadata. Provider access and refresh tokens are not retained when a provider
+is used only for authentication. Bearer credentials are random and opaque; the
+server stores keyed digests with the digest key outside the credential database.
+Account sessions, native refresh credentials, browser sessions, and
+gameplay-session resume credentials are separate authority classes scoped to
+the relevant account, endpoint, audience, and game session. Refresh and resume
+credentials rotate after successful use; reuse revokes their credential family.
+Revocations are durable and act at the appropriate account, endpoint, or game
+scope. Account and security storage is logically separated from scenario
+content and journals. An isolated-LAN server receives no permanent credential
+record, provider token, or recovery address; it may verify only a bounded,
+signed, audience-restricted offline-admission assertion and retain the minimum
+session authority needed for admission, reconnect, and local revocation.
+Security stores, backups, and trusted-component connections are encrypted, and
+administrative access is restricted and auditable. Raw credential material is
+excluded from logs and analytics.
+
+**Rationale:** This limits the value of database, log, LAN-host, and gameplay
+system compromise while supporting revocation, account recovery, isolated-LAN
+admission, and deterministic session restoration.
+
+**Consequences:** Concrete token lifetimes, database products, encryption and
+digest keys, secrets management, retention, and infrastructure providers remain
+separate decisions. The local server needs a trust mechanism for verifying
+offline-admission assertions without acquiring permanent account authority.
+
+**Recorded in:** [Server-Side Credential Storage](../security/security-model.md#server-side-credential-storage)
 
 ### MC-ID-023: Browser Companion Credential Storage
 
@@ -551,7 +590,6 @@ discarded merely because it moves.
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
-| MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-003, MC-ID-010 |
 | MC-ID-008 | Open | Whether several personal endpoints may be connected and which one may actively receive private content or submit actions | MC-ID-007 |
 
 ### Control-Plane Networking

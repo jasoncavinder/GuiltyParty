@@ -173,6 +173,46 @@ not an acceptable production credential boundary; production LAN browser access
 therefore depends on the local certificate and trust design. This decision does
 not authorize persistent caching of private gameplay content.
 
+### Server-Side Credential Storage
+
+Permanent account authority stores only the verifier and binding material
+needed for the approved authentication methods: WebAuthn credential records
+containing public—not private—key material; issuer-and-subject bindings for
+Apple and Google sign-in; the encrypted verified recovery email; and minimal
+security, acceptance, and revocation metadata. Identity-provider access or
+refresh tokens are not retained when a provider is used only to authenticate.
+
+Bearer credentials are random, opaque values. The client receives the raw
+value; the server stores a keyed digest and keeps the digest key outside the
+credential database. Account sessions, native refresh credentials, browser
+sessions, and gameplay-session resume credentials are distinct authority
+classes. Each record is scoped to its account, endpoint, intended audience,
+and, where applicable, game session, with issuance, expiry, rotation, use, and
+revocation metadata. Logs and analytics never contain raw credential values.
+
+Refresh and resume credentials rotate after successful use. Reuse of an
+invalidated value revokes its credential family and requires authentication.
+Endpoint removal revokes that endpoint's authority; account recovery revokes
+all existing account sessions; ending a game revokes its gameplay-resume
+authority without necessarily ending the account session. Revocation and
+expiration state must survive server restarts.
+
+Account and security records are logically separated from scenarios, content,
+and deterministic session journals. Gameplay systems reference opaque account,
+participant, and endpoint identifiers. They do not receive credential values,
+recovery addresses, provider bindings, or unrelated authentication history.
+
+An isolated-LAN game server does not receive permanent-account credential
+records, identity-provider tokens, or recovery addresses. It may verify a
+bounded, signed, audience-restricted offline-admission assertion and retain
+only the session-scoped authority needed for admission, reconnect, and local
+revocation. The assertion contains no unnecessary personal information.
+
+Security databases, backups, and connections between trusted components are
+encrypted, and administrative access is restricted and auditable. Concrete
+database, encryption-key, secret-management, retention, and infrastructure
+provider choices require separate approval.
+
 ### Media Privacy Failure
 
 Examples include whisper audio reaching a Stage, stale routes after permission
@@ -213,7 +253,6 @@ Future implementations should include:
 
 Human approval is required for:
 
-- server-side credential storage and protection
 - administrative and support-access policy
 - encryption and key-management design
 - provider selection and data residency
