@@ -69,8 +69,10 @@ Pairing credentials must be:
 - revocable when a device is removed or a session ends
 - free of embedded private participant or scenario information
 
-Exact lifetimes, code lengths, admission approval policy, and invitation reuse
-behavior remain human and implementation decisions.
+A pairing invitation is valid for 15 minutes from its server-issued time. It
+expires sooner if the session ends or the host revokes joining. Code length,
+automatic renewal, admission approval policy, and invitation reuse behavior
+remain human and implementation decisions.
 
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
@@ -101,7 +103,7 @@ Recovery must not silently broaden access.
 ## Open Decisions
 
 - provisional-account linking and recovery behavior
-- invitation lifetime and retry limits
+- invitation renewal, rotation, and retry behavior
 - room creation and approval authority
 - device reauthentication and revocation UX
 - capability attestation and permission prompts
