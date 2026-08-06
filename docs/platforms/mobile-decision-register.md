@@ -40,25 +40,75 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-PRIV-002: Companion Data Cache and Deletion Lifecycle
+### MC-PRIV-004: Mobile Crash Reporting and Diagnostics
 
 **Status:** Active
 
-**Why next:** Mobile release parity is accepted. This item was deliberately
-deferred for a separate discussion, but it is now the earliest unresolved
-prerequisite: crash-report policy depends on it, and store disclosure and
-account-deletion preparation depend on both decisions.
+**Why next:** The Companion-local data lifecycle and third-party dependency
+governance are accepted, so the project can now decide whether and how mobile
+crash reporting operates. Store disclosure and review preparation depend on
+this result.
 
-**Decision question:** Which data may a Companion cache locally, for which
-purposes and offline behaviors, how is each category protected, when is it
-deleted after session exit, revocation, logout, transfer, account deletion, or
-expiry, and how do browser storage, operating-system backups, diagnostics, and
-user controls affect the lifecycle?
+**Decision question:** Which crash and diagnostic fields may be collected,
+which fields and payloads are prohibited, where scrubbing occurs, whether user
+consent or notice is required, who may access reports, how long they remain,
+which provider constraints apply, and what happens when safe collection cannot
+be guaranteed?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-PRIV-002: Companion Data Cache and Deletion Lifecycle
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** The initial Companion does not persist private gameplay content.
+Private projections, secrets, objectives, evidence, messages, votes, action
+payloads, media, captions, transcripts, and AI context remain in process or
+page memory and are covered and logically purged when connection, lifecycle,
+audience, or endpoint authority becomes uncertain. A fresh server-authorized
+projection is required before private content returns. Persistent data is
+limited to approved device-bound credentials, paired-server trust, minimum
+opaque resumption metadata, and non-secret device preferences. Credentials,
+trust, session metadata, diagnostics, and private content are excluded from
+cloud backup, device-to-device transfer, and cross-platform transfer; only
+non-secret preferences without account, session, scenario, participant,
+endpoint, pairing, or authority identifiers may be backed up. Native authority
+uses the accepted Keychain or Android Keystore-protected boundaries. Browser
+private content remains in page memory, authenticated gameplay responses use
+`Cache-Control: no-store`, and credentials or private data never enter script-
+readable persistent storage or service-worker caches. Confirmed session end,
+leave, removal, revocation, endpoint transfer, logout, account deletion,
+credential expiry, or server-trust failure immediately deletes applicable
+local continuity data and invalidates server authority where possible. Without
+contact, opaque resumption metadata expires no later than 24 hours after the
+last-known session end or last authenticated contact when no end is known.
+Startup and every read path enforce expiry. Sign-out, endpoint removal, local
+reset, and connected account deletion are distinct user controls; an offline
+client may clear local data but cannot claim remote deletion. Uninstall is not
+proof of server revocation. Application diagnostics remain unauthorized until
+MC-PRIV-004 is accepted. This decision governs Companion-local storage only and
+does not approve server-side consent, safety, journal, diagnostic, AI, media,
+or account retention.
+
+**Rationale:** Memory-only private content minimizes exposure from lost,
+restored, transferred, or stale devices while narrowly scoped opaque metadata
+supports the accepted reconnection behavior. Explicit backup exclusions,
+expiry checks, and truthful deletion controls address operating-system
+lifecycle limits without treating a client cache as canonical truth.
+
+**Consequences:** Private content must be fetched again after uncertainty, and
+long disconnections may require sign-in or rejoining. Device replacement
+requires reauthentication and re-pairing. Implementations need backup,
+transfer, expiry, crash, forced-termination, and purge tests. Server-side data
+lifecycle decisions remain unresolved and separately gated.
+
+**Recorded in:** [ADR 0029](../adr/0029-companion-local-data-lifecycle.md) and
+[Data Lifecycle](../security/data-lifecycle.md#companion-local-data-matrix)
 
 ### MC-DEL-005: Mobile Release Parity
 
@@ -693,9 +743,10 @@ specific purpose, scope, audience, processor, and retention notice, named
 persistent indicators, and renewed consent after scope change. Hosts cannot
 consent for players or expose who declined. Withdrawal stops the route. Minimal
 consent evidence is control-plane audit data, not scenario truth or media
-content, and its production collection is blocked until MC-PRIV-002 approves a
-retention and deletion lifecycle. Background mobile capture is not initially
-supported.
+content, and its production collection remains blocked until a separate
+server-side retention and deletion lifecycle is approved. ADR 0029 governs
+Companion-local caches only and does not satisfy that gate. Background mobile
+capture is not initially supported.
 
 **Rationale:** Separating permission, live transport, derived processing, and
 retained records gives people meaningful control while preserving private
@@ -1137,8 +1188,8 @@ the Companion fallback.
 **Consequences:** Exact session lifetime, rotation, and "remember this browser"
 UX remain separate decisions. Authenticated browser operation requires
 HTTPS/WSS, so production LAN browser access is blocked on the local certificate
-and trust design. Persistent private-gameplay caching remains deliberately
-deferred under MC-PRIV-002.
+and trust design. ADR 0029 prohibits persistent browser caching of private
+gameplay content.
 
 **Recorded in:** [Browser Companion Credential Storage](../security/security-model.md#browser-companion-credential-storage)
 
@@ -1167,9 +1218,8 @@ resumption without turning portable client storage, backups, or diagnostic
 systems into bearer-credential channels.
 
 **Consequences:** Browser credential storage and server-side verifier storage
-remain separate decisions. This decision does not authorize persistent caching
-of private gameplay content, which remains deliberately deferred under
-MC-PRIV-002.
+remain separate decisions. ADR 0029 prohibits persistent Companion caching of
+private gameplay content and defines the permitted opaque continuity metadata.
 
 **Recorded in:** [Native Companion Credential Storage](../security/security-model.md#native-companion-credential-storage)
 
@@ -1608,9 +1658,7 @@ No open items. Accepted decisions remain in the history above.
 
 ### Privacy and Safety
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-PRIV-004 | Open | Crash-report fields, scrubbing, consent, retention, access, and provider constraints | MC-PRIV-002, MC-DEL-006 |
+No open items. MC-PRIV-004 is the current discussion above.
 
 ### Media and Device Interruptions
 

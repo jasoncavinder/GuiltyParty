@@ -2,9 +2,10 @@
 
 ## Status
 
-This document records existing privacy defaults and the decisions that must be
-made before production data collection begins. It intentionally does not invent
-retention periods or legal requirements.
+This document records existing privacy defaults, the accepted Companion-local
+lifecycle, and the decisions that must be made before other production data
+collection begins. It does not invent legal requirements or treat a client
+cache decision as approval for server-side retention.
 
 ## Governing Rule
 
@@ -39,6 +40,37 @@ No implementation may interpret `TBD` as permission for indefinite retention.
 | Beta feedback | Structured build, device class, synthetic test reference, expected behavior, observed behavior, and reproduction steps; attachments are explicit and access-restricted. | Raw attachments are deleted promptly after triage; durable issues retain only a minimized technical summary. Beta membership is not a marketing list. |
 | Creator drafts and assets | Private to authorized creator workflows. | Draft deletion, publication retention, marketplace, and contractual rules require approval. |
 
+## Companion-Local Data Matrix
+
+[ADR 0029](../adr/0029-companion-local-data-lifecycle.md) governs this matrix.
+It applies only to player Companion storage and does not approve server-side
+retention.
+
+| Local category | Initial storage | Protection and backup | Deletion or expiry |
+| --- | --- | --- | --- |
+| Short-lived access token | Process memory only. | Never backed up, logged, or placed in ordinary settings. | Purged on authority loss, background or lock, termination, sign-out, or replacement. |
+| Device-bound refresh or session-resume credential | Approved Keychain or Android Keystore-protected boundary; browser uses the accepted host-only cookie. | Non-synchronizing and excluded from cloud, device-to-device, and cross-platform transfer. | Removed locally and invalidated server-side on sign-out, account deletion, endpoint revocation, expiry, or unusable authority. |
+| Paired LAN server trust | Minimum fingerprint, endpoint binding, and non-secret locator in protected application storage. | Device-bound and excluded from backup and transfer. | Cleared on local reset, server-identity failure, explicit unpairing, endpoint removal, or unusable authority. |
+| Opaque session-resumption metadata | Session, participant, endpoint, sequence, authority generation, pending idempotency identifiers, and expiry only. | Application-private, encrypted when it could support correlation or resumption, and excluded from backup and transfer. | Immediate on confirmed authority-ending events; otherwise no later than 24 hours after last-known session end or last authenticated contact when no end is known. |
+| Non-secret device preferences | Ordinary application-private or browser storage. | Backup is permitted only when the values contain no account, session, scenario, participant, endpoint, pairing, or authority identifier. | Retained until local reset or uninstall; account-linked preferences, if later approved, follow account deletion. |
+| Private gameplay projection and content | Process or page memory only. | Never placed in application files, databases, settings, browser storage, caches, logs, diagnostics, notifications, or backups. | Covered and logically purged on connection uncertainty and every lifecycle or authority-loss trigger; restored only from a fresh authorized projection. |
+| Private messages, media, captions, transcripts, votes, action payloads, or AI context | Process memory and bounded live media buffers only when separately authorized. | No persistent Companion cache or backup. | Purged when the live use ends or any audience, route, consent, lifecycle, or authority condition becomes uncertain. |
+| Application-owned diagnostics | Not authorized. | No local collection or upload until MC-PRIV-004 is accepted. | A later decision must define exact collection, retention, access, and deletion. |
+
+Every startup and read path enforces expiry before use because an operating
+system may suspend an application before cleanup code runs. Backup, restore,
+device transfer, reinstall, crash, forced termination, clock change, and
+offline-expiry tests are required.
+
+The browser marks authenticated gameplay and participant-specific responses
+`Cache-Control: no-store`; service workers do not cache them. Private content
+does not enter `localStorage`, `sessionStorage`, IndexedDB, or Cache Storage.
+
+User controls provide sign-out, endpoint removal, local settings and pairing
+reset, and a connected account-deletion request. An offline client may clear
+its own data but cannot truthfully claim that remote account data was deleted.
+Uninstall likewise does not prove server-side revocation.
+
 ## Consent and Notice Gates
 
 ### Recording
@@ -51,8 +83,9 @@ The minimum consent evidence uses opaque session and participant references and
 records only the feature, purpose, channels, audience, processor class, policy
 versions, decision, and server-authoritative lifecycle times. It does not store
 the reason for denial or communication content. Production collection remains
-blocked until the retention, access, deletion, backup, and export lifecycle is
-approved under MC-PRIV-002.
+blocked until a separate server-side retention, access, deletion, backup, and
+export lifecycle is approved. ADR 0029 governs only Companion-local caches and
+does not satisfy this gate.
 
 ### Transcription and Captions
 

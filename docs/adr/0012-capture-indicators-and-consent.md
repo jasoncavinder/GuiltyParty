@@ -158,9 +158,10 @@ and not communication content. The minimum structured record contains:
 
 It contains no reason for denial, raw media, caption or transcript text,
 character secret, or unnecessary account profile. Production use of any feature
-that requires retained consent evidence is blocked until MC-PRIV-002 approves
-its storage, retention, deletion, backup, access, and export behavior. `TBD` is
-not indefinite retention permission.
+that requires retained consent evidence is blocked until a separate server-side
+data-lifecycle decision approves its storage, retention, deletion, backup,
+access, and export behavior. ADR 0029 governs Companion-local caches only and
+does not satisfy this gate. `TBD` is not indefinite retention permission.
 
 ## Scope Limits
 

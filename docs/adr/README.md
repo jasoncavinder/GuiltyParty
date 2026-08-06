@@ -36,6 +36,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0026](0026-solo-owner-ai-assisted-mobile-ownership.md) | Accepted | Keep one human owner accountable during solo, AI-assisted operation and grow into one shared mobile team with native platform specialization. |
 | [0027](0027-kotlin-multiplatform-reconsideration-thresholds.md) | Accepted | Keep separate native clients unless sustained duplication or divergence triggers a bounded, reversible KMP experiment that passes explicit benefit and quality gates. |
 | [0028](0028-mobile-release-parity.md) | Accepted | Require equivalent core product guarantees across supported native clients while permitting disclosed native adaptations and evidence-governed sequential delivery. |
+| [0029](0029-companion-local-data-lifecycle.md) | Accepted | Keep private gameplay content memory-only while permitting narrowly scoped, device-bound continuity data with explicit backup exclusions and deletion backstops. |
 
 ## Adding an ADR
 

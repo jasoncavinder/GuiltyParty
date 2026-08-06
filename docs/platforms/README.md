@@ -38,6 +38,7 @@ Browser display, casting, and screen mirroring are fallback paths.
 - [Kotlin Multiplatform evidence and experiment record](kmp-reconsideration-evidence.md)
 - [Mobile release-parity policy](../adr/0028-mobile-release-parity.md)
 - [Living mobile release-parity matrix](mobile-release-parity.md)
+- [Companion local-data lifecycle](../adr/0029-companion-local-data-lifecycle.md)
 - [Open and deliberately deferred mobile decision register](mobile-decision-register.md)
 
 The decision register identifies exactly one active discussion at a time and

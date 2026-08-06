@@ -141,9 +141,10 @@ backups. Sign-out, account removal, endpoint revocation, or detection that the
 credential can no longer represent valid authority deletes the corresponding
 local credential and invalidates it server-side where applicable.
 
-This boundary does not authorize persistent caching of private gameplay
-content. Browser storage, server-side verifier storage, and private-content
-cache lifetime are separate decisions.
+[ADR 0029](../adr/0029-companion-local-data-lifecycle.md) separately prohibits
+persistent private-gameplay caching and defines the allowed opaque local
+continuity categories and deletion triggers. Server-side verifier storage
+remains a distinct boundary.
 
 ### Browser Companion Credential Storage
 
@@ -170,8 +171,41 @@ cookie where possible and invalidates the corresponding server-side session.
 
 This design requires an authenticated HTTPS/WSS origin. Plain HTTP on a LAN is
 not an acceptable production credential boundary; production LAN browser access
-therefore depends on the local certificate and trust design. This decision does
-not authorize persistent caching of private gameplay content.
+therefore depends on the local certificate and trust design. ADR 0029 prohibits
+persistent browser caching of private gameplay content.
+
+### Companion Local Data Lifecycle
+
+Private gameplay projections, secrets, objectives, messages, votes, action
+payloads, captions, media, and AI context remain in process or page memory and
+are never written to an application-controlled persistent cache. Connection
+uncertainty and lifecycle or authority loss cover and logically purge the
+private view. A fresh server-authorized projection is required before it
+returns.
+
+Persistent Companion storage is limited to approved device-bound credentials,
+paired-server trust, minimum opaque resumption metadata, and non-secret device
+preferences. Credentials, trust, session metadata, diagnostics, and private
+content are excluded from cloud backup and device or cross-platform transfer.
+A restored or replacement device reauthenticates and re-pairs.
+
+Confirmed session end, leave, removal, revocation, primary transfer, logout,
+account deletion, credential expiry, or server-identity failure deletes the
+applicable local continuity data and invalidates authority server-side where
+possible. Without authoritative contact, opaque resumption metadata expires no
+later than 24 hours after the last-known session end or last authenticated
+contact when no end is known. Startup and every read path enforce expiration
+before use.
+
+Authenticated browser gameplay responses use `Cache-Control: no-store` and
+never enter script-readable persistent storage or service-worker caches. Only
+non-secret preferences without account, endpoint, session, scenario,
+participant, pairing, or authority identifiers may use ordinary browser
+storage or backup.
+
+Application diagnostics remain unauthorized until MC-PRIV-004 defines their
+fields, scrubbing, consent, access, provider, retention, and deletion. ADR 0029
+does not approve any server-side retention category.
 
 ### Server-Side Credential Storage
 

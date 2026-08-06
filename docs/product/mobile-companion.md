@@ -264,6 +264,29 @@ See [ADR 0020](../adr/0020-android-lan-discovery-and-permission-ux.md).
 
 ## Privacy and Capture Protection
 
+### MC-PROD-014: Minimal Local Data and Prompt Deletion
+
+The initial Companion does not persist private gameplay content. Character
+secrets, objectives, evidence, private projections, messages, votes, private
+media, captions, action payloads, and AI context remain in memory and are
+discarded whenever connectivity, lifecycle state, audience, or endpoint
+authority becomes uncertain. Returning private content requires a fresh,
+server-authorized projection.
+
+Persistent local data is limited to approved device-bound credentials, paired-
+server trust, minimum opaque resumption metadata, and non-secret device
+preferences. Credentials, trust, session metadata, diagnostics, and private
+content do not migrate through backup or device transfer. Stale resumption
+metadata expires no later than 24 hours after the last-known session end or,
+when no end is known, the last authenticated server contact.
+
+Browser private content remains page-memory-only and authenticated gameplay
+responses are not cached. Sign-out, endpoint removal, local reset, and a
+connected account-deletion request provide distinct, truthful controls. An
+offline client may clear its own storage but does not claim that remote account
+data has been deleted. See
+[ADR 0029](../adr/0029-companion-local-data-lifecycle.md).
+
 ### MC-PROD-007: Protect App-Switcher Snapshots
 
 Private session content must be obscured in operating-system app-switcher and
