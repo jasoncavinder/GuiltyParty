@@ -40,22 +40,48 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-022: Participant Recovery After Server Restart
+### MC-ID-005: Native Companion Credential Storage
 
 **Status:** Active
 
-**Why next:** Companion-side recovery is accepted. Server restart behavior must
-now preserve deterministic session state while revalidating participant and
-endpoint authority.
+**Why next:** Client and server restart behavior is accepted. Automatic
+resumption now needs a concrete boundary for which credential material an
+installed Companion may persist and where it is protected.
 
-**Decision question:** After the Guilty Party server restarts, what session,
-participant, and endpoint state should it restore automatically before clients
-reconnect?
+**Decision question:** Which account and session credentials may the native iOS
+and Android Companions persist, and which platform-protected storage must hold
+them?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-022: Participant Recovery After Server Restart
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The server reconstructs canonical scenario state from the exact
+immutable scenario version and ordered journal. It restores durable session and
+participant identities, character and room associations, endpoint
+registrations, permissions and revocations, and completed admission and
+idempotency records needed to prevent duplication. It does not restore live
+connections or presence, ephemeral invitations, pending uncommitted commands,
+cached projections, AI suggestions, or media routes. Endpoints begin
+disconnected, reauthenticate or resume authority, and receive fresh authorized
+projections. A fresh invitation is issued if joining remains open.
+
+**Rationale:** Deterministic state and identity continuity survive restart while
+ephemeral transport, AI, projection, and media state is rebuilt rather than
+mistaken for canonical truth.
+
+**Consequences:** Missing scenario versions, replay failure, or invalid durable
+state fail the session closed for host intervention. Credential persistence,
+retry timing, and concrete storage remain separate decisions.
+
+**Recorded in:** [Session Journal Boundaries](../architecture/session-journal.md#server-restart-recovery)
 
 ### MC-ID-004: Companion Reconnect After App Restart
 
@@ -461,7 +487,8 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
+| MC-ID-023 | Open | Browser Companion credential and session-authority storage | MC-ID-005, MC-NET-006 |
+| MC-ID-024 | Open | Server-side storage and protection of credential verifiers and session authority | MC-ID-005, MC-NET-006 |
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
 | MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-003, MC-ID-010 |
 | MC-ID-008 | Open | Whether several personal endpoints may be connected and which one may actively receive private content or submit actions | MC-ID-007 |
