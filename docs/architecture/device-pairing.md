@@ -112,6 +112,17 @@ does not create another participant, endpoint, host prompt, or journal event.
 Reusing the identifier with different contents is rejected. An intentional
 corrected request uses a new identifier.
 
+New admission attempts are rate-limited in layers:
+
+- primarily by endpoint and authenticated or provisional identity
+- by invitation at an aggregate level above the session's expected capacity
+- by network address only at a high emergency ceiling so a shared LAN does not
+  become the primary limit
+- server-wide at an emergency resource-protection ceiling
+
+An identical retry with the same idempotency identifier is not a new attempt
+and does not consume the new-attempt allowance.
+
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
 

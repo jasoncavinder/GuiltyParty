@@ -40,21 +40,42 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-019: Pairing Admission Rate-Limit Scope
+### MC-ID-020: Pairing Admission Throttle and Retry UX
 
 **Status:** Active
 
-**Why next:** Identical network retries are now safe. New attempt identifiers
-still need abuse controls that do not let one device or a shared-LAN address
-prevent legitimate guests from joining.
+**Why next:** Rate-limit scopes are accepted. Cooldowns and messages must now
+balance abuse resistance with understandable recovery from ordinary mistakes.
 
-**Decision question:** At which scopes should the server rate-limit new pairing
-admission attempts?
+**Decision question:** How should cooldowns escalate, and what should a
+legitimate player see and be able to do while throttled?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-019: Pairing Admission Rate-Limit Scope
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** New pairing admission attempts are limited primarily per endpoint
+and authenticated or provisional identity, with an aggregate per-invitation
+limit above expected session capacity, a high per-network-address emergency
+ceiling, and a server-wide emergency ceiling. Identical retries under the same
+idempotency identifier do not count as new attempts. A shared LAN address is
+not the primary limit.
+
+**Rationale:** Layered limits constrain abusive clients and resource exhaustion
+without allowing one device or a shared network address to block the rest of a
+legitimate group.
+
+**Consequences:** Exact thresholds, cooldown escalation, retry timing, host
+controls, and user-facing messages remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
 
 ### MC-ID-018: Pairing Redemption Idempotency
 
@@ -337,7 +358,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-020 | Open | Pairing admission throttle duration, retry timing, and user experience | MC-ID-019 |
 | MC-ID-013 | Open | Pairing invitation revocation authority and user experience | MC-ID-003, MC-ID-011 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
