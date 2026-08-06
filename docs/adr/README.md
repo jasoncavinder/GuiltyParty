@@ -32,6 +32,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0022](0022-mobile-audio-route-and-interruption-policy.md) | Accepted | Revalidate mobile input and output after route or lifecycle changes, stopping private media and microphones until safe resumption is confirmed. |
 | [0023](0023-physical-device-test-matrix.md) | Accepted | Use tiered virtual, targeted physical, core-lab, and release coverage with real hardware required for privacy-, media-, LAN-, and room-sensitive claims. |
 | [0024](0024-mobile-beta-distribution.md) | Accepted | Progress from local and internal testing to named external cohorts, using synthetic data, minimized feedback, explicit gates, and short project-controlled build lifetimes. |
+| [0025](0025-third-party-dependency-governance.md) | Accepted | Require owner-approved evidence for third-party necessity, rights, privacy, security, provenance, pinning, inventory, updates, SBOMs, exceptions, and removal. |
 
 ## Adding an ADR
 

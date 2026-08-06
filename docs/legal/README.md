@@ -13,6 +13,8 @@ permission beyond the terms expressly stated in those files.
 
 - [Licensing and intellectual property policy](licensing.md) is an internal
   project reference and does not replace the root license files.
+- [Third-party components](third-party-components.md) records dependency intake,
+  review status, notices, and release-inventory obligations under ADR 0025.
 - [Brand guidelines](brand.md) describe naming, voice, and identity direction.
 - [Trademark planning notes](trademark.md) identify future clearance work and do
   not claim registration.

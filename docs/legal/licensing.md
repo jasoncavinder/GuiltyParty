@@ -132,6 +132,27 @@ the project owner.
 
 ---
 
+# Third-Party Components
+
+Every library, SDK, binary, build plugin, generator, hosted processor, model,
+font, asset, dataset, or copied implementation requires explicit owner approval
+after its rights, notices, provenance, transitive components, privacy, security,
+permissions, store impact, update path, and removal path are documented.
+
+Public availability, package-manager presence, a free price, or a familiar
+license label does not by itself establish compatibility with proprietary
+commercial distribution. Ambiguous, restrictive, copyleft, model, dataset,
+content, service, patent, trademark, or redistribution terms require focused
+human and, where appropriate, professional review.
+
+Approved components remain distinct from the Guilty Party proprietary license.
+Their required license and copyright notices accompany applicable releases
+without granting broader rights to first-party software or content. See
+[ADR 0025](../adr/0025-third-party-dependency-governance.md) and the
+[Third-Party Components inventory](third-party-components.md).
+
+---
+
 # Trademarks
 
 The following may become protected trademarks:

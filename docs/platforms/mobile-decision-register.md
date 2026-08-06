@@ -40,25 +40,74 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-DEL-006: Dependency and SDK Intake
+### MC-ORG-001: Mobile Team Ownership
 
 **Status:** Active
 
-**Why next:** Beta distribution is accepted, while crash reporting and store
-disclosures remain blocked on the dependency and data-lifecycle policies. The
-next unblocked question is the reusable intake and maintenance gate for every
-third-party library, SDK, generator, service client, and bundled asset.
+**Why next:** Dependency governance is accepted. Team ownership is now the only
+unblocked decision and must be resolved before the project can define release
+parity or a measurable threshold for reconsidering shared Kotlin Multiplatform
+code.
 
-**Decision question:** What evidence and human approval are required before a
-dependency or SDK enters the repository or a distributed build; how are
-license, ownership, privacy manifests and data safety, permissions, security,
-transitive components, version pinning, updates, vulnerability response,
-inventory, attribution, and eventual removal handled?
+**Decision question:** Should one shared mobile team own both native apps with
+platform specialization inside that team, should separate platform owners
+coordinate through shared contracts, or should another ownership model apply;
+who is accountable for cross-platform behavior, platform-specific quality,
+release readiness, and resolving parity differences as the project grows?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-DEL-006: Dependency and SDK Intake
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Every third-party library, SDK, binary, package, build plugin,
+generator, hosted service client or processor, font, asset, model, dataset,
+copied implementation, and material transitive component requires an intake
+record and explicit project-owner approval for its exact source, version,
+features, purpose, platform, and data behavior. Agents and automation may
+research and propose but cannot self-approve. Intake covers necessity,
+alternatives, source and provenance, direct and transitive code, licenses,
+copyright, patent and notice obligations, commercial and redistribution terms,
+permissions, entitlements, build and runtime authority, all data flows and
+processors, retention and consent, Apple privacy manifests and signatures,
+Android SDK Index and Data Safety effects, advisories, tests, pinning, update,
+rollback, and complete removal. Clearly licensed, source-available, no-data,
+no-permission components may use the standard review; authentication, payments,
+cryptography, media, AI, databases, native binaries, build execution, remote
+configuration, diagnostics, and private-content processors receive elevated
+review and often an ADR. Unclear or incompatible rights, mutable or
+unverifiable artifacts, silent or unavoidable collection, excessive
+permissions, advertising, tracking, data sale, session replay, or no viable
+removal path block adoption. Manifests and lockfiles are committed, versions
+and provenance are pinned and verified, notices remain distinct from the
+project license, and release candidates are reconciled with a human inventory,
+store declarations, and a machine-readable SBOM. Updates repeat the affected
+review and never merge automatically. Removal covers packages, generated and
+native artifacts, permissions, manifests, endpoints, credentials, provider
+data, formats, notices, tests, and SBOMs. Exceptions are owner-approved,
+scoped, visible, time-limited, and cannot override rights, privacy, or store
+requirements. Existing prototype components require retrospective approval
+before invitation-only external beta.
+
+**Rationale:** Third-party code and services can create ownership, privacy,
+store, security, and operational obligations beyond their top-level package
+metadata. Human approval with reproducible evidence protects the proprietary
+product while permitting justified components.
+
+**Consequences:** New components and updates require documented review, release
+artifact reconciliation, notices, and SBOM evidence. Ambiguous or high-risk
+components may require professional review or be rejected. The current Rust
+workspace and local AI endpoint are inventoried as retrospective-review
+pending without changing or newly approving them.
+
+**Recorded in:** [ADR 0025](../adr/0025-third-party-dependency-governance.md)
+and [Third-Party Components](../legal/third-party-components.md)
 
 ### MC-DEL-003: Mobile Beta Distribution
 
@@ -1452,9 +1501,7 @@ No open items. Accepted decisions remain in the history above.
 
 ### Team Ownership
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-ORG-001 | Open | Whether one team owns both apps, platform owners specialize within one team, or separate teams own each platform | MC-ARCH-001 |
+No open items. MC-ORG-001 is the current discussion above.
 
 ## Decision Record Template
 
