@@ -40,25 +40,59 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ARCH-001: Long-Term Mobile Implementation Strategy
+### MC-NET-002: Generated Contract Models
 
 **Status:** Active
 
-**Why next:** The control-plane and media boundaries that materially constrain
-mobile implementation are now accepted. Choosing the long-term mobile strategy
-unblocks contract-model generation, platform support levels, Android prototype
-timing, code-sharing thresholds, team ownership, and the future desktop-host
-relationship.
+**Why next:** The separate native-client strategy makes the language-neutral
+control-plane contract the primary sharing boundary between Swift and Kotlin.
+The project should decide how those client transport models are produced before
+either production client contract becomes established by handwritten code.
 
-**Decision question:** Should iOS/iPadOS and Android use separate native Swift
-and Kotlin applications, native UIs with shared Kotlin Multiplatform logic, a
-shared cross-platform UI such as Flutter, or another approach, and which product
-requirements and measurable tradeoffs determine that choice?
+**Decision question:** Should Swift and Kotlin HTTP and WebSocket payload,
+envelope, and error models be generated from canonical JSON Schema and OpenAPI
+artifacts or maintained manually; which artifacts are authoritative; what
+handwritten boundary surrounds generated code; and how are reproducibility and
+compatibility verified?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ARCH-001: Long-Term Mobile Implementation Strategy
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Guilty Party will build separate native player Companion
+applications: Swift and SwiftUI for one adaptive iPhone/iPad codebase, and
+Kotlin and Jetpack Compose for one adaptive Android phone/tablet codebase. The
+browser Companion remains an HTML/CSS/JavaScript fallback, while Rust remains
+the authoritative server and deterministic scenario-engine language. The
+native clients share versioned schemas, fixtures, behavioral acceptance tests,
+design semantics, and original assets where appropriate, but initially share no
+mobile runtime or UI framework. Flutter, React Native, Kotlin Multiplatform,
+Compose Multiplatform UI, and mobile WebAssembly are not adopted initially.
+Kotlin Multiplatform may be reconsidered only for proven platform-independent
+duplication under a later measurable threshold. Platform-specific adapters own
+authentication, protected storage, local discovery and trust, media and audio,
+privacy surfaces, and lifecycle integration. Separate clients must conform to
+the same behavioral and privacy contracts but need not be pixel-identical or
+released simultaneously.
+
+**Rationale:** The accepted authentication, networking, privacy, and media
+requirements depend heavily on native operating-system behavior. Sharing
+contracts and evidence reduces semantic drift without adding a cross-platform
+runtime to those sensitive boundaries before duplicated logic is demonstrated.
+
+**Consequences:** The project accepts two mobile toolchains and some duplicated
+presentation or orchestration code. Contract-model generation, Android timing,
+Kotlin Multiplatform reconsideration thresholds, team ownership, and release
+parity remain separate decisions. The account-free iOS MVP scope is unchanged.
+
+**Recorded in:** [ADR 0015](../adr/0015-native-mobile-client-strategy.md)
 
 ### MC-MEDIA-005: Shared and Personal Microphone Arbitration
 
@@ -1066,7 +1100,6 @@ No open items. Accepted decisions remain in the history above.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-NET-002 | Open | Whether Swift and Kotlin contract models are generated from schemas or maintained manually | MC-NET-001, MC-ARCH-001 |
 | MC-NET-004 | Open | Android NSD discovery behavior and nearby-network permission experience | MC-NET-003, MC-DEL-001 |
 
 ### Privacy and Safety

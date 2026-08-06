@@ -5,8 +5,9 @@
 Accepted product direction as of 2026-08-05.
 
 This document records product decisions for the intended mobile Companion. It
-does not expand the approved local MVP, select a cross-platform framework,
-define production networking, or authorize implementation. Open technical and
+does not expand the approved local MVP, define production networking, or
+authorize implementation. The long-term native-client direction is recorded in
+[ADR 0015](../adr/0015-native-mobile-client-strategy.md). Open technical and
 product questions are tracked in the
 [mobile decision register](../platforms/mobile-decision-register.md).
 
@@ -294,8 +295,6 @@ indicators and the no-passive-monitoring privacy rule.
 These decisions are product requirements. Significant implementation choices
 still require an accepted ADR. In particular, this document does not select:
 
-- separate native apps, Kotlin Multiplatform, Flutter, React Native, or another
-  sharing strategy
 - an authentication provider or account recovery design
 - a media protocol, provider, or mixing topology
 - production transport security or local certificate handling
@@ -305,3 +304,7 @@ The accepted MVP technology decision remains
 [ADR 0004](../adr/0004-mvp-technology-stack.md): the first Companion slice is a
 native Swift and SwiftUI iOS development app, while Android and production
 accounts remain outside that prototype.
+
+For the target product, [ADR 0015](../adr/0015-native-mobile-client-strategy.md)
+selects separate native SwiftUI and Jetpack Compose applications. It does not
+bring Android or production mobile capabilities into the MVP scope.

@@ -22,6 +22,7 @@ Browser display, casting, and screen mirroring are fallback paths.
 ## Mobile Direction
 
 - [Accepted Mobile Companion product decisions](../product/mobile-companion.md)
+- [Native mobile client strategy](../adr/0015-native-mobile-client-strategy.md)
 - [Open and deliberately deferred mobile decision register](mobile-decision-register.md)
 
 The decision register identifies exactly one active discussion at a time and

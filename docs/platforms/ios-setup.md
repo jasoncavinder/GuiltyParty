@@ -2,6 +2,11 @@
 
 This document covers the manually created SwiftUI development project for the first LAN transport slice. It does not claim that the Companion experience or Bonjour discovery is implemented.
 
+This iOS-only prototype scope is unchanged by
+[ADR 0015](../adr/0015-native-mobile-client-strategy.md), which selects
+separate native SwiftUI and Jetpack Compose applications for the longer-term
+product without authorizing Android implementation in the MVP.
+
 ## Current Networking Scope
 
 The Rust server listens on port `3000` on the Mac. A physical iPhone must use the Mac's LAN address, such as `192.168.1.20`; `127.0.0.1` on the phone refers to the phone itself.

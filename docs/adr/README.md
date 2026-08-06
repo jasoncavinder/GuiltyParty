@@ -22,6 +22,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0012](0012-capture-indicators-and-consent.md) | Accepted | Separate device permission from scoped consent and require persistent, audience-appropriate indicators for capture and processing. |
 | [0013](0013-private-audio-route-failure.md) | Accepted | Stop private audio on any audience, encryption, authority, or output uncertainty and recover without replay or public fallback. |
 | [0014](0014-room-microphone-arbitration.md) | Accepted | Grant one short-lived room-audible capture lease with explicit speaker intent and break-before-make transfer. |
+| [0015](0015-native-mobile-client-strategy.md) | Accepted | Build separate native SwiftUI and Jetpack Compose Companions that share contracts and behavioral evidence rather than a mobile runtime. |
 
 ## Adding an ADR
 
