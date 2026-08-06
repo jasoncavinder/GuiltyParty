@@ -51,12 +51,19 @@ Example:
 Death at Blackwood Manor
 Saturday, August 8
 7:00 PM HST
+Language: English
 8 Players
 Hosted by Cassandra
 ```
 
 
 An event references a specific published scenario version.
+
+Every event advertises its gameplay language alongside its scheduled time and
+time zone, host, scenario, and participation information. Scenarios may be
+authored and offered in any human language. Approved translation and
+localization direction is recorded in
+[Language and Localization Product Direction](language-and-localization.md).
 
 ---
 
@@ -66,6 +73,7 @@ A Session is the live technical execution of an event.
 
 A session manages:
 
+- Gameplay language
 - Connected participants
 - Rooms
 - Devices

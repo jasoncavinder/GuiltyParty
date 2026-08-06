@@ -59,6 +59,13 @@ validation and publishing process accepts it.
 AI assistance must respect creator access boundaries and must not ingest another
 creator's private work without authorization.
 
+AI may also propose translations of scenario content. A proposed translation
+remains draft creator content until a human with appropriate publication
+authority reviews and explicitly approves it. Translation must preserve
+canonical rules, secrecy boundaries, deterministic outcomes, accessibility
+requirements, and creator rights. It does not authorize external processing of
+unpublished content or participant communications.
+
 ## Rights Metadata
 
 Future tools must be able to associate content and assets with source,
@@ -91,3 +98,4 @@ authoritative.
 - publication review and moderation
 - marketplace, revenue, and licensing workflows
 - asset processing and storage
+- localization representation, translation workflow, and approval evidence

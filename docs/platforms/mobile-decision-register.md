@@ -40,25 +40,56 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-NET-002: Generated Contract Models
+### MC-ARCH-003: Android Prototype Timing
 
 **Status:** Active
 
-**Why next:** The separate native-client strategy makes the language-neutral
-control-plane contract the primary sharing boundary between Swift and Kotlin.
-The project should decide how those client transport models are produced before
-either production client contract becomes established by handwritten code.
+**Why next:** The native client languages and generated contract boundary are
+now accepted. The next unblocked architecture question is when Android work
+begins and what proven iOS/server slice should precede it, so the project avoids
+both indefinite Android deferral and premature duplication of unstable behavior.
 
-**Decision question:** Should Swift and Kotlin HTTP and WebSocket payload,
-envelope, and error models be generated from canonical JSON Schema and OpenAPI
-artifacts or maintained manually; which artifacts are authoritative; what
-handwritten boundary surrounds generated code; and how are reproducibility and
-compatibility verified?
+**Decision question:** At what point should the Android prototype begin, and
+which server and iOS Companion capabilities, contracts, and tests must be stable
+before the first Kotlin and Jetpack Compose vertical slice is authorized?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-NET-002: Generated Contract Models
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Generate data-only Swift and Kotlin transport DTOs from the
+committed canonical contracts. JSON Schema remains authoritative for payload,
+envelope, and shared error shapes; OpenAPI remains authoritative for HTTP
+operation metadata while referencing those schemas; WebSocket messages reuse
+the same schemas. Generated code is a derived artifact, clearly marked, not
+edited by hand, and isolated from handwritten networking adapters,
+application-domain models, UI, authorization, scenario truth, persistence, and
+logging policy. Generated outputs are committed so ordinary Xcode and Gradle
+builds work offline. Pinned tooling regenerates them in CI and fails on drift.
+Clients tolerate additive unknown fields, preserve null and absence semantics,
+and route unsupported discriminators or security-critical variants to a safe
+incompatibility or resynchronization path. Shared positive, negative,
+compatibility, Unicode, boundary, and privacy fixtures verify each language.
+The exact generator requires a focused Swift/Kotlin compatibility evaluation
+and dependency, license, security, and maintenance review before adoption.
+
+**Rationale:** Mechanical generation reduces Swift/Kotlin representation drift
+without making generated language types authoritative or moving sensitive
+policy into a tool-controlled layer.
+
+**Consequences:** The repository carries generated source and a pinned
+generation pipeline, contract changes produce larger diffs, and both apps need
+explicit mapping code. Generator selection and implementation remain future
+work and do not expand the MVP.
+
+**Recorded in:** [ADR 0016](../adr/0016-generated-mobile-contract-models.md)
 
 ### MC-ARCH-001: Long-Term Mobile Implementation Strategy
 
@@ -1120,7 +1151,6 @@ No open items. Accepted decisions remain in the history above.
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
 | MC-ARCH-002 | Open | Measurable duplication, staffing, test, or delivery threshold that would justify adopting Kotlin Multiplatform | MC-ARCH-001, MC-ORG-001 |
-| MC-ARCH-003 | Open | Android prototype timing and the feature slice required before Android work begins | MC-ARCH-001 |
 | MC-ARCH-004 | Open | Whether a future desktop host application embeds and manages the LAN server, including lifecycle, storage, migration, and recovery | MC-ARCH-001, MC-NET-006 |
 
 ### Delivery, Compliance, and Maintenance

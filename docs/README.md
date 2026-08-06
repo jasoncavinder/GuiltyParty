@@ -5,6 +5,7 @@
 - [Vision](product/vision.md)
 - [Ecosystem](product/ecosystem.md)
 - [Experience model](product/experience-model.md)
+- [Language and localization product direction](product/language-and-localization.md)
 - [Mobile Companion product decisions](product/mobile-companion.md)
 - [Roadmap status](roadmap/)
 
