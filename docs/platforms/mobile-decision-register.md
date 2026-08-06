@@ -40,24 +40,61 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-MEDIA-004: Private-Audio Route Failure
+### MC-MEDIA-005: Shared and Personal Microphone Arbitration
 
 **Status:** Active
 
-**Why next:** Capture indicators and consent are accepted, which unblocks the
-private-audio failure decision. Safe recovery must now define what the player,
-host, recipients, and Stage observe when a private route cannot remain private.
+**Why next:** Media ownership and fail-closed private-route recovery are
+accepted. The remaining unblocked media question is how a shared room
+microphone and individual Companion microphones request, transfer, and release
+the single room-audible capture role without coercion or accidental overlap.
 
-**Decision question:** When a private-audio route is unavailable, becomes
-publicly audible, loses authorization or E2EE, changes output, or fails during a
-whisper, what must stop immediately, what privacy-safe status may each audience
-see, and which recovery choices may be offered without leaking content or
-pressuring the participant?
+**Decision question:** How should participants and hosts request, grant,
+transfer, preempt, time out, and revoke the room-audible microphone role when a
+shared microphone and personal Companion microphones coexist, and what consent,
+priority, and visible state prevents two co-located capture paths from opening
+together?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-MEDIA-004: Private-Audio Route Failure
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Private capture, publication, subscription, decoding, and playback
+stop when authorization, server-enforced audience, E2EE key epoch, endpoint
+authority, personal output, or provider enforcement is absent or uncertain.
+Output change, endpoint transfer, restart, and reconnect require revalidation,
+a new key epoch where applicable, and affirmative resume. Interrupted speech is
+not queued, retained, retransmitted, or replayed, and possible partial delivery
+is reported honestly. Recovery first revalidates the same route, then another
+authorized personal endpoint, a private text or ephemeral caption alternative,
+a scenario-defined adaptation or minimum-information host assistance, and
+finally pause or cancellation. No path broadens the audience, weakens
+encryption, or admits Stage, speaker, another participant, recording,
+transcription, or AI. Sender, recipients, authorized host tools, Stage, and
+unrelated participants receive audience-minimized statuses. Possible unintended
+output or subscription is a potential exposure with direct affected-party
+notice and minimized non-content security metadata, not an ordinary network
+error. Route failure is not scenario truth, though an approved gameplay pause
+or alternative may be journaled.
+
+**Rationale:** Stopping before recovery prevents a technical failure from
+silently becoming a privacy downgrade, while explicit resume and truthful
+partial-delivery status preserve participant agency and trust.
+
+**Consequences:** Clients and media infrastructure need route-state
+acknowledgment, buffer clearing, key-epoch rotation, active grant revocation,
+audience-specific notices, and potential-exposure handling. Platform-specific
+Bluetooth and interruption mechanics remain MC-MEDIA-003, and safety-event
+retention still requires an approved lifecycle.
+
+**Recorded in:** [ADR 0013](../adr/0013-private-audio-route-failure.md)
 
 ### MC-PRIV-005: Capture Indicators and Consent UX
 
@@ -1009,7 +1046,6 @@ No open items. Accepted decisions remain in the history above.
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
 | MC-MEDIA-003 | Open | Bluetooth changes, calls, headphones, route changes, backgrounding, and interruption recovery | MC-MEDIA-001, MC-DEL-001 |
-| MC-MEDIA-005 | Open | Arbitration and consent when a shared room microphone competes with participant microphones | MC-MEDIA-001, MC-MEDIA-002 |
 
 ### Mobile Architecture and Platform Scope
 

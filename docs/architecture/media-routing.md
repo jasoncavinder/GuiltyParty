@@ -295,3 +295,27 @@ affirmative consent from every affected participant and persistent labels that
 name the actual processing. Scope changes or consent withdrawal stop the route.
 
 See [ADR 0012](../adr/0012-capture-indicators-and-consent.md).
+
+---
+
+# Private-Route Failure
+
+Private capture, publication, subscription, decoding, and playback stop when
+authorization, server-enforced audience, E2EE key epoch, endpoint authority,
+personal output, or provider enforcement becomes absent or uncertain. Output
+change, endpoint transfer, restart, or reconnect requires route revalidation, a
+new key epoch where applicable, and affirmative resume.
+
+Interrupted private media is neither queued nor replayed. If part may have left
+the sender, the product reports possible partial delivery rather than claiming
+failure was atomic. Recovery tries the same validated route, another authorized
+personal endpoint, a private text or caption modality, a scenario-defined safe
+adaptation, or a pause—in that order. It never falls back to Stage or speaker
+output, another participant, weaker encryption, AI, transcription, or storage.
+
+A possible unintended output or subscriber is handled as a potential exposure
+with direct, factual notice to affected participants and minimized non-content
+security metadata. The Stage and unrelated participants do not learn that a
+private route exists.
+
+See [ADR 0013](../adr/0013-private-audio-route-failure.md).

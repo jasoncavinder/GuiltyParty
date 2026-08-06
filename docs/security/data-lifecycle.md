@@ -33,6 +33,7 @@ No implementation may interpret `TBD` as permission for indefinite retention.
 | Captions and transcripts | Not stored by default. | Generation, accessibility use, and any retention require explicit approval and notice. |
 | Private messages and whispers | Not stored by default. | Exceptions require a documented safety or legal basis, limited access, and automatic deletion. |
 | Safety reports and evidence | Retained only for a defined protection or investigation purpose. | A case-specific or policy duration must be approved before collection. |
+| Potential media-exposure metadata | Opaque references, safe cause and audience classes, lifecycle times, detection source, and response actions only; no media or transcript content. | Production retention, notification, access, and deletion require approval; `TBD` is not indefinite retention. |
 | AI inputs and outputs | AI analysis is disabled by default; inputs are purpose-minimized when enabled. | Feature and provider retention require approval before use. |
 | Operational and security logs | Limited to reliability, security, and abuse-prevention needs. | Fields, access, redaction, and duration require approval before production logging. |
 | Creator drafts and assets | Private to authorized creator workflows. | Draft deletion, publication retention, marketplace, and contractual rules require approval. |
@@ -74,6 +75,11 @@ unrelated analysis or future reuse.
 Safety-related retention must be purpose-specific, access-controlled,
 time-limited, auditable, and automatically deleted. User notice should be given
 where appropriate and legally permitted.
+
+A possible private-media disclosure is distinguished from an ordinary network
+failure. Any retained event is limited to opaque references, safe cause and
+audience classes, lifecycle times, detection source, and response actions. It
+does not include raw media, caption or transcript text, or scenario secrets.
 
 ## Session Journal Clarification
 

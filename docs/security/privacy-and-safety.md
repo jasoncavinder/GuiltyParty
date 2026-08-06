@@ -211,6 +211,17 @@ Default behavior:
 - Not transcribed.
 - Not available to AI systems.
 
+Private audio stops when its authorized audience, E2EE key epoch, endpoint
+authority, personal output, or media-provider enforcement becomes absent or
+uncertain. It is not queued, replayed, downgraded, or redirected to a speaker,
+Stage, another participant, recorder, transcription service, or AI process.
+
+Affected participants receive direct, honest notice if partial delivery or
+unintended playback cannot be ruled out. The host sees only the minimum
+authorized operational status, while the Stage and unrelated participants do
+not learn that a private route exists. A possible unintended output or
+subscriber is handled as a potential exposure, not merely a network error.
+
 Exceptions may exist for:
 
 - Explicit user reports
@@ -372,4 +383,5 @@ Trust should be considered part of the product experience.
 - [Session journal boundaries](../architecture/session-journal.md)
 - [AI Stage Manager boundaries](../architecture/ai-stage-manager.md)
 - [Capture indicators and consent](../adr/0012-capture-indicators-and-consent.md)
+- [Private-audio route failure](../adr/0013-private-audio-route-failure.md)
 - [Repository security policy](../../SECURITY.md)

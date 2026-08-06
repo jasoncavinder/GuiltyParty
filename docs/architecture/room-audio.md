@@ -76,6 +76,19 @@ Private routes must not be inferred only from hidden UI state. Authorization is
 server-controlled, and media routing must fail closed when authorization is
 missing or stale.
 
+Loss or uncertainty of the expected personal output, E2EE key epoch,
+authorization, endpoint authority, or provider audience enforcement stops both
+capture and playback. A changed output, endpoint transfer, restart, or reconnect
+requires validation and affirmative resume. Private speech is not queued or
+replayed.
+
+Recovery may re-establish the same route, select another authorized personal
+endpoint, offer a private text or ephemeral caption alternative, use a
+scenario-approved adaptation, or pause. It never routes to a public speaker or
+Stage. Possible unintended playback or subscription is treated as a potential
+exposure and disclosed directly to affected participants without announcing the
+private interaction publicly.
+
 ## Privacy Defaults
 
 - no recording by default
@@ -99,9 +112,9 @@ transmission before recovery begins.
 ## Open Decisions
 
 - active-microphone arbitration within a room
-- reconnection and route-revocation timing
+- platform-specific interruption and route-change timing
 - accessibility caption generation and retention
-- consent UX for optional recording or transcription
 - observable health and diagnostics without unnecessary surveillance
 
-See [ADR 0011](../adr/0011-room-audio-processing-ownership.md).
+See [ADR 0011](../adr/0011-room-audio-processing-ownership.md) and
+[ADR 0013](../adr/0013-private-audio-route-failure.md).
