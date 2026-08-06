@@ -40,21 +40,49 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-021: Pairing Invitation Revocation Effects and UX
+### MC-ID-004: Companion Reconnect After App Restart
 
 **Status:** Active
 
-**Why next:** Revocation authority is accepted. The effects on pending requests,
-Stage presentation, applicants, and operational records must be understandable
-without exposing unnecessary information.
+**Why next:** Pairing invitation behavior is now specified end to end. The next
+identity-continuity boundary is restoring an admitted participant after the
+Companion disconnects or restarts.
 
-**Decision question:** What should happen to pending admission requests and
-what should each surface show after an invitation is revoked?
+**Decision question:** What should the Companion attempt automatically after a
+temporary disconnection or app restart, and when must it ask the player to
+rejoin explicitly?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-021: Pairing Invitation Revocation Effects and UX
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Revocation immediately invalidates the current invitation and its
+grace-period predecessor and cancels pending, unapproved admission requests. It
+does not remove admitted participants. A rotation displays its replacement;
+closing joining says joining is closed; other revocations say joining is
+temporarily unavailable. Applicants receive a generic instruction to scan the
+current code or ask the host, without the actor or security reason. The host
+receives confirmation and a cancellation count. Revocation cannot be undone;
+recovery requires a new invitation.
+
+**Rationale:** Revocation reliably closes the affected admission path without
+confusing invitation authority with existing participant authority or exposing
+security details.
+
+**Consequences:** The control plane stores a minimal operational audit record
+containing invitation and session identifiers, time, actor or automatic reason
+category, and cancellation count. It is not a scenario-journal event and
+contains no private scenario content. Retention remains subject to the project
+data-lifecycle policy.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
 
 ### MC-ID-013: Pairing Invitation Revocation Authority
 
@@ -410,7 +438,7 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
+| MC-ID-022 | Open | Participant and endpoint recovery after server restart | MC-ID-004, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
 | MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-003, MC-ID-010 |

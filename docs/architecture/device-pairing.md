@@ -141,6 +141,21 @@ independently, the AI Stage Manager, and ordinary support personnel do not have
 revocation authority. A temporary Stage disconnection or ordinary throttling
 does not revoke an invitation by itself.
 
+Revocation immediately invalidates the current invitation and its grace-period
+predecessor and cancels pending, unapproved admission requests created through
+them. It does not remove admitted participants, whose authority is separate. A
+rotation displays its replacement; closing joining displays that joining is
+closed; other revocations display that joining is temporarily unavailable. An
+applicant receives a generic instruction to scan the current Stage code or ask
+the host, without disclosure of the actor or security reason.
+
+The host receives confirmation and the count of cancelled pending requests.
+The control plane records the invitation and session identifiers, time,
+authorized actor or automatic reason category, and cancellation count. This is
+an operational audit record, not a scenario-journal event, and contains no
+private scenario content. Revocation is not undone; recovery issues a new
+invitation.
+
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
 
