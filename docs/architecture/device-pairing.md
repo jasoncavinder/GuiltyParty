@@ -84,6 +84,14 @@ accommodate scanning, submission, and minor authentication delays. Closing or
 revoking joining, or ending the session, invalidates both invitations
 immediately without a grace period.
 
+The Stage never generates an invitation locally or extends an expired
+invitation. If it cannot reach the server when renewal is due, it removes or
+disables the expired code, explains that joining is temporarily unavailable,
+and retries automatically with bounded backoff. After reconnecting, it confirms
+that joining remains open before displaying a fresh server-issued invitation.
+This pairing failure does not by itself remove already joined participants or
+decide how cached Stage presentation behaves during disconnection.
+
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
 
@@ -113,7 +121,7 @@ Recovery must not silently broaden access.
 ## Open Decisions
 
 - provisional-account linking and recovery behavior
-- invitation disconnection and retry behavior
+- invitation consumption, replay, and revocation behavior
 - room creation and approval authority
 - device reauthentication and revocation UX
 - capability attestation and permission prompts

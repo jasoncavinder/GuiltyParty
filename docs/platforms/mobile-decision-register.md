@@ -40,21 +40,43 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-016: Invitation Renewal During Disconnection
+### MC-ID-017: Invitation Expiry Clock Authority
 
 **Status:** Active
 
-**Why next:** Invitation rotation and its grace period are accepted. The Stage
-still needs safe, understandable behavior when renewal is due but the server is
-temporarily unreachable.
+**Why next:** Renewal now fails closed during disconnection. A single authority
+for expiry is needed so incorrect endpoint clocks cannot lengthen or shorten an
+invitation unpredictably.
 
-**Decision question:** What should the Stage display and permit when it cannot
-reach the server to renew an expiring invitation?
+**Decision question:** Should the Guilty Party server be the sole authority for
+issuing and expiring pairing invitations, regardless of the Stage or Companion
+wall clock?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-016: Invitation Renewal During Disconnection
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The Stage never creates an invitation locally or extends an
+expired invitation. If renewal fails, it removes or disables the expired code,
+states that joining is temporarily unavailable, and retries automatically with
+bounded backoff. After reconnecting, it confirms that joining remains open and
+obtains a fresh server-issued invitation. Pairing failure does not itself remove
+joined participants or determine cached Stage behavior.
+
+**Rationale:** This fails closed without presenting a stale code as usable and
+recovers without unnecessary host intervention.
+
+**Consequences:** Exact retry timing, invitation clock authority, joined-client
+reconnection, and cached Stage behavior remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
 
 ### MC-ID-015: Invitation Rotation Grace Period
 
@@ -256,7 +278,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-017 | Open | Pairing invitation server-clock authority and skew handling | MC-ID-011, MC-ID-016 |
 | MC-ID-012 | Open | Pairing invitation consumption, reuse, replay rejection, and retry behavior | MC-ID-003, MC-ID-011, MC-ID-014, MC-ID-015, MC-ID-016, MC-ID-017 |
 | MC-ID-013 | Open | Pairing invitation revocation authority and user experience | MC-ID-003, MC-ID-011 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
