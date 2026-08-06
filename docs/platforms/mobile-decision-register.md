@@ -40,23 +40,56 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-NET-003: LAN Service Discovery Metadata
+### MC-NET-005: HTTPS/WSS Enforcement Milestone
 
 **Status:** Active
 
-**Why next:** The versioned control-plane contract is accepted. Model generation
-still depends on the mobile architecture decision, while LAN discovery metadata
-can now advertise compatible servers without exposing private session state.
+**Why next:** Browser credentials and WebAuthn already require a secure origin,
+and discovery now advertises a TLS control service. The project needs a precise
+boundary for when prototype-only HTTP/WS must be removed before choosing local
+certificate and trust mechanics.
 
-**Decision question:** What DNS-SD service type and minimal TXT metadata should
-Guilty Party advertise, how broadly is it discoverable, and how do clients
-handle several servers or naming collisions without treating discovery as
-authentication?
+**Decision question:** In which environments and milestones may HTTP/WS remain,
+when does HTTPS/WSS become mandatory, and what development-only exceptions are
+permitted without allowing real credentials or private data onto plaintext
+transport?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-NET-003: LAN Service Discovery Metadata
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Local servers advertise `_guiltyparty._tcp.local.` through DNS-SD
+over mDNS on explicitly eligible LAN interfaces, with IANA registration of the
+service name required before production distribution. A privacy-neutral default
+instance name uses a short random display suffix and is never treated as server
+identity. The single TXT record contains only `txtvers=1`, `protovers=1`, and
+`tls=1`; detailed compatibility comes from the non-private HTTPS compatibility
+endpoint. Session, host, participant, room, scenario, joining, account,
+credential, address, certificate, and stable tracking data are not advertised.
+Discovery is an untrusted address and protocol hint, while server identity and
+authority come only from TLS and pairing. Several unpaired candidates produce a
+chooser; remembered servers reconnect only after authenticated identity
+verification. Advertisement remains active while the local control plane is
+available, including while joining is closed. Scope is link-local by default,
+excluding cellular, VPN, WAN, wide-area DNS-SD, and cross-subnet relays. QR or
+code pairing and manual addressing remain fallbacks.
+
+**Rationale:** The service is discoverable across intended LAN clients without
+putting private session details or a spoofable trust signal into multicast
+metadata.
+
+**Consequences:** Multicast-blocked networks require a fallback. Production
+requires service-name registration, and TLS trust, Android permission UX, and
+cross-subnet discovery remain separate decisions.
+
+**Recorded in:** [ADR 0006](../adr/0006-link-local-service-discovery.md)
 
 ### MC-NET-001: Versioned Control-Plane Contract
 
@@ -724,7 +757,6 @@ No open items. Accepted decisions remain in the history above.
 |---|---|---|---|
 | MC-NET-002 | Open | Whether Swift and Kotlin contract models are generated from schemas or maintained manually | MC-NET-001, MC-ARCH-001 |
 | MC-NET-004 | Open | Android NSD discovery behavior and nearby-network permission experience | MC-NET-003, MC-DEL-001 |
-| MC-NET-005 | Open | The milestone at which HTTP/WS is no longer permitted and HTTPS/WSS becomes mandatory | MC-ID-002 |
 | MC-NET-006 | Open | Local certificate issuance, trust establishment, rotation, and failure recovery | MC-NET-005, MC-ID-003 |
 | MC-NET-007 | Open | Connection timeout, heartbeat, retry, backoff, session-resume, and stale-endpoint policies | MC-NET-001 |
 

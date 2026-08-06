@@ -59,6 +59,32 @@ Pairing belongs to the control plane. The authoritative service must verify:
 Media services consume the resulting authorization but do not decide session or
 scenario membership.
 
+## LAN Service Discovery
+
+A local control-plane server advertises `_guiltyparty._tcp.local.` using DNS-SD
+over mDNS on explicitly eligible LAN interfaces. The default instance name is
+privacy-neutral, such as `Guilty Party A7K3`, and may be collision-renamed by
+the DNS-SD implementation. A custom name is visibly disclosed to the local
+link.
+
+The single TXT record contains only `txtvers=1`, `protovers=1`, and `tls=1`.
+Session, host, participant, room, scenario, joining, account, credential,
+address, certificate, and stable tracking data are excluded. Detailed
+compatibility comes from the non-private HTTPS compatibility endpoint.
+
+Discovery is an untrusted address and compatibility hint. It does not establish
+server identity or grant pairing, membership, authentication, or authorization.
+Clients establish trust through the approved TLS and pairing mechanism. When
+several services are discovered, an unpaired client displays a chooser rather
+than selecting by instance name. A paired client reconnects automatically only
+after verifying the remembered authenticated server identity.
+
+The advertisement remains active while the control-plane service is available,
+including when joining is closed, to support rediscovery and reconnect. It is
+link-local by default; cellular, VPN, WAN, wide-area DNS-SD, and cross-subnet
+relays require separate approval. QR or code pairing and manual addressing
+remain fallbacks when multicast discovery is unavailable.
+
 ## Security Requirements
 
 Pairing credentials must be:
@@ -185,8 +211,6 @@ Recovery must not silently broaden access.
 ## Open Decisions
 
 - provisional-account linking and recovery behavior
-- invitation consumption, replay, and revocation behavior
 - room creation and approval authority
-- device reauthentication and revocation UX
 - capability attestation and permission prompts
 - recovery ownership when the host is disconnected
