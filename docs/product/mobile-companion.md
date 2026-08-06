@@ -109,8 +109,25 @@ endpoint.
 On an isolated LAN, a valid offline-admission assertion may prove the account
 relationship. If a replacement endpoint has no usable account proof, the system
 requires a defined host-assisted recovery path rather than inferring identity.
-Whether old and replacement endpoints may remain active simultaneously is a
-separate decision.
+
+Several personal endpoints may remain registered and connected for one
+participant, but exactly one is the primary private endpoint at a time. Only the
+primary endpoint receives complete private projections and submits ordinary
+participant actions. Other connected endpoints receive non-private connection
+status and may request to become primary.
+
+After authentication, choosing "Use this device" atomically transfers primary
+authority to the requesting endpoint without requiring approval from an
+unavailable former endpoint. The former primary immediately loses private-view
+and participant-action authority, is notified of the transfer, and clears its
+private view. Participant commands identify the endpoint, use an idempotency
+identifier, and carry the current authority generation so the server can reject
+stale commands after a transfer.
+
+A shared Stage cannot become a primary private endpoint. Separately authorized,
+capability-specific roles—such as using another device for a microphone—may be
+designed later without creating a second general-purpose primary endpoint.
+Revoking an endpoint invalidates its credentials and disconnects it.
 
 The Companion does not display cached private content until the server
 reauthorizes the endpoint and sends a fresh projection. It clears stale private

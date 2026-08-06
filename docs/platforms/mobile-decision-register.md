@@ -40,23 +40,54 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-008: Simultaneous Personal Endpoints
+### MC-ID-006: Host Controls for Lost Endpoints
 
 **Status:** Active
 
-**Why next:** A replacement device receives a new endpoint identity attached to
-the existing participant. The product must now decide whether old and new
-personal endpoints may remain connected together and which endpoint may receive
-private content or submit participant actions.
+**Why next:** Endpoint identity, recovery, simultaneous connection, and primary
+authority transfer are accepted. The remaining identity question is the host's
+limited authority to revoke a lost endpoint or help a participant recover
+within a session when normal account proof is unavailable.
 
-**Decision question:** May several personal endpoints remain connected to one
-participant, and how is active authority for private projections and participant
-actions selected, transferred, and revoked?
+**Decision question:** Which endpoint and participant recovery operations may an
+authorized host perform, what proof or confirmation is required, and which
+permanent-account powers must remain unavailable to the host?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-008: Simultaneous Personal Endpoints
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** One participant may keep several personal endpoints registered
+and connected, but exactly one is the primary private endpoint at a time. Only
+the primary receives complete private projections and submits ordinary
+participant actions; standby endpoints receive non-private connection status
+and may request a transfer. After authentication, choosing "Use this device"
+atomically transfers primary authority without requiring the former endpoint's
+approval. The former primary immediately loses private-view and action
+authority, is notified, and clears its private view. Commands identify the
+endpoint, use an idempotency identifier, and carry the current server-issued
+authority generation so stale commands are rejected. Shared Stages cannot hold
+primary private authority. Future capability-specific leases may authorize a
+narrow function on another endpoint without creating a second general-purpose
+primary endpoint. Endpoint revocation invalidates its credentials and
+disconnects it.
+
+**Rationale:** A server-controlled primary-authority generation supports quick
+device replacement while preventing concurrent secret exposure and conflicting
+participant actions.
+
+**Consequences:** Host controls for lost endpoints and host-assisted session
+recovery remain MC-ID-006. Exact transfer notifications, timeouts, and
+capability-specific media authority remain later decisions.
+
+**Recorded in:** [Primary Private Endpoint Authority](../architecture/device-and-room-model.md#primary-private-endpoint-authority) and [MC-PROD-004](../product/mobile-companion.md#mc-prod-004-move-between-personal-devices)
 
 ### MC-ID-007: Independent Identity Recovery
 
@@ -619,7 +650,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
 
 ### Control-Plane Networking
 

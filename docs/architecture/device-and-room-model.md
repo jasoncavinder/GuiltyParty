@@ -168,6 +168,27 @@ themselves. On an isolated LAN, a bounded offline-admission assertion may prove
 the account relationship. Without usable account proof, recovery requires an
 explicit host-assisted process rather than inference.
 
+## Primary Private Endpoint Authority
+
+A participant may have several registered and connected personal endpoints,
+but the server grants one endpoint the primary private-authority generation at
+a time. That endpoint receives complete participant-private projections and may
+submit ordinary participant actions. Standby endpoints receive only non-private
+connection state.
+
+An authenticated endpoint may request an atomic transfer by choosing "Use this
+device." The former primary endpoint does not need to approve the transfer; it
+immediately loses private and action authority, receives notification, and must
+clear its private view. Requests include the endpoint identity, an idempotency
+identifier, and the current authority generation. The server rejects requests
+from a stale generation.
+
+Public or shared Stages are never eligible for primary private authority.
+Future media or accessibility designs may grant a separate, narrowly scoped
+capability lease to another endpoint without granting a second general-purpose
+private endpoint. Endpoint revocation invalidates its credentials and ends its
+connection.
+
 ---
 
 # Endpoint Capabilities
