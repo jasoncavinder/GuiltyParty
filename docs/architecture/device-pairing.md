@@ -104,6 +104,14 @@ establishes a provisional account independently, submits a separate admission
 request, and receives distinct participant and endpoint authority. Expiration,
 joining closure, or revocation prevents further use by every player.
 
+Each admission request has a unique client-generated attempt identifier. The
+server binds it to the invitation, authenticated or provisional identity,
+endpoint, and request contents. Repeating the identical request from the same
+authorized context returns the same pending, approved, or rejected result and
+does not create another participant, endpoint, host prompt, or journal event.
+Reusing the identifier with different contents is rejected. An intentional
+corrected request uses a new identifier.
+
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
 

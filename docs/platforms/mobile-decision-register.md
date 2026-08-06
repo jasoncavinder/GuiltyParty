@@ -40,21 +40,42 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-018: Pairing Redemption Idempotency
+### MC-ID-019: Pairing Admission Rate-Limit Scope
 
 **Status:** Active
 
-**Why next:** Multi-player invitation reuse is accepted. Repeated delivery of
-one player's request must not create duplicate participants, endpoints, or
-side effects when a network response is lost.
+**Why next:** Identical network retries are now safe. New attempt identifiers
+still need abuse controls that do not let one device or a shared-LAN address
+prevent legitimate guests from joining.
 
-**Decision question:** How should the server handle the same pairing redemption
-request when it is submitted more than once?
+**Decision question:** At which scopes should the server rate-limit new pairing
+admission attempts?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-018: Pairing Redemption Idempotency
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Every pairing admission request has a unique client-generated
+attempt ID bound to the invitation, authenticated or provisional identity,
+endpoint, and request contents. An identical retry from the same authorized
+context returns the same result without duplicating participants, endpoints,
+host prompts, or journal events. The same ID with different contents is
+rejected; a corrected request uses a new ID.
+
+**Rationale:** Network retries become safe and deterministic without allowing
+one player's transaction to be replayed as another player's request.
+
+**Consequences:** Retention of idempotency results, new-attempt rate limits, and
+user-facing retry timing remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
 
 ### MC-ID-012: Invitation Reuse Across Players
 
@@ -316,7 +337,7 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-019 | Open | Pairing admission retry and rate-limit behavior | MC-ID-012, MC-ID-018 |
+| MC-ID-020 | Open | Pairing admission throttle duration, retry timing, and user experience | MC-ID-019 |
 | MC-ID-013 | Open | Pairing invitation revocation authority and user experience | MC-ID-003, MC-ID-011 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
