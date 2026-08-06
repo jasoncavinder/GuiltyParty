@@ -40,24 +40,70 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-DEL-005: Mobile Release Parity
+### MC-PRIV-002: Companion Data Cache and Deletion Lifecycle
 
 **Status:** Active
 
-**Why next:** The native-client strategy, ownership model, and threshold for
-reconsidering Kotlin Multiplatform are accepted. The next unblocked question is
-which product guarantees must remain equivalent across separately maintained
-native clients and how a solo operation may sequence their delivery.
+**Why next:** Mobile release parity is accepted. This item was deliberately
+deferred for a separate discussion, but it is now the earliest unresolved
+prerequisite: crash-report policy depends on it, and store disclosure and
+account-deletion preparation depend on both decisions.
 
-**Decision question:** Which features and guarantees require parity between
-iOS/iPadOS and Android, which platform-specific differences or delays are
-permitted, when may one platform ship first, and how must gaps be disclosed,
-tracked, and resolved?
+**Decision question:** Which data may a Companion cache locally, for which
+purposes and offline behaviors, how is each category protected, when is it
+deleted after session exit, revocation, logout, transfer, account deletion, or
+expiry, and how do browser storage, operating-system backups, diagnostics, and
+user controls affect the lifecycle?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-DEL-005: Mobile Release Parity
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile parity means equivalent accepted product guarantees and
+safe participation in the same eligible sessions, not pixel-identical native
+interfaces or simultaneous release dates. Every material capability is
+classified as a core parity gate, platform adaptation, staged-parity feature,
+or justified platform-exclusive capability. Before a platform is represented
+as generally supported for an applicable scope, it must demonstrate the core
+authentication and recovery, pairing and endpoint authority, gameplay,
+server-enforced secrecy, contract and reconnection, privacy and media safety,
+phone and tablet, accessibility, language and locale, update and revocation,
+and applicable account-deletion guarantees. Native interaction, permissions,
+discovery, secure storage, accessibility integration, capture controls, media
+routing, casting, and store flows may differ while preserving those outcomes.
+One platform may enter beta, release, or receive an optional capability first
+when the gap is accurately disclosed, backward compatibility or an explicit
+update boundary is preserved, scenarios cannot silently depend on the missing
+capability, safe fallback and eligibility behavior exist, and no privacy,
+security, authorization, deterministic, account-continuity, or safety
+guarantee is weakened. Clients advertise versioned capabilities, while the
+server retains authority and does not infer support solely from platform name.
+Security and privacy fixes may ship immediately; unsafe clients or capabilities
+are disabled, revoked, constrained, or required to update rather than waiting
+for schedule parity. A living matrix records classification, platform status,
+evidence, gaps, disclosure, fallback, owner, and next review date. Only the
+human owner approves platform claims and releases. The browser fallback does
+not satisfy a native platform parity gate.
+
+**Rationale:** This preserves common product trust and cross-platform session
+compatibility while letting a solo operation sequence native implementation
+and follow each platform's conventions honestly.
+
+**Consequences:** Material mobile capabilities require classification and
+evidence. A functional client may remain beta or unsupported until its core
+gates pass. Staged gaps are reviewed during applicable planning and before
+release, and must eventually be resolved, withdrawn, or honestly reclassified
+rather than silently treated as parity.
+
+**Recorded in:** [ADR 0028](../adr/0028-mobile-release-parity.md) and the
+[Mobile Release Parity Matrix](mobile-release-parity.md)
 
 ### MC-ARCH-002: Kotlin Multiplatform Reconsideration Threshold
 
@@ -1546,7 +1592,6 @@ until the owner chooses to reopen them.
 | ID | Decision | Revisit trigger |
 |---|---|---|
 | MC-PRIV-001 | Content permitted in lock-screen notifications | Before implementing notifications or preparing store privacy disclosures |
-| MC-PRIV-002 | Data cached on a Companion and its deletion schedule | Before implementing persistent client storage or production accounts |
 
 ## Ordered Open Decision Queue
 

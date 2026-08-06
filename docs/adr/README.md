@@ -35,6 +35,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0025](0025-third-party-dependency-governance.md) | Accepted | Require owner-approved evidence for third-party necessity, rights, privacy, security, provenance, pinning, inventory, updates, SBOMs, exceptions, and removal. |
 | [0026](0026-solo-owner-ai-assisted-mobile-ownership.md) | Accepted | Keep one human owner accountable during solo, AI-assisted operation and grow into one shared mobile team with native platform specialization. |
 | [0027](0027-kotlin-multiplatform-reconsideration-thresholds.md) | Accepted | Keep separate native clients unless sustained duplication or divergence triggers a bounded, reversible KMP experiment that passes explicit benefit and quality gates. |
+| [0028](0028-mobile-release-parity.md) | Accepted | Require equivalent core product guarantees across supported native clients while permitting disclosed native adaptations and evidence-governed sequential delivery. |
 
 ## Adding an ADR
 

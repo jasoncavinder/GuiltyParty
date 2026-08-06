@@ -352,3 +352,8 @@ requirements and does not expand the local MVP.
 keeps Kotlin Multiplatform outside the current architecture and defines the
 evidence, experiment, and exit thresholds required before it may be proposed
 again. Meeting a reconsideration trigger does not authorize adoption.
+
+[ADR 0028](../adr/0028-mobile-release-parity.md) requires equivalent core
+product guarantees before iOS/iPadOS and Android are represented as supported
+for the same scope. Native adaptations and sequential delivery remain
+permitted when capability gaps are disclosed, tracked, and safely governed.
