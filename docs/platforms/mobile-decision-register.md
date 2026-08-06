@@ -40,25 +40,63 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-PRIV-001: Lock-Screen Notification Content
+### MC-DEL-004: Mobile Store Privacy and Review Preparation
 
 **Status:** Active
 
-**Why next:** Mobile crash reporting and diagnostics are accepted. This item
-was deliberately deferred until notifications or store privacy preparation;
-that revisit point has now arrived because it is the last unresolved privacy
-input before store disclosure and review preparation.
+**Why next:** Every mobile product, architecture, networking, privacy, media,
+delivery, and ownership question in this register is now accepted. This final
+item turns those decisions into a truthful App Store and Google Play disclosure,
+account-deletion, capture-claim, and review-preparation policy.
 
-**Decision question:** Which notification categories may appear on a locked
-device, what title and body content is safe by default, which content requires
-an unlocked in-app view, how do previews, actions, grouped notifications,
-watches, vehicle displays, and shared devices behave, and what controls may a
-player choose without exposing private or creator-controlled content?
+**Decision question:** What evidence and owner approvals are required for store
+privacy declarations, account and data deletion, privacy-policy presentation,
+screen-capture claims, authentication-provider obligations, review notes and
+accounts, age and content ratings, export compliance, and release-by-release
+recertification?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-PRIV-001: Lock-Screen Notification Content
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile notifications are optional and use only fixed, localized,
+project-owned, public-safe templates. Their complete payload is safe if fully
+displayed and never includes identities, session or scenario details, private
+gameplay, communications, media, authentication material, AI output, or creator
+content. Opening requires unlock, current authentication, and a fresh
+authorized fetch; notification settings and behavior are not exposed to hosts
+or collected as engagement analytics. A future Live Session Status may use iOS
+Live Activities and Android Live Updates. After a one-time contextual choice on
+a device, it may start automatically whenever that player intentionally joins
+an eligible session, with a global toggle and per-session stop. It shows only
+fixed generic status or countdown information, is optional and
+non-authoritative, becomes stale within five minutes without refresh, and is
+removed when purpose or authority ends. Dismissal prevents recreation during
+the same session. Initial creation is limited to a foreground authenticated
+join; push-to-start and scheduled tracking remain unapproved pending separate
+review.
+
+**Rationale:** Generic notification content and a reusable device preference
+give players a convenient path back into an active game without treating an
+ambient surface as private or forcing repetitive per-session confirmation.
+
+**Consequences:** Live status is not part of the MVP, and later implementation
+requires a native baseline, provider and token review, store reconciliation,
+platform fallbacks, and physical-device testing. Platform differences are
+acceptable when the return-to-session purpose and privacy guarantees remain
+equivalent. The policy may be revisited if evidence shows friction, poor
+usefulness, privacy exposure, stale behavior, or material platform change.
+
+**Recorded in:** [MC-PROD-016](../product/mobile-companion.md#mc-prod-016-private-safe-notifications-and-live-session-status),
+[ADR 0031](../adr/0031-mobile-notifications-and-live-session-status.md), and
+[Mobile Notification and Live Status Checklist](../security/mobile-notifications.md)
 
 ### MC-PRIV-004: Mobile Crash Reporting and Diagnostics
 
@@ -1689,8 +1727,7 @@ decisions.
 
 ## Deliberately Deferred Decisions
 
-No items are currently deferred. MC-PRIV-001 has moved to **Current
-Discussion** because its store-privacy preparation trigger has been reached.
+No items are currently deferred.
 
 ## Ordered Open Decision Queue
 
@@ -1707,7 +1744,7 @@ No open items. Accepted decisions remain in the history above.
 
 ### Privacy and Safety
 
-No open items. MC-PRIV-001 is the current discussion above.
+No open items. Accepted decisions remain in the history above.
 
 ### Media and Device Interruptions
 
@@ -1719,9 +1756,7 @@ No open items. Accepted decisions remain in the history above.
 
 ### Delivery, Compliance, and Maintenance
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-DEL-004 | Open | App Store and Play privacy disclosures, account-deletion obligations, capture claims, and review preparation | MC-ID-002, MC-PRIV-002, MC-PRIV-004 |
+No open items. MC-DEL-004 is the current discussion above.
 
 ### Team Ownership
 

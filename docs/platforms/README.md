@@ -41,6 +41,8 @@ Browser display, casting, and screen mirroring are fallback paths.
 - [Companion local-data lifecycle](../adr/0029-companion-local-data-lifecycle.md)
 - [Mobile crash-reporting and diagnostics policy](../adr/0030-mobile-crash-reporting-and-diagnostics.md)
 - [Mobile diagnostics policy checklist](../security/mobile-diagnostics.md)
+- [Mobile notification and Live Session Status policy](../adr/0031-mobile-notifications-and-live-session-status.md)
+- [Mobile notification and live-status checklist](../security/mobile-notifications.md)
 - [Open and deliberately deferred mobile decision register](mobile-decision-register.md)
 
 The decision register identifies exactly one active discussion at a time and

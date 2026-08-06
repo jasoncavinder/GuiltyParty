@@ -69,6 +69,16 @@ Identity, payment, media, infrastructure, and AI providers are separate trust
 domains. Each future integration requires data-flow, retention, access, and
 contract review.
 
+### Private Companion to Ambient Notification Surface
+
+Lock screens, watches, desktop relays, vehicle displays, and live-status
+surfaces are public or uncertain audiences. They receive only fixed,
+public-safe notification state and never a private Companion projection,
+scenario content, participant identity, credential, or executable authority.
+Opening a notification crosses back into the private application only after
+unlock, current authentication, and a fresh server-authorized fetch. See
+[ADR 0031](../adr/0031-mobile-notifications-and-live-session-status.md).
+
 ## Required Security Invariants
 
 - Authorization is enforced server-side for every protected operation.
@@ -83,6 +93,8 @@ contract review.
   and approved duration before collection begins.
 - Revoked or expired session and pairing authority cannot continue to grant
   access.
+- Notification delivery, display, dismissal, or live-status timing cannot
+  create scenario truth or disclose private content.
 
 ## Threat Areas
 

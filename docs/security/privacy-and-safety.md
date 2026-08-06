@@ -216,6 +216,25 @@ does not claim protection against physical cameras, external capture hardware,
 browsers, or compromised operating systems. See
 [ADR 0021](../adr/0021-mobile-screen-capture-and-stage-casting.md).
 
+# Mobile Notifications and Live Status
+
+Lock screens, watches, desktop relays, vehicle displays, and other ambient
+surfaces are not private Companion endpoints. Mobile notifications therefore
+use only fixed, generic project-owned text whose complete payload is safe to
+display. Preview settings do not authorize private data. Hosts, scenarios,
+creators, and AI cannot inject notification content, and notification behavior
+is not visible to hosts or retained as engagement analytics.
+
+An optional future Live Session Status may help a player tap back into an
+active session after using another application or reaching the lock screen. A
+one-time device preference can allow it to start automatically following the
+player's later intentional joins. Its content remains public-safe,
+non-authoritative, promptly stale, and removable by the player. It cannot name
+the session, people, characters, location, language, private content, or game
+phase. Push-to-start remains unapproved. See
+[ADR 0031](../adr/0031-mobile-notifications-and-live-session-status.md) and the
+[Mobile Notification and Live Status Checklist](mobile-notifications.md).
+
 ---
 
 # Mobile Beta Privacy

@@ -311,6 +311,33 @@ to the human owner during solo operation; AI agents receive only explicitly
 authorized minimized issue extracts. See
 [ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md).
 
+### MC-PROD-016: Private-Safe Notifications and Live Session Status
+
+Notifications are optional conveniences and never required for gameplay,
+identity recovery, consent, safety, or canonical progress. They use only fixed,
+localized, project-owned generic templates and contain no identity, event,
+scenario, character, room, location, language, schedule, private gameplay,
+communication, media, security, invitation, authentication, AI, or creator
+content. Opening requires unlock, current authentication, and a fresh authorized
+fetch. Notification settings and behavior are not visible to hosts or other
+participants and are not collected as engagement analytics.
+
+A future **Live Session Status** may use iOS Live Activities and Android Live
+Updates to give a player a convenient route back into an in-progress game. The
+player makes one contextual, device-specific choice after a successful join. If
+enabled, live status starts automatically after later intentional joins without
+a new confirmation for every session. A global toggle and per-session stop
+remain available, and a dismissed status is not recreated during that session.
+
+Live status shows only fixed public-safe states such as **Session in progress**,
+a generic duration or intermission countdown, **Session paused**,
+**Reconnecting**, or **Open Guilty Party—your attention is needed**. It does not
+identify why attention is needed or reveal a game phase. It is optional,
+non-authoritative, expires promptly when stale, and is removed when session or
+endpoint authority ends. Initial creation is limited to a foreground,
+authenticated join; remote push-to-start remains a separate future decision.
+See [ADR 0031](../adr/0031-mobile-notifications-and-live-session-status.md).
+
 ### MC-PROD-007: Protect App-Switcher Snapshots
 
 Private session content must be obscured in operating-system app-switcher and

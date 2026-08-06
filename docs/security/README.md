@@ -17,6 +17,9 @@ Security and privacy are product requirements, not later implementation tasks.
 - [Mobile diagnostics](mobile-diagnostics.md) records the field allowlist,
   prohibited-data tests, choice, access, and retention evidence required by
   [ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md).
+- [Mobile notifications](mobile-notifications.md) records the public-safe
+  content, action, expiry, choice, and verification boundary required by
+  [ADR 0031](../adr/0031-mobile-notifications-and-live-session-status.md).
 - [ADR 0025](../adr/0025-third-party-dependency-governance.md) defines the
   security, privacy, provenance, update, and removal gate for dependencies,
   SDKs, services, models, and external assets.
