@@ -276,9 +276,16 @@ provides a reliable signal, warn the player, and prevent or obscure capture
 where the platform permits it. The product must not promise universal
 prevention on platforms that do not provide that control.
 
-This protects participant privacy and creator intellectual property. The exact
-response, user messaging, and treatment of screenshots versus screen recording
-remain implementation and policy decisions.
+Android active-session windows use secure-window protection. iOS/iPadOS warns
+honestly after a detected still screenshot and shields private content during
+active recording or mirroring. Capture signals are not sent to hosts or used
+for discipline by default.
+
+A private Companion projection is never cast or mirrored. The same physical
+device may initiate and control a separately authorized public Stage endpoint,
+including an AirPlay television, provided that only the server-authorized Stage
+projection reaches that route. See
+[ADR 0021](../adr/0021-mobile-screen-capture-and-stage-casting.md).
 
 ## Audio Input
 

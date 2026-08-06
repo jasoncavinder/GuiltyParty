@@ -187,6 +187,25 @@ Recording, transcription, external captions, and AI media routes name the
 actual operation with an unhideable active label and appropriate start, pause,
 resume, and stop notices. A generic microphone icon is not sufficient.
 
+# Companion Screen-Capture Protection
+
+Active Android Companion windows use secure-window protection. iOS and iPadOS
+cover protected content during reported recording or mirroring and warn
+truthfully after a still-screenshot notification, which arrives after capture.
+App-switcher snapshots use a neutral privacy shield on every platform.
+
+Capture state is not scenario truth, is not reported to hosts or other players
+by default, and is not retained for analytics, discipline, reputation, or
+account enforcement. A required interaction may use another authorized endpoint
+or a generic technical pause without identifying the participant.
+
+A phone or tablet may control a separate public Stage route such as AirPlay,
+but only the server-authorized Stage projection reaches the television. The
+private Companion projection and notifications are never mirrored. The product
+does not claim protection against physical cameras, external capture hardware,
+browsers, or compromised operating systems. See
+[ADR 0021](../adr/0021-mobile-screen-capture-and-stage-casting.md).
+
 ---
 
 # Accessibility Caption Consent

@@ -40,25 +40,62 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-PRIV-003: Screenshot and Screen-Recording Behavior
+### MC-MEDIA-003: Mobile Audio Routes and Interruptions
 
 **Status:** Active
 
-**Why next:** The supported mobile operating systems are now accepted, so the
-project can define honest platform-specific protection for private participant
-content and creator intellectual property without promising controls the OS
-does not provide.
+**Why next:** The media protocol, room processing, private-route failure,
+microphone arbitration, capture consent, and supported OS floors are accepted.
+The remaining unblocked media question is how native Companions preserve those
+rules through calls, Bluetooth and headphone changes, audio focus, route loss,
+backgrounding, and media-service resets.
 
-**Decision question:** What content should iOS/iPadOS and Android obscure or
-block in screenshots, screen recordings, mirroring, casting, and app-switcher
-snapshots; which platform signals are reliable; and what warnings, session
-behavior, host visibility, and user claims remain honest when prevention is
-impossible?
+**Decision question:** How should iOS/iPadOS and Android handle audio-route
+selection and changes, calls and other interruptions, Bluetooth transitions,
+headphone removal, audio-focus loss, app backgrounding, and media-service
+resets; when may media resume automatically, and when is fresh participant
+confirmation required?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-PRIV-003: Screenshot and Screen-Recording Behavior
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Android applies `FLAG_SECURE` to every active-session Companion
+window and task-switcher representation, without a production bypass. iOS and
+iPadOS use a neutral app-switcher shield, show a truthful local warning after a
+reported still screenshot, and never claim it was blocked or deleted. During
+reported recording or mirroring, Apple clients shield protected content, stop
+private playback and endpoint media publication, disable private actions, then
+revalidate authority and request a fresh projection before restoring content.
+Capture signals are not scenario truth, are not reported to hosts or other
+players, and are not uploaded for analytics, discipline, reputation, or account
+enforcement by default. Browser and external-camera limitations are disclosed
+honestly. Internal capture bypasses are build-time restricted to synthetic or
+explicitly authorized QA content and absent from production. A private
+Companion projection is never cast or mirrored, but the same physical phone or
+tablet may initiate and control a separately authorized public Stage endpoint
+or media route, including AirPlay, if only the public Stage projection reaches
+the television. Targeted output is preferred; inseparable full-screen mirroring
+is declined or limited to a verifiably public-safe Stage presentation.
+
+**Rationale:** The policy uses reliable platform controls without overstating
+iOS or browser capabilities, protects private and creator-owned content, avoids
+surveillance, and preserves the first-class distinction among physical devices,
+private endpoints, and public Stage endpoints.
+
+**Consequences:** Still screenshots may escape on iOS, secure Android windows
+restrict capture and display workflows, and AirPlay Stage support requires a
+distinct public projection rather than Companion mirroring. Real-device,
+lifecycle, media, accessibility, and multi-window tests are required.
+
+**Recorded in:** [ADR 0021](../adr/0021-mobile-screen-capture-and-stage-casting.md)
 
 ### MC-NET-004: Android NSD Discovery and Local-Network Permission UX
 
@@ -1277,9 +1314,7 @@ No open items. Accepted decisions remain in the history above.
 
 ### Media and Device Interruptions
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-MEDIA-003 | Open | Bluetooth changes, calls, headphones, route changes, backgrounding, and interruption recovery | MC-MEDIA-001, MC-DEL-001 |
+No open items. Accepted decisions remain in the history above.
 
 ### Mobile Architecture and Platform Scope
 
