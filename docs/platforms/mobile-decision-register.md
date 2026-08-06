@@ -40,24 +40,60 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-NET-006: Local Certificate and Trust Model
+### MC-NET-007: Connection and Resumption Policy
 
 **Status:** Active
 
-**Why next:** HTTPS/WSS is required before authentication, private data, or
-external testing. An isolated-LAN server therefore needs a certificate and
-server-identity mechanism that native and browser clients can trust without
-internet access or unsafe warning bypasses.
+**Why next:** Contract negotiation, discovery, secure transport, and LAN server
+identity are accepted. Clients now need deterministic timeout, heartbeat,
+retry, resumption, and stale-endpoint behavior across temporary disconnection.
 
-**Decision question:** How does a LAN server obtain and rotate its certificate,
-how do native and browser Companions establish and remember trust, and how does
-the product recover from certificate loss, mismatch, expiry, or server
-replacement without permitting silent trust changes?
+**Decision question:** What connection, heartbeat, timeout, retry, backoff,
+resumption, sequence-gap, and stale-endpoint rules should apply without
+duplicating commands, revealing cached private state, or mistaking transport
+presence for canonical scenario state?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-NET-006: Local Certificate and Trust Model
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Every LAN server creates an installation-specific private
+certificate authority and server identity key in protected host storage; no
+universal private key is shared among installations. It issues and locally
+renews short-lived leaf certificates for current LAN names and addresses. QR
+pairing binds the invitation to the authority fingerprint, while short-code or
+manual flows require a human-comparable authentication string. Native clients
+perform application-controlled validation anchored to the paired authority and
+never treat discovery or first contact as trust on first use. Leaf renewal does
+not require re-pairing. Planned authority rotation is authenticated by the old
+authority and visibly announced. Loss, corruption, unauthenticated change, or
+server replacement creates a new identity, invalidates local endpoint and
+session authority, and requires explicit re-pairing; names, addresses, and
+database restores cannot transfer trust. Public services use publicly trusted
+certificates. Generic browser fallback uses a publicly trusted HTTPS origin;
+fully isolated LAN browsers require operator-managed trust provisioning, and
+ordinary guests are not asked to install roots or bypass warnings. A zero-install
+consumer browser fallback on a completely isolated LAN is not initially
+guaranteed. The same model applies if a future desktop host app embeds the LAN
+server, but that packaging decision remains open.
+
+**Rationale:** Pairing-authenticated, per-installation trust enables native
+isolated-LAN operation without a shared impersonation key or unsafe browser
+warning behavior.
+
+**Consequences:** Losing the server authority requires re-pairing absent a later
+approved encrypted migration design. Generic isolated-LAN browser support is
+limited, and native trust evaluation requires focused security testing. A
+future combined desktop host/server remains MC-ARCH-004.
+
+**Recorded in:** [ADR 0008](../adr/0008-lan-server-certificate-trust.md)
 
 ### MC-NET-005: HTTPS/WSS Enforcement Milestone
 
@@ -788,7 +824,6 @@ No open items. Accepted decisions remain in the history above.
 |---|---|---|---|
 | MC-NET-002 | Open | Whether Swift and Kotlin contract models are generated from schemas or maintained manually | MC-NET-001, MC-ARCH-001 |
 | MC-NET-004 | Open | Android NSD discovery behavior and nearby-network permission experience | MC-NET-003, MC-DEL-001 |
-| MC-NET-007 | Open | Connection timeout, heartbeat, retry, backoff, session-resume, and stale-endpoint policies | MC-NET-001 |
 
 ### Privacy and Safety
 
@@ -816,6 +851,7 @@ No open items. Accepted decisions remain in the history above.
 | MC-ARCH-001 | Open | Long-term implementation strategy: separate native apps, shared Kotlin Multiplatform logic, a cross-platform UI, or another evidence-backed approach | MC-NET-001, MC-MEDIA-001 |
 | MC-ARCH-002 | Open | Measurable duplication, staffing, test, or delivery threshold that would justify adopting Kotlin Multiplatform | MC-ARCH-001, MC-ORG-001 |
 | MC-ARCH-003 | Open | Android prototype timing and the feature slice required before Android work begins | MC-ARCH-001 |
+| MC-ARCH-004 | Open | Whether a future desktop host application embeds and manages the LAN server, including lifecycle, storage, migration, and recovery | MC-ARCH-001, MC-NET-006 |
 
 ### Delivery, Compliance, and Maintenance
 

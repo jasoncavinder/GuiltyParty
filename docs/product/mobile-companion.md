@@ -204,6 +204,15 @@ individually authorized private endpoint and must enforce the same server-side
 secrecy boundaries as the installed app. A shared public Stage is not a
 Companion fallback.
 
+The normal browser fallback requires a publicly trusted HTTPS origin. On a
+fully isolated LAN, a generic browser cannot dynamically trust the local
+server's installation-specific authority. Browser surfaces in that environment
+are supported only on operator-managed devices provisioned with the applicable
+trust authority. Ordinary guests are not asked to install a root certificate or
+bypass a certificate warning. A zero-install consumer browser fallback on a
+completely isolated LAN is therefore not guaranteed initially; native
+Companions remain the normal isolated-LAN private surface.
+
 ## Availability and Networking
 
 ### MC-PROD-006: Connected Experience with Reconnection

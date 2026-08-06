@@ -235,6 +235,28 @@ WebSocket upgrade.
 Media-plane encryption remains a separate decision and is required before user
 media is carried.
 
+### LAN Server Identity and Certificate Trust
+
+Each LAN server has an installation-specific private certificate authority and
+server identity key protected by the host platform. It issues renewable local
+leaf certificates; no universal private LAN key is shared across installations.
+Native clients learn the authority fingerprint through QR pairing or a
+human-compared authentication string and store that server-specific binding in
+protected storage. Discovery data and first network contact are not trust on
+first use.
+
+Leaf renewal under the paired authority is automatic. A planned authority
+rotation is authenticated by the existing authority and visibly announced. An
+unauthenticated change, loss, or replacement creates a new server identity,
+invalidates local endpoint and session authority, and requires explicit
+re-pairing. Names, addresses, discovery records, and database restores cannot
+silently transfer trust.
+
+Generic browsers use publicly trusted HTTPS. A fully isolated LAN browser is
+supported only when an operator-managed device was provisioned with the local
+authority. The consumer path never asks guests to install a root or bypass a
+certificate warning.
+
 ### Media Privacy Failure
 
 Examples include whisper audio reaching a Stage, stale routes after permission
