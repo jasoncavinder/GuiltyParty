@@ -42,6 +42,12 @@ Deferred television targets include:
 
 Desktop applications are also deferred.
 
+The accepted product boundary for a future host-oriented desktop application is
+recorded in [ADR 0018](../adr/0018-desktop-host-and-managed-local-server.md):
+official remote hosting is the default, with an explicit managed local-server
+option for authenticated registered hosts. This does not authorize desktop
+implementation in the current MVP.
+
 ## Documentation Rule
 
 Platform documents should describe capabilities and constraints rather than

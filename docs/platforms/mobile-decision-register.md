@@ -40,25 +40,61 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ARCH-004: Desktop Host Application with Embedded LAN Server
+### MC-DEL-001: Minimum Supported Mobile Operating-System Versions
 
 **Status:** Active
 
-**Why next:** The mobile strategy and Android entry checkpoint are accepted,
-and the LAN trust model already permits the same installation-specific server
-identity if a future desktop host application supervises the server. Deciding
-the product boundary now clarifies the intended isolated-LAN operating model
-without selecting a desktop framework or authorizing implementation.
+**Why next:** The native architecture, media boundary, Android entry checkpoint,
+and future desktop-host boundary are accepted. A concrete iOS, iPadOS, and
+Android support baseline now unblocks Android discovery and permission UX,
+capture behavior, interruption handling, the physical-device matrix, and beta
+distribution planning.
 
-**Decision question:** Should a future host-oriented desktop application embed,
-install, start, stop, update, monitor, and recover the Guilty Party LAN server;
-which responsibilities remain in the server; and what lifecycle, storage,
-migration, trust, and failure boundaries must the combined product preserve?
+**Decision question:** Which minimum iOS, iPadOS, and Android versions should the
+first supported product target, how should capability and audience evidence
+justify them, and when should the project raise or temporarily extend those
+minimums?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ARCH-004: Desktop Host Application with Embedded LAN Server
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** A future host-oriented desktop application connects to Guilty
+Party's official remote services by default and offers local isolated-LAN
+hosting only as an explicit choice. Host mode requires a Guilty Party account
+that authenticated online and was recognized by the official service as a
+registered host. The official service may issue a signed, time-bounded,
+installation-bound authorization stored in protected credential storage so the
+registered host can later enter Host mode offline; exact validity, renewal,
+revocation, and active-session-expiry behavior remain a later decision. Without
+a valid assertion, Host mode is unavailable offline. For local hosting, the app
+supervises a separately bounded server process and optional local media
+component. The server retains authority over participants, projections,
+secrecy, deterministic truth, journals, persistence, control/media policy, and
+installation-specific LAN trust. Closing UI cannot unexpectedly terminate an
+active session. Updates and migrations do not run during a session, must
+preserve recovery, and ordinary app updates preserve server identity. Uninstall
+does not silently delete server data or trust identity. Player or Stage modes
+do not confer host or server-administration authority.
+
+**Rationale:** Remote-by-default operation is the normal managed experience,
+while a signed offline host entitlement and separately supervised local server
+preserve isolated-LAN hosting without allowing local settings to invent
+registered-host status or UI lifecycle to own canonical state.
+
+**Consequences:** Guilty Party must support remote infrastructure and a local
+server package, plus secure offline assertion, process supervision, update,
+storage, and recovery behavior. Desktop platforms and implementation technology
+remain undecided.
+
+**Recorded in:** [ADR 0018](../adr/0018-desktop-host-and-managed-local-server.md)
 
 ### MC-ARCH-003: Android Prototype Timing
 
@@ -1189,7 +1225,6 @@ No open items. Accepted decisions remain in the history above.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-DEL-001 | Open | Minimum supported iOS, iPadOS, and Android versions based on capabilities and audience coverage | MC-ARCH-001, MC-MEDIA-001 |
 | MC-DEL-002 | Open | Physical-device test matrix covering representative phones, tablets, OS versions, network conditions, audio routes, and room arrangements | MC-DEL-001, MC-MEDIA-003 |
 | MC-DEL-003 | Open | TestFlight and Android beta channels, cohorts, feedback handling, and build expiry | MC-DEL-001 |
 | MC-DEL-004 | Open | App Store and Play privacy disclosures, account-deletion obligations, capture claims, and review preparation | MC-ID-002, MC-PRIV-002, MC-PRIV-004 |

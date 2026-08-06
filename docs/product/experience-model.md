@@ -153,6 +153,14 @@ The host may:
 
 The host remains responsible for directing the experience.
 
+A future host-oriented desktop application uses Guilty Party's official remote
+services by default and may explicitly supervise a local server for isolated-LAN
+hosting. Host mode requires an authenticated, registered host established while
+online; a protected, signed authorization may permit later offline hosting.
+Packaging the UI and local server together does not move deterministic state or
+server authorization into the desktop interface. See
+[ADR 0018](../adr/0018-desktop-host-and-managed-local-server.md).
+
 ---
 
 # Physical Room
