@@ -40,21 +40,54 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-023: Browser Companion Credential Storage
+### MC-ID-024: Server-Side Credential Storage
 
 **Status:** Active
 
-**Why next:** The browser fallback must support account continuity and temporary
-disconnection without treating browser-accessible storage as equivalent to the
-native Keychain or Keystore boundary.
+**Why next:** Native and browser client-storage boundaries are accepted. The
+server now needs a matching boundary for authentication verifiers, account
+sessions, refresh authority, and gameplay-session resumption.
 
-**Decision question:** Which account and session credential material may the
-browser Companion persist, and which browser storage mechanisms may hold it?
+**Decision question:** What credential verifier and session-authority material
+may the server retain, and how must it be protected, rotated, revoked, and kept
+separate from scenario data?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-023: Browser Companion Credential Storage
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Browser passkeys use WebAuthn so private keys remain with the
+authenticator. Account and session authority uses an opaque, server-managed
+identifier in a host-only `__Host-` cookie marked `Secure`, `HttpOnly`, and
+`SameSite=Strict`, with `Path=/` and no `Domain` attribute. A narrowly scoped,
+short-lived `SameSite=Lax` correlation cookie is permitted only when an
+external identity-provider return flow requires it. Access tokens, refresh
+tokens, session identifiers, and resume credentials never enter
+`localStorage`, `sessionStorage`, IndexedDB, service-worker or HTTP caches,
+URLs, logs, or analytics; transient proof remains in memory. Non-secret
+preferences and identifiers may use ordinary browser storage. A bounded
+persistent cookie may provide browser-restart continuity. Sign-out, account
+removal, endpoint revocation, or invalid authority deletes the cookie where
+possible and invalidates the server session.
+
+**Rationale:** Server-managed, script-inaccessible cookies reduce exposure to
+credential theft while preserving reconnect and browser-restart continuity for
+the Companion fallback.
+
+**Consequences:** Exact session lifetime, rotation, and "remember this browser"
+UX remain separate decisions. Authenticated browser operation requires
+HTTPS/WSS, so production LAN browser access is blocked on the local certificate
+and trust design. Persistent private-gameplay caching remains deliberately
+deferred under MC-PRIV-002.
+
+**Recorded in:** [Browser Companion Credential Storage](../security/security-model.md#browser-companion-credential-storage)
 
 ### MC-ID-005: Native Companion Credential Storage
 
@@ -517,7 +550,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-024 | Open | Server-side storage and protection of credential verifiers and session authority | MC-ID-005, MC-NET-006 |
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
 | MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-003, MC-ID-010 |
 | MC-ID-008 | Open | Whether several personal endpoints may be connected and which one may actively receive private content or submit actions | MC-ID-007 |

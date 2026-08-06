@@ -145,6 +145,34 @@ This boundary does not authorize persistent caching of private gameplay
 content. Browser storage, server-side verifier storage, and private-content
 cache lifetime are separate decisions.
 
+### Browser Companion Credential Storage
+
+Browser authentication uses WebAuthn for passkeys, leaving private-key
+operations with the authenticator rather than exposing keys to application
+JavaScript. Account and session authority is represented by an opaque,
+server-managed session identifier in a host-only cookie marked `Secure`,
+`HttpOnly`, and `SameSite=Strict`. The cookie uses the `__Host-` prefix, has no
+`Domain` attribute, and uses `Path=/`. A narrowly scoped, short-lived
+`SameSite=Lax` correlation cookie may be used only when an external identity
+provider's return flow requires it; it is not ongoing session authority.
+
+Access tokens, refresh tokens, session identifiers, and resume credentials must
+not be placed in `localStorage`, `sessionStorage`, IndexedDB, service-worker or
+HTTP caches, URLs, logs, or analytics. Any transient browser-held proof remains
+in memory. Ordinary browser storage may contain only non-secret preferences and
+identifiers that do not grant or resume authority.
+
+The server may issue a bounded persistent session cookie to support browser
+restart and temporary-disconnection recovery. Its lifetime, rotation policy,
+and any explicit "remember this browser" experience require separate approval.
+Sign-out, account removal, endpoint revocation, or invalid authority deletes the
+cookie where possible and invalidates the corresponding server-side session.
+
+This design requires an authenticated HTTPS/WSS origin. Plain HTTP on a LAN is
+not an acceptable production credential boundary; production LAN browser access
+therefore depends on the local certificate and trust design. This decision does
+not authorize persistent caching of private gameplay content.
+
 ### Media Privacy Failure
 
 Examples include whisper audio reaching a Stage, stale routes after permission
@@ -185,7 +213,7 @@ Future implementations should include:
 
 Human approval is required for:
 
-- browser and server-side credential storage and protection
+- server-side credential storage and protection
 - administrative and support-access policy
 - encryption and key-management design
 - provider selection and data residency
