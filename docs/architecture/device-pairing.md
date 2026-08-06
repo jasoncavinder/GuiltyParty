@@ -78,6 +78,12 @@ While joining remains open, the Stage automatically obtains and displays a
 replacement invitation when the current invitation expires. Automatic renewal
 stops when joining closes, joining is revoked, or the session ends.
 
+The Stage displays only the replacement invitation, but the immediately
+previous invitation remains redeemable for a 120-second grace period to
+accommodate scanning, submission, and minor authentication delays. Closing or
+revoking joining, or ending the session, invalidates both invitations
+immediately without a grace period.
+
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
 
@@ -107,7 +113,7 @@ Recovery must not silently broaden access.
 ## Open Decisions
 
 - provisional-account linking and recovery behavior
-- invitation renewal, rotation, and retry behavior
+- invitation disconnection and retry behavior
 - room creation and approval authority
 - device reauthentication and revocation UX
 - capability attestation and permission prompts
