@@ -40,24 +40,58 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-MEDIA-001: Media-Plane Protocol and Boundary
+### MC-MEDIA-002: Room Audio Processing Ownership
 
 **Status:** Active
 
-**Why next:** Private-capability degradation is accepted. The media protocol,
-provider, deployment topology, and abstraction boundary are now the next
-unblocked decision and must be settled before echo cancellation, interruptions,
-private-route failure, capture indicators, or long-term mobile architecture.
+**Why next:** The WebRTC/SFU protocol and provider boundary are accepted. Room
+audio processing ownership is the next unblocked decision and shapes microphone
+arbitration, echo behavior, interruption handling, platform audio integration,
+and the eventual mobile implementation strategy.
 
-**Decision question:** Which realtime media protocol and deployment model should
-carry audio, video, whispers, and captions, what provider abstraction should
-Guilty Party own, and which authorization and privacy responsibilities must
-remain in the control plane rather than the media provider?
+**Decision question:** Which endpoint or infrastructure component owns acoustic
+echo cancellation, noise suppression, gain control, room mixing, and mix-minus,
+and how should those responsibilities change between a shared room microphone,
+individual Companion microphones, headphones, and public Stage audio?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-MEDIA-001: Media-Plane Protocol and Boundary
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Realtime audio and video use WebRTC through an SFU. Guilty Party
+owns a narrow media-provider boundary, with a self-hostable LiveKit SFU as the
+initial reference adapter for local, regional, or approved managed deployment.
+The control plane remains authoritative for identity, membership, permissions,
+communication audiences, consent, and deterministic scenario truth. Clients
+receive short-lived, endpoint-bound, pseudonymous provider grants. Private
+routes require server-enforced audience denial and application E2EE where no
+authorized server processing is needed. Canonical gameplay never moves onto
+media data channels. Captions may use encrypted, recipient-scoped ephemeral
+media data but are not retained or canonical by default. Recording, egress,
+transcription, passive capture, and AI media access remain off by default. Exact
+dependencies require licensing and security review, and real private media is
+blocked on native LAN-trust, audience-enforcement, expiry, reconnection, and
+E2EE integration proofs.
+
+**Rationale:** A standards-based SFU supports low-latency selective routing and
+cross-platform clients, while self-hosting preserves isolated-LAN operation and
+the owned boundary prevents provider identity or policy from becoming product
+authority.
+
+**Consequences:** Guilty Party must operate or procure SFU and TURN capacity,
+implement one adapter, distribute E2EE keys, use short-lived grants for
+self-hosted revocation limits, and prove the ADR 0008 trust model through the
+native provider SDKs. Provider selection does not waive dependency intake or
+license review.
+
+**Recorded in:** [ADR 0010](../adr/0010-media-plane-protocol-and-provider.md)
 
 ### MC-PRIV-006: Missing Private-Capability Fallback
 
@@ -903,7 +937,6 @@ No open items. Accepted decisions remain in the history above.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-MEDIA-002 | Open | Ownership of echo cancellation, room mixing, and mix-minus across clients and media infrastructure | MC-MEDIA-001 |
 | MC-MEDIA-003 | Open | Bluetooth changes, calls, headphones, route changes, backgrounding, and interruption recovery | MC-MEDIA-001, MC-DEL-001 |
 | MC-MEDIA-004 | Open | Fail-closed behavior and user recovery when a private-audio route is unavailable | MC-MEDIA-001, MC-PRIV-005 |
 | MC-MEDIA-005 | Open | Arbitration and consent when a shared room microphone competes with participant microphones | MC-MEDIA-001, MC-MEDIA-002 |

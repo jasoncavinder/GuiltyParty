@@ -17,6 +17,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0007](0007-control-plane-transport-security.md) | Accepted | Require HTTPS/WSS before real authentication, private data, external distribution, or production use. |
 | [0008](0008-lan-server-certificate-trust.md) | Accepted | Pair native clients to an installation-specific LAN server authority and fail closed on unauthenticated identity change. |
 | [0009](0009-connection-resumption-policy.md) | Accepted | Use application heartbeats, bounded retry, idempotent commands, and authorized projection resumption across disconnects. |
+| [0010](0010-media-plane-protocol-and-provider.md) | Accepted | Use WebRTC through an SFU and a control-plane-authorized, self-hostable media-provider boundary. |
 
 ## Adding an ADR
 

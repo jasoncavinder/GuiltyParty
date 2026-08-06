@@ -3,8 +3,9 @@
 ## Status
 
 This document consolidates the existing room-aware audio and mix-minus
-requirements. It does not select a media provider, protocol, codec, or platform
-audio framework.
+requirements. ADR 0010 selects WebRTC, an SFU topology, and a self-hostable
+LiveKit reference adapter. It does not select a codec or decide ownership of
+platform audio processing, mixing, or echo cancellation.
 
 ## Purpose
 
@@ -30,7 +31,8 @@ A room should receive authorized remote audio without receiving its own local
 microphone feed back from the network. Routing must account for every active
 input and output associated with the room.
 
-The exact mixing topology and provider remain open.
+The SFU forwards authorized tracks. The exact placement of acoustic processing,
+room mixing, and mix-minus remains open under MC-MEDIA-002.
 
 ## Public Speech
 
@@ -73,7 +75,6 @@ authorized endpoint. Failure must not reroute private audio to a public output.
 
 ## Open Decisions
 
-- media provider and topology
 - echo-cancellation ownership across platforms
 - active-microphone arbitration within a room
 - reconnection and route-revocation timing

@@ -230,14 +230,31 @@ The session adapts accordingly.
 
 ---
 
-# Future Media Options
+# Protocol and Provider Boundary
 
-Potential implementations:
+ADR 0010 selects WebRTC with a selective forwarding unit for realtime audio
+and video. Guilty Party owns a narrow provider adapter, with a self-hostable
+LiveKit SFU as the initial reference. The adapter may connect to a local,
+self-hosted regional, or separately approved managed deployment without making
+provider identity authoritative product state.
 
-- WebRTC
-- Media servers
-- Server-composited Stage streams
-- Low-latency streaming
-- Native platform media frameworks
+The Control Plane decides membership, communication audiences, endpoint
+authority, microphone permission, consent, and revocation. It issues
+short-lived, endpoint-bound, pseudonymous provider grants containing no
+scenario secrets. The Media Plane enforces the resulting routes and transports
+media; it does not decide who should receive them.
 
-The application should use an abstraction layer so providers can change.
+Private routes require server-enforced audience restrictions and fail closed.
+Client-side selective rendering is not an authorization control. Private media
+also uses application end-to-end encryption when no authorized media processor
+needs access.
+
+Gameplay commands and canonical events remain on the versioned Control Plane.
+Encrypted media data channels may carry ephemeral, recipient-scoped captions or
+timing signals, but those messages are not canonical or retained by default.
+
+Recording, egress, transcription, passive capture, and AI media access remain
+off by default. Any server-side processor is an explicit, consented route with
+a documented purpose and retention policy.
+
+See [ADR 0010](../adr/0010-media-plane-protocol-and-provider.md).
