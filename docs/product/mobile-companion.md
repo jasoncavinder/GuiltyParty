@@ -257,6 +257,11 @@ and must be recoverable. The minimum operating environment is a network that
 can reach a Guilty Party server; that may be an isolated LAN used for a private
 event, prototype, or convention demonstration.
 
+On Android, local joining uses foreground, user-initiated NSD and prefers the
+Android 17 system service picker over broad LAN visibility. QR supplies pairing
+and trust information but does not override operating-system network consent.
+See [ADR 0020](../adr/0020-android-lan-discovery-and-permission-ux.md).
+
 ## Privacy and Capture Protection
 
 ### MC-PROD-007: Protect App-Switcher Snapshots

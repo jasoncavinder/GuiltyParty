@@ -40,25 +40,61 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-NET-004: Android NSD Discovery and Local-Network Permission UX
+### MC-PRIV-003: Screenshot and Screen-Recording Behavior
 
 **Status:** Active
 
-**Why next:** Android 13/API 33 is now the accepted deployment floor, current
-builds target API 36, and Android 17/API 37 will enforce new local-network
-protections. The discovery experience must preserve ADR 0006's untrusted,
-privacy-minimized DNS-SD boundary while handling platform permission changes
-without misleading fallbacks.
+**Why next:** The supported mobile operating systems are now accepted, so the
+project can define honest platform-specific protection for private participant
+content and creator intellectual property without promising controls the OS
+does not provide.
 
-**Decision question:** How should the Android Companion discover and select a
-local `_guiltyparty._tcp` service across API 33 and later, when should it use a
-system-mediated NSD picker or request broad local-network access, and what UX is
-required for denial, revocation, retry, manual connection, and QR pairing?
+**Decision question:** What content should iOS/iPadOS and Android obscure or
+block in screenshots, screen recordings, mirroring, casting, and app-switcher
+snapshots; which platform signals are reliable; and what warnings, session
+behavior, host visibility, and user claims remain honest when prevention is
+impossible?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-NET-004: Android NSD Discovery and Local-Network Permission UX
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** QR pairing remains preferred and carries invitation and server-
+authority trust, while Android controls local reachability separately.
+Discovery is explicit, foreground-only, scoped to `_guiltyparty._tcp`, stopped
+promptly, and neither retained nor uploaded. API 33 through 36 use
+`NsdManager`, with narrowly held multicast reception only where the device
+requires it and no location or unrelated nearby permission. When targeting API
+37 or later, the default is Android's system NSD service picker; selection
+permits contact but does not establish server identity or session authority.
+TLS must match the QR-paired installation authority. Broad
+`ACCESS_LOCAL_NETWORK` is optional and requested just in time only for a chosen
+feature such as automatic paired-server rediscovery or direct addressing. Its
+denial preserves remote play, system-picker local join, and a settings path.
+Manual addressing is not a permission bypass. Denial or failure never enables
+plaintext, certificate bypass, trust on first use, public display of private
+content, or repeated prompting. Reconnect reuses an OS-authorized route only
+while server and session authority validate; otherwise it presents an honest
+selection or permission action. Tests cover APIs 33, 36, and 37, spoofing,
+identity mismatch, multicast suppression, grant, denial, revocation, retry, and
+lifecycle cleanup.
+
+**Rationale:** Picker-first access provides a usable local path without routine
+broad network visibility, while QR-bound TLS preserves the distinction between
+reachability, identity, invitation, and authorization.
+
+**Consequences:** Android 17 may add a system step after QR scanning, automatic
+rediscovery may need optional broad access, and several platform behaviors need
+physical-device coverage. This does not implement Android in the current MVP.
+
+**Recorded in:** [ADR 0020](../adr/0020-android-lan-discovery-and-permission-ux.md)
 
 ### MC-DEL-001: Minimum Supported Mobile Operating-System Versions
 
@@ -1231,14 +1267,12 @@ No open items. Accepted decisions remain in the history above.
 
 ### Control-Plane Networking
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
+No open items. Accepted decisions remain in the history above.
 
 ### Privacy and Safety
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-PRIV-003 | Open | Platform-specific behavior and honest user messaging for screenshot and screen-recording detection or restriction | MC-DEL-001 |
 | MC-PRIV-004 | Open | Crash-report fields, scrubbing, consent, retention, access, and provider constraints | MC-PRIV-002, MC-DEL-006 |
 
 ### Media and Device Interruptions

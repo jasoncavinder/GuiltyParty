@@ -27,6 +27,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0017](0017-android-prototype-entry-checkpoint.md) | Accepted | Begin the first narrow Android slice after the generated contract and complete iOS gameplay baseline are proven. |
 | [0018](0018-desktop-host-and-managed-local-server.md) | Accepted | Default desktop Host mode to official remote services while offering a separately bounded managed LAN server to registered hosts. |
 | [0019](0019-initial-mobile-os-support-baseline.md) | Accepted | Initially support iOS/iPadOS 18 and Android 13 while building against current stable store-required SDKs. |
+| [0020](0020-android-lan-discovery-and-permission-ux.md) | Accepted | Prefer foreground Android NSD and the API 37 system picker, reserving broad LAN access for optional user-chosen conveniences. |
 
 ## Adding an ADR
 
