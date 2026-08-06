@@ -45,16 +45,18 @@ A permanent account requires only:
 
 - an opaque internal user identifier
 - at least one verified authentication binding
+- one verified recovery email address
 - security metadata and records of applicable terms and privacy acceptance
 
 Passkeys must be available when permanent-account authentication launches,
 alongside any other supported authentication bindings rather than as a later
 enhancement. The initial methods listed above must be available across the
 supported surfaces where their platforms permit them. A real name, persistent
-display name, email address, phone number, birth date, avatar, and location are
-not mandatory account fields. A player may choose a session-specific display
-name. Recovery contact information remains optional unless a later approved
-requirement justifies collecting it.
+display name, phone number, birth date, avatar, and location are not mandatory
+account fields. A player may choose a session-specific display name. The
+recovery email may use a privacy-preserving relay address and must not be used
+as a public identifier, routine login method, marketing address, or discovery
+mechanism.
 
 An otherwise functional LAN session must not require internet access merely for
 a player to join:
@@ -82,6 +84,30 @@ receiving another character.
 The product should attempt reconnection and recovery automatically. It may ask
 the player to rejoin the in-progress session when automatic recovery cannot be
 completed safely.
+
+### MC-PROD-012: Consumer-Friendly Account Recovery
+
+Permanent-account recovery uses the verified recovery email rather than a
+user-managed recovery key:
+
+- a trusted, already signed-in endpoint may approve recovery immediately
+- recovery from an unfamiliar endpoint requires verification through the
+  recovery email and a 24-hour waiting period
+- linked providers and trusted endpoints are notified and may cancel a pending
+  recovery
+- successful recovery revokes existing sessions, requires a new authentication
+  binding, and temporarily restricts sensitive account changes
+- support may explain or initiate the defined process but must not substitute
+  security questions or discretionary personal judgment for proof
+
+The product cannot safely guarantee recovery if the player loses every
+authentication binding, every trusted endpoint, and access to the recovery
+email. Additional cryptographic evidence, such as future store-signed purchase
+records, may be considered separately.
+
+This policy must be reviewed when observed user friction, failed recoveries,
+account-takeover attempts, support workload, or the operating capacity of the
+business shows that its balance is no longer appropriate.
 
 ## Participants, Rooms, and Endpoints
 

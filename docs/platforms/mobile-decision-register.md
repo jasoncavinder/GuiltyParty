@@ -40,21 +40,51 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-010: Permanent-Account Recovery
+### MC-ID-003: Pairing Invitation Scope
 
 **Status:** Active
 
-**Why next:** The initial authentication set is accepted. Recovery rules are
-needed before credential storage, account linking, lost-device handling, and
-cross-device continuity can be specified safely.
+**Why next:** The invitation's authority boundary must be settled before its
+lifetime, reuse, retry, and revocation rules can be evaluated.
 
-**Decision question:** How should a player recover a permanent account when
-none of its passkeys, Apple binding, or Google binding is currently usable?
+**Decision question:** What should a Stage-displayed QR code or short code
+authorize before the player authenticates or establishes a provisional account?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-010: Permanent-Account Recovery
+
+**Status:** Accepted with review triggers
+
+**Decision date:** 2026-08-05
+
+**Decision:** A permanent account requires one verified recovery email, which
+may be a privacy-preserving relay and is used only for security and recovery. A
+trusted signed-in endpoint may approve recovery immediately. Recovery from an
+unfamiliar endpoint requires email verification and a 24-hour wait, with
+notifications and cancellation available through linked providers and trusted
+endpoints. Successful recovery revokes existing sessions, requires a new
+authentication binding, and temporarily restricts sensitive changes. Support
+may facilitate the defined process but cannot override proof requirements with
+security questions or personal judgment.
+
+**Rationale:** This is more compatible with ordinary consumer behavior than a
+saved recovery key while retaining delay, notification, cancellation, and
+post-recovery controls against account takeover.
+
+**Consequences:** The minimum account data now includes a recovery email.
+Recovery cannot be guaranteed after loss of every authentication binding,
+trusted endpoint, and recovery-email account. Exact notification and temporary
+restriction details remain implementation decisions.
+
+**Review triggers:** Observed signup or recovery friction, failed recoveries,
+account-takeover attempts, support workload, changes in provider capabilities,
+or operating-capacity constraints for the business.
+
+**Recorded in:** [MC-PROD-012](../product/mobile-companion.md#mc-prod-012-consumer-friendly-account-recovery)
 
 ### MC-ID-009: Permanent-Account Sign-In Methods
 
@@ -89,6 +119,9 @@ other supported authentication bindings. Real names, persistent display names,
 email addresses, phone numbers, birth dates, avatars, and locations are not
 mandatory. Session display names are session-specific, and recovery contact
 information remains optional unless a later approved requirement justifies it.
+
+**Amendment:** MC-ID-010 later makes one verified, recovery-only email address
+mandatory while preserving the other data-minimization requirements.
 
 **Rationale:** This provides continuity and secure authentication while
 preserving data minimization and avoiding unnecessary persistent identity data.
@@ -140,10 +173,12 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-003 | Open | Pairing invitation scope, expiry, consumption, retry, and revocation rules | MC-ID-001, MC-ID-002, MC-ID-009 |
+| MC-ID-011 | Open | Pairing invitation lifetime, renewal, and clock behavior | MC-ID-003 |
+| MC-ID-012 | Open | Pairing invitation consumption, reuse, replay rejection, and retry behavior | MC-ID-003, MC-ID-011 |
+| MC-ID-013 | Open | Pairing invitation revocation authority and user experience | MC-ID-003, MC-ID-011 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
-| MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-003, MC-ID-008 |
+| MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
 | MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-003, MC-ID-010 |
 | MC-ID-008 | Open | Whether several personal endpoints may be connected and which one may actively receive private content or submit actions | MC-ID-007 |
 
