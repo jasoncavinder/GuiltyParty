@@ -123,6 +123,16 @@ New admission attempts are rate-limited in layers:
 An identical retry with the same idempotency identifier is not a new attempt
 and does not consume the new-attempt allowance.
 
+Initial per-endpoint and per-identity defaults allow five new attempts within
+one minute. Excess attempts trigger a 15-second cooldown, escalating after
+repeated excess within ten minutes to 60 seconds and then five minutes. Pairing
+throttles never create a permanent lockout. The player receives a generic
+message with an approximate retry time, without disclosure of the triggered
+limit or remaining allowance. The host receives a general pairing-throttle
+warning and may rotate the invitation without receiving unnecessary
+participant details. These defaults require review against observed security
+and usability outcomes.
+
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
 

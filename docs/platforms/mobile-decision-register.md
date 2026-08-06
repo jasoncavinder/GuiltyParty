@@ -40,20 +40,49 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-020: Pairing Admission Throttle and Retry UX
+### MC-ID-013: Pairing Invitation Revocation Authority
 
 **Status:** Active
 
-**Why next:** Rate-limit scopes are accepted. Cooldowns and messages must now
-balance abuse resistance with understandable recovery from ordinary mistakes.
+**Why next:** Pairing invitation scope, timing, reuse, idempotency, and
+throttling are accepted. The system must now define who can invalidate an
+invitation before its normal expiry.
 
-**Decision question:** How should cooldowns escalate, and what should a
-legitimate player see and be able to do while throttled?
+**Decision question:** Which human roles and automatic server conditions may
+revoke a pairing invitation?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-020: Pairing Admission Throttle and Retry UX
+
+**Status:** Accepted with review triggers
+
+**Decision date:** 2026-08-05
+
+**Decision:** Initial per-endpoint and per-identity defaults permit five new
+attempts in one minute. Excess attempts cause a 15-second cooldown, escalating
+after repeated excess within ten minutes to 60 seconds and then five minutes.
+Pairing throttles never permanently lock out a player. Players receive a
+generic message with an approximate retry time but no identification of the
+limiting bucket or count of remaining attempts. Identical idempotent retries
+remain available. The host sees a general throttle warning and may rotate the
+invitation without receiving unnecessary participant details.
+
+**Rationale:** Short, escalating cooldowns constrain automated attempts without
+turning pairing controls into a practical denial-of-service mechanism for a
+legitimate player or shared room.
+
+**Consequences:** Invitation rotation and revocation authority remain separate
+decisions. Emergency aggregate limits may have different thresholds but must
+preserve generic messaging and the shared-LAN safeguard.
+
+**Review triggers:** Observed false throttles, automated abuse, host confusion,
+join abandonment, or material changes in expected session size.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
 
 ### MC-ID-019: Pairing Admission Rate-Limit Scope
 
@@ -358,7 +387,7 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-013 | Open | Pairing invitation revocation authority and user experience | MC-ID-003, MC-ID-011 |
+| MC-ID-021 | Open | Pairing invitation revocation messaging, audit, and recovery UX | MC-ID-013 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
