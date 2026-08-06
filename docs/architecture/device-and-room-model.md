@@ -386,6 +386,30 @@ Audio routing decisions should consider:
 - Room membership
 - Endpoint capabilities
 
+## Room-Audible Capture Lease
+
+Each physical room has at most one active room-audible capture lease. The
+control plane binds it to the room, endpoint, route, audience, authority
+generation, and participant when the source is personal. Merely advertising a
+microphone capability or publishing a provider track does not create authority.
+
+A personal microphone is attributable to its participant and endpoint. A
+shared microphone belongs to the room and is labeled `Room microphone` unless a
+participant explicitly accepts current attribution. It is not a participant,
+account, character, or proof of speaker identity, and Guilty Party does not use
+voice recognition or AI to infer one.
+
+Requests do not open microphones. The current speaker must hold push-to-talk or
+confirm a bounded activation. Hosts may facilitate or stop the public-speaking
+queue but cannot remotely unmute a personal device or silently activate a
+shared microphone. Lease transfer is break-before-make and uses a new authority
+generation.
+
+The technical lease lasts at most 15 seconds and renews every five seconds while
+authority remains valid. Any latched room-audible activation lasts at most 120
+seconds before the speaker explicitly renews it. See
+[ADR 0014](../adr/0014-room-microphone-arbitration.md).
+
 ---
 
 # Design Principles

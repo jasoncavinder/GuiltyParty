@@ -65,7 +65,20 @@ ducking before capture opens.
 
 A shared microphone is the room's selected capture endpoint. While it owns the
 public route, individual Companions in that room do not also publish
-room-audible speech. Exact arbitration and handoff UX remains MC-MEDIA-005.
+room-audible speech.
+
+The control plane grants at most one room-audible capture lease per physical
+room. Requests never open a microphone. A host may select or cancel requests and
+stop an active source, but the speaker must still hold push-to-talk or confirm a
+bounded activation. Shared microphones belong to the room and remain labeled
+`Room microphone` unless the current speaker explicitly accepts attribution;
+voice recognition and AI do not infer identity.
+
+The technical lease lasts at most 15 seconds and renews every five seconds.
+Hold-to-talk releases immediately. A tap-based or assistive queued request
+requires fresh confirmation when selected, and any latched activation requires
+explicit renewal after 120 seconds. Transfer closes and confirms the old
+generation before validating, ducking, and opening the new one.
 
 ## Private Audio and Whispers
 
@@ -111,10 +124,10 @@ transmission before recovery begins.
 
 ## Open Decisions
 
-- active-microphone arbitration within a room
 - platform-specific interruption and route-change timing
 - accessibility caption generation and retention
 - observable health and diagnostics without unnecessary surveillance
 
 See [ADR 0011](../adr/0011-room-audio-processing-ownership.md) and
-[ADR 0013](../adr/0013-private-audio-route-failure.md).
+[ADR 0013](../adr/0013-private-audio-route-failure.md). Microphone arbitration
+is defined by [ADR 0014](../adr/0014-room-microphone-arbitration.md).

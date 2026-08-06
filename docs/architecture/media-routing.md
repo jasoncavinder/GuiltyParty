@@ -319,3 +319,25 @@ security metadata. The Stage and unrelated participants do not learn that a
 private route exists.
 
 See [ADR 0013](../adr/0013-private-audio-route-failure.md).
+
+---
+
+# Room Microphone Arbitration
+
+The control plane grants at most one room-audible capture lease per physical
+room. The lease is bound to one endpoint, a participant when personal, a route,
+audience, generation, and short expiry. It lasts at most 15 seconds and renews
+every five seconds while authority remains valid. The media adapter enforces the
+grant but does not choose the speaker.
+
+Requests and host selection never open capture. Personal and shared sources
+still require current speaker intent. Shared microphones belong to the room and
+are not attributed through voice or AI inference. Transfer is
+break-before-make: the old generation closes before Stage ducking and the new
+generation can be acknowledged.
+
+Hold-to-talk ends on release. Tap-based or assistive requests require fresh
+confirmation when selected, and a latched activation requires explicit speaker
+renewal after 120 seconds. AI may suggest an order but has no lease authority.
+
+See [ADR 0014](../adr/0014-room-microphone-arbitration.md).

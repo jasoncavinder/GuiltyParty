@@ -173,6 +173,12 @@ continue in the background initially. Restart, endpoint replacement,
 interruption, or unexpected route change returns capture to ready or paused
 until the user resumes it.
 
+A shared room microphone is disclosed during session entry and is never
+passive. A participant or shared-endpoint user explicitly activates it, and an
+indicator remains visible within the physical room. A host may request or stop
+public speech but cannot silently activate the shared endpoint or remotely
+unmute a personal Companion.
+
 Public-route state may appear on the Stage and affected endpoints. Private-route
 state appears only to authorized senders, recipients, and host roles; it must
 not reveal a whisper or accessibility choice publicly.

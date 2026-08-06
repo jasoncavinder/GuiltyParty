@@ -40,25 +40,60 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-MEDIA-005: Shared and Personal Microphone Arbitration
+### MC-ARCH-001: Long-Term Mobile Implementation Strategy
 
 **Status:** Active
 
-**Why next:** Media ownership and fail-closed private-route recovery are
-accepted. The remaining unblocked media question is how a shared room
-microphone and individual Companion microphones request, transfer, and release
-the single room-audible capture role without coercion or accidental overlap.
+**Why next:** The control-plane and media boundaries that materially constrain
+mobile implementation are now accepted. Choosing the long-term mobile strategy
+unblocks contract-model generation, platform support levels, Android prototype
+timing, code-sharing thresholds, team ownership, and the future desktop-host
+relationship.
 
-**Decision question:** How should participants and hosts request, grant,
-transfer, preempt, time out, and revoke the room-audible microphone role when a
-shared microphone and personal Companion microphones coexist, and what consent,
-priority, and visible state prevents two co-located capture paths from opening
-together?
+**Decision question:** Should iOS/iPadOS and Android use separate native Swift
+and Kotlin applications, native UIs with shared Kotlin Multiplatform logic, a
+shared cross-platform UI such as Flutter, or another approach, and which product
+requirements and measurable tradeoffs determine that choice?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-MEDIA-005: Shared and Personal Microphone Arbitration
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Each physical room has at most one room-audible capture lease,
+owned by the control plane and enforced by the media adapter. Personal sources
+bind participant and endpoint; shared sources belong to the room and remain
+`Room microphone` unless the current speaker explicitly accepts attribution.
+No voice or AI inference identifies the speaker. Requests and host queue actions
+never open capture. The current speaker must hold push-to-talk or confirm a
+bounded activation; hosts may invite, reorder, cancel, close, or safety-stop but
+cannot remotely unmute or silently activate an endpoint. Ordinary requests do
+not preempt the active speaker, while safety, authorization, privacy, and route
+failure do. Transfer is break-before-make with generation checks and required
+Stage-ducking acknowledgment. The technical lease lasts at most 15 seconds and
+renews every five seconds. Hold-to-talk ends on release; queued tap or assistive
+requests require fresh confirmation when selected; any latched activation has
+an initial 120-second maximum before explicit renewal. Public queue and active
+state are visible without private or diagnostic details. AI may suggest an
+order but holds no lease authority, and arbitration remains ephemeral rather
+than scenario truth.
+
+**Rationale:** One short-lived, server-authoritative role prevents co-located
+overlap while preserving speaker consent, accessible activation, room/device
+separation, host facilitation, and bounded failure behavior.
+
+**Consequences:** The control protocol and media adapter need request,
+reservation, generation, renewal, expiry, provider revocation, Stage ducking,
+and break-before-make acknowledgments. Clients need public queue, active-source,
+timer, accessible activation, and safety-stop UX.
+
+**Recorded in:** [ADR 0014](../adr/0014-room-microphone-arbitration.md)
 
 ### MC-MEDIA-004: Private-Audio Route Failure
 
@@ -1051,7 +1086,6 @@ No open items. Accepted decisions remain in the history above.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ARCH-001 | Open | Long-term implementation strategy: separate native apps, shared Kotlin Multiplatform logic, a cross-platform UI, or another evidence-backed approach | MC-NET-001, MC-MEDIA-001 |
 | MC-ARCH-002 | Open | Measurable duplication, staffing, test, or delivery threshold that would justify adopting Kotlin Multiplatform | MC-ARCH-001, MC-ORG-001 |
 | MC-ARCH-003 | Open | Android prototype timing and the feature slice required before Android work begins | MC-ARCH-001 |
 | MC-ARCH-004 | Open | Whether a future desktop host application embeds and manages the LAN server, including lifecycle, storage, migration, and recovery | MC-ARCH-001, MC-NET-006 |
