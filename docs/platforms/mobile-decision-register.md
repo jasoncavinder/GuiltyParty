@@ -40,24 +40,68 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-DEL-003: Mobile Beta Distribution
+### MC-DEL-006: Dependency and SDK Intake
 
 **Status:** Active
 
-**Why next:** Supported OS floors and the physical-device qualification matrix
-are accepted. The next unblocked delivery question is how pre-release builds
-reach internal, invited, and broader external testers without confusing beta
-access with production availability or retaining feedback indefinitely.
+**Why next:** Beta distribution is accepted, while crash reporting and store
+disclosures remain blocked on the dependency and data-lifecycle policies. The
+next unblocked question is the reusable intake and maintenance gate for every
+third-party library, SDK, generator, service client, and bundled asset.
 
-**Decision question:** How should TestFlight and Android beta distribution be
-structured across internal, invited, and broader cohorts; who may receive each
-build, how are synthetic and real-session boundaries communicated, how are
-feedback and diagnostics handled, and when do builds and tester access expire?
+**Decision question:** What evidence and human approval are required before a
+dependency or SDK enters the repository or a distributed build; how are
+license, ownership, privacy manifests and data safety, permissions, security,
+transitive components, version pinning, updates, vulnerability response,
+inventory, attribution, and eventual removal handled?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-DEL-003: Mobile Beta Distribution
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile distribution progresses through local development,
+internal TestFlight and Play testing, named invitation-only external groups,
+and only later an open beta after privacy, account-deletion, store, security,
+support, legal, and release gates are ready. Promotion is a human decision.
+The initial external cohort is normally about 10 to 25 trusted players and
+grows to fill documented device, language, accessibility, network, and room
+coverage gaps. Early cohorts use local or staging services, synthetic or
+dedicated non-production accounts, original test scenarios, non-production
+credentials, and clear beta labeling. They exclude payments, production
+creator libraries, recording, transcription, behavioral analytics, retained
+private communications, and production AI media access. External testers
+receive human-reviewed proprietary beta terms and plain-language limitations.
+Feedback uses one identified route, structured reproduction data, and only
+explicit attachments with synthetic content; raw attachments are deleted
+promptly after triage and durable issues retain minimized technical summaries.
+Beta membership is not a marketing list. Only platform-provided beta health
+may be inspected initially; no third-party crash, analytics, session-replay, or
+diagnostic SDK is authorized. Internal builds expire when superseded or after
+14 days. Invitation-only builds are supported for 30 days and have an absolute
+60-day lifetime. Security, privacy, authorization, licensing, or deterministic-
+integrity defects trigger immediate revocation, and expired clients receive a
+clear update-required state.
+
+**Rationale:** Progressive named cohorts bound proprietary-content exposure,
+support load, stale-client risk, and unreviewed data collection while still
+providing useful device and play evidence. Project-controlled expiry aligns the
+platforms more closely than their native testing limits do.
+
+**Consequences:** External testing requires reviewed notices and terms, staging
+separation, cohort records, feedback triage and artifact deletion, supported-
+build enforcement, and emergency revocation. Open beta and richer diagnostics
+remain blocked on their prerequisite privacy, dependency, store, security, and
+support decisions.
+
+**Recorded in:** [ADR 0024](../adr/0024-mobile-beta-distribution.md) and the
+[Mobile Beta Distribution checklist](mobile-beta-distribution.md)
 
 ### MC-DEL-002: Physical-Device Test Matrix
 
@@ -1405,7 +1449,6 @@ No open items. Accepted decisions remain in the history above.
 |---|---|---|---|
 | MC-DEL-004 | Open | App Store and Play privacy disclosures, account-deletion obligations, capture claims, and review preparation | MC-ID-002, MC-PRIV-002, MC-PRIV-004 |
 | MC-DEL-005 | Open | Required feature parity, permitted platform differences, and release synchronization | MC-ARCH-001, MC-ORG-001 |
-| MC-DEL-006 | Open | Dependency and SDK intake, licensing, privacy-manifest, update, and removal process | None |
 
 ### Team Ownership
 

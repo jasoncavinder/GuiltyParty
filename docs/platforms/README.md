@@ -29,6 +29,8 @@ Browser display, casting, and screen mirroring are fallback paths.
 - [Mobile audio routes and interruptions](../adr/0022-mobile-audio-route-and-interruption-policy.md)
 - [Physical-device test-matrix policy](../adr/0023-physical-device-test-matrix.md)
 - [Living mobile test matrix and available environment](mobile-test-matrix.md)
+- [Mobile beta-distribution policy](../adr/0024-mobile-beta-distribution.md)
+- [Mobile beta-distribution status and checklist](mobile-beta-distribution.md)
 - [Open and deliberately deferred mobile decision register](mobile-decision-register.md)
 
 The decision register identifies exactly one active discussion at a time and

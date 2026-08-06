@@ -31,6 +31,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0021](0021-mobile-screen-capture-and-stage-casting.md) | Accepted | Block or shield active Companion capture where supported while allowing a separately authorized public Stage casting route. |
 | [0022](0022-mobile-audio-route-and-interruption-policy.md) | Accepted | Revalidate mobile input and output after route or lifecycle changes, stopping private media and microphones until safe resumption is confirmed. |
 | [0023](0023-physical-device-test-matrix.md) | Accepted | Use tiered virtual, targeted physical, core-lab, and release coverage with real hardware required for privacy-, media-, LAN-, and room-sensitive claims. |
+| [0024](0024-mobile-beta-distribution.md) | Accepted | Progress from local and internal testing to named external cohorts, using synthetic data, minimized feedback, explicit gates, and short project-controlled build lifetimes. |
 
 ## Adding an ADR
 

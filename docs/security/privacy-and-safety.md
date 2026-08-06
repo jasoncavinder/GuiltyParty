@@ -218,6 +218,24 @@ browsers, or compromised operating systems. See
 
 ---
 
+# Mobile Beta Privacy
+
+Local, internal, and initial invitation-only mobile testing uses local or
+staging services, synthetic or dedicated non-production accounts, and original
+test scenarios. Early cohorts do not enable payments, recording,
+transcription, behavioral analytics, retained private communications,
+production creator libraries, or unapproved AI media access.
+
+Feedback attachments require an explicit tester action and use synthetic
+content. Raw screenshots, logs, and similar artifacts are access-restricted and
+deleted promptly after triage; durable issues keep only a minimized technical
+summary. Beta membership is not consent for marketing. No third-party crash,
+analytics, session-replay, or diagnostic SDK is authorized until its fields,
+scrubbing, provider, retention, licensing, update, and removal behavior are
+approved. See [ADR 0024](../adr/0024-mobile-beta-distribution.md).
+
+---
+
 # Accessibility Caption Consent
 
 A recipient may privately enable verified local, ephemeral accessibility

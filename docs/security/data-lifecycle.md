@@ -36,6 +36,7 @@ No implementation may interpret `TBD` as permission for indefinite retention.
 | Potential media-exposure metadata | Opaque references, safe cause and audience classes, lifecycle times, detection source, and response actions only; no media or transcript content. | Production retention, notification, access, and deletion require approval; `TBD` is not indefinite retention. |
 | AI inputs and outputs | AI analysis is disabled by default; inputs are purpose-minimized when enabled. | Feature and provider retention require approval before use. |
 | Operational and security logs | Limited to reliability, security, and abuse-prevention needs. | Fields, access, redaction, and duration require approval before production logging. |
+| Beta feedback | Structured build, device class, synthetic test reference, expected behavior, observed behavior, and reproduction steps; attachments are explicit and access-restricted. | Raw attachments are deleted promptly after triage; durable issues retain only a minimized technical summary. Beta membership is not a marketing list. |
 | Creator drafts and assets | Private to authorized creator workflows. | Draft deletion, publication retention, marketplace, and contractual rules require approval. |
 
 ## Consent and Notice Gates
@@ -80,6 +81,20 @@ A possible private-media disclosure is distinguished from an ordinary network
 failure. Any retained event is limited to opaque references, safe cause and
 audience classes, lifecycle times, detection source, and response actions. It
 does not include raw media, caption or transcript text, or scenario secrets.
+
+### Beta Feedback
+
+Early mobile cohorts use staging services, synthetic or dedicated non-
+production accounts, and original test scenarios. Feedback attachments require
+an explicit tester action and must not contain credentials, participant
+communications, character secrets, production creator content, or unnecessary
+personal information.
+
+Raw attachments are deleted promptly after triage. A durable engineering issue
+contains only the minimized technical information needed to reproduce and
+resolve the defect. Tester access and store-group membership end with the
+cohort or authorized purpose and are not copied into an unrelated marketing
+list. See [ADR 0024](../adr/0024-mobile-beta-distribution.md).
 
 ## Session Journal Clarification
 
