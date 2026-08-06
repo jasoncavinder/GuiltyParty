@@ -31,8 +31,15 @@ open.
 ### MC-PROD-003: Minimal Account Required
 
 A player must establish at least a minimal Guilty Party account before using a
-Companion in a session. Account creation should be low friction and may use
-federated sign-in such as Apple or Google.
+Companion in a session. The initial permanent-account authentication methods
+are:
+
+- passkeys
+- Sign in with Apple
+- Sign in with Google
+
+Passwords, SMS login, and email magic links are not included in the initial
+authentication set.
 
 A permanent account requires only:
 
@@ -42,10 +49,12 @@ A permanent account requires only:
 
 Passkeys must be available when permanent-account authentication launches,
 alongside any other supported authentication bindings rather than as a later
-enhancement. A real name, persistent display name, email address, phone number,
-birth date, avatar, and location are not mandatory account fields. A player may
-choose a session-specific display name. Recovery contact information remains
-optional unless a later approved requirement justifies collecting it.
+enhancement. The initial methods listed above must be available across the
+supported surfaces where their platforms permit them. A real name, persistent
+display name, email address, phone number, birth date, avatar, and location are
+not mandatory account fields. A player may choose a session-specific display
+name. Recovery contact information remains optional unless a later approved
+requirement justifies collecting it.
 
 An otherwise functional LAN session must not require internet access merely for
 a player to join:

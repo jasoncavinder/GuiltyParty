@@ -40,21 +40,41 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-009: Permanent-Account Sign-In Methods
+### MC-ID-010: Permanent-Account Recovery
 
 **Status:** Active
 
-**Why next:** Passkeys are accepted as a launch requirement. The other initial
-authentication bindings determine platform coverage, recovery paths, account
-linking, and provider dependencies.
+**Why next:** The initial authentication set is accepted. Recovery rules are
+needed before credential storage, account linking, lost-device handling, and
+cross-device continuity can be specified safely.
 
-**Decision question:** Which other sign-in methods should launch alongside
-passkeys for permanent Guilty Party accounts?
+**Decision question:** How should a player recover a permanent account when
+none of its passkeys, Apple binding, or Google binding is currently usable?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-009: Permanent-Account Sign-In Methods
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The complete initial authentication set is passkeys, Sign in with
+Apple, and Sign in with Google. Passwords, SMS login, and email magic links are
+not included initially.
+
+**Rationale:** The selected set provides passwordless authentication and broad
+coverage across the intended iOS, Android, and browser surfaces without making
+email addresses or phone numbers mandatory account data.
+
+**Consequences:** Safe binding and unlinking rules, provider configuration,
+account recovery, offline credential behavior, and implementation details
+remain separate decisions.
+
+**Recorded in:** [MC-PROD-003](../product/mobile-companion.md#mc-prod-003-minimal-account-required)
 
 ### MC-ID-002: Minimum Permanent-Account Data
 
@@ -120,7 +140,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-010 | Open | Permanent-account recovery methods and support boundaries | MC-ID-002, MC-ID-009 |
 | MC-ID-003 | Open | Pairing invitation scope, expiry, consumption, retry, and revocation rules | MC-ID-001, MC-ID-002, MC-ID-009 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
