@@ -14,6 +14,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0004](0004-mvp-technology-stack.md) | Accepted | Use a lean Rust/vanilla-web/Swift local prototype stack with deterministic replay and explicit authorization boundaries. |
 | [0005](0005-versioned-control-plane-contract.md) | Accepted | Version the HTTP and WebSocket control plane around shared schemas, explicit compatibility, and safe evolution rules. |
 | [0006](0006-link-local-service-discovery.md) | Accepted | Discover LAN control-plane servers using a privacy-minimized, untrusted DNS-SD advertisement. |
+| [0007](0007-control-plane-transport-security.md) | Accepted | Require HTTPS/WSS before real authentication, private data, external distribution, or production use. |
 
 ## Adding an ADR
 

@@ -40,24 +40,55 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-NET-005: HTTPS/WSS Enforcement Milestone
+### MC-NET-006: Local Certificate and Trust Model
 
 **Status:** Active
 
-**Why next:** Browser credentials and WebAuthn already require a secure origin,
-and discovery now advertises a TLS control service. The project needs a precise
-boundary for when prototype-only HTTP/WS must be removed before choosing local
-certificate and trust mechanics.
+**Why next:** HTTPS/WSS is required before authentication, private data, or
+external testing. An isolated-LAN server therefore needs a certificate and
+server-identity mechanism that native and browser clients can trust without
+internet access or unsafe warning bypasses.
 
-**Decision question:** In which environments and milestones may HTTP/WS remain,
-when does HTTPS/WSS become mandatory, and what development-only exceptions are
-permitted without allowing real credentials or private data onto plaintext
-transport?
+**Decision question:** How does a LAN server obtain and rotate its certificate,
+how do native and browser Companions establish and remember trust, and how does
+the product recover from certificate loss, mismatch, expiry, or server
+replacement without permitting silent trust changes?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-NET-005: HTTPS/WSS Enforcement Milestone
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** HTTP/WS is permitted only for loopback tests, synthetic local
+development, and the account-free placeholder MVP under an explicitly enabled
+development LAN profile. That profile is absent from beta and release builds,
+binds only to selected private or link-local interfaces, displays a persistent
+unencrypted warning, rejects real authentication and private or licensed data,
+and never activates after TLS failure. HTTPS/WSS becomes mandatory before real
+authentication, non-synthetic participant information, non-placeholder private
+or licensed content, external testing or distribution, untrusted or routed
+networking, and commercial or production deployment. Beta and release mobile
+configurations reject cleartext. Clients never continue insecurely after TLS
+or server-identity failure. A plaintext listener may redirect a non-sensitive
+browser navigation but does not accept credentials, authority, private
+projections, commands, or WebSocket upgrades. Media-plane authenticated
+encryption remains separately required before carrying user media.
+
+**Rationale:** The narrow exception preserves current prototype work while
+placing transport security before every capability that creates real privacy,
+identity, content-rights, or distribution risk.
+
+**Consequences:** External tests and account work are blocked until the local
+certificate and trust model is implemented. Development and release network
+policies must be separate and covered by negative cleartext tests.
+
+**Recorded in:** [ADR 0007](../adr/0007-control-plane-transport-security.md)
 
 ### MC-NET-003: LAN Service Discovery Metadata
 
@@ -757,7 +788,6 @@ No open items. Accepted decisions remain in the history above.
 |---|---|---|---|
 | MC-NET-002 | Open | Whether Swift and Kotlin contract models are generated from schemas or maintained manually | MC-NET-001, MC-ARCH-001 |
 | MC-NET-004 | Open | Android NSD discovery behavior and nearby-network permission experience | MC-NET-003, MC-DEL-001 |
-| MC-NET-006 | Open | Local certificate issuance, trust establishment, rotation, and failure recovery | MC-NET-005, MC-ID-003 |
 | MC-NET-007 | Open | Connection timeout, heartbeat, retry, backoff, session-resume, and stale-endpoint policies | MC-NET-001 |
 
 ### Privacy and Safety

@@ -213,6 +213,28 @@ encrypted, and administrative access is restricted and auditable. Concrete
 database, encryption-key, secret-management, retention, and infrastructure
 provider choices require separate approval.
 
+### Control-Plane Transport Security
+
+HTTP/WS is limited to loopback tests, synthetic local development, and the
+explicitly enabled account-free placeholder MVP development profile. The
+development profile is absent from beta and release builds, warns continuously
+that transport is unencrypted, binds only to selected private or link-local
+interfaces, and rejects real authentication, participant data, private or
+licensed content, payments, recording, transcription, and private
+communications.
+
+HTTPS/WSS is mandatory before permanent accounts or real authentication,
+non-synthetic participant data, non-placeholder private or licensed content,
+external testing or distribution, untrusted or routed networking, and any
+commercial or production deployment. Beta and release clients reject
+cleartext. TLS or server-identity failure never offers or triggers plaintext
+fallback. A plaintext listener may redirect a non-sensitive browser navigation
+but never accepts credentials, authority, private projections, commands, or a
+WebSocket upgrade.
+
+Media-plane encryption remains a separate decision and is required before user
+media is carried.
+
 ### Media Privacy Failure
 
 Examples include whisper audio reaching a Stage, stale routes after permission
