@@ -85,6 +85,19 @@ The product should attempt reconnection and recovery automatically. It may ask
 the player to rejoin the in-progress session when automatic recovery cannot be
 completed safely.
 
+After a temporary disconnection or app restart, the Companion automatically
+attempts to reconnect to the most recent server and session. When its stored
+session authority remains valid, it resumes the same participant, character,
+and endpoint without creating duplicates. It shows clear reconnecting and
+rejoined states.
+
+The Companion does not display cached private content until the server
+reauthorizes the endpoint and sends a fresh projection. It clears stale private
+content and requires explicit sign-in or rejoining if authority expired or was
+revoked, the participant was removed or reassigned, the session ended, or the
+server identity no longer matches. A visible manual rejoin path remains
+available when automatic recovery cannot complete.
+
 ### MC-PROD-012: Consumer-Friendly Account Recovery
 
 Permanent-account recovery uses the verified recovery email rather than a

@@ -40,22 +40,45 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-004: Companion Reconnect After App Restart
+### MC-ID-022: Participant Recovery After Server Restart
 
 **Status:** Active
 
-**Why next:** Pairing invitation behavior is now specified end to end. The next
-identity-continuity boundary is restoring an admitted participant after the
-Companion disconnects or restarts.
+**Why next:** Companion-side recovery is accepted. Server restart behavior must
+now preserve deterministic session state while revalidating participant and
+endpoint authority.
 
-**Decision question:** What should the Companion attempt automatically after a
-temporary disconnection or app restart, and when must it ask the player to
-rejoin explicitly?
+**Decision question:** After the Guilty Party server restarts, what session,
+participant, and endpoint state should it restore automatically before clients
+reconnect?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-004: Companion Reconnect After App Restart
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** After temporary disconnection or app restart, the Companion
+automatically reconnects to the most recent server and session. Valid stored
+authority resumes the same participant, character, and endpoint without
+duplicates. The app shows reconnecting and rejoined states and withholds cached
+private content until server reauthorization and a fresh projection. Expired or
+revoked authority, participant removal or reassignment, session end, or a server
+identity mismatch clears stale private content and requires explicit sign-in or
+rejoining. A manual rejoin path remains available.
+
+**Rationale:** Recovery is low-friction during ordinary interruption while
+private information and participant identity continue to fail closed.
+
+**Consequences:** Credential storage, retry timing, and server-restart recovery
+remain separate decisions.
+
+**Recorded in:** [MC-PROD-004](../product/mobile-companion.md#mc-prod-004-move-between-personal-devices)
 
 ### MC-ID-021: Pairing Invitation Revocation Effects and UX
 
@@ -438,7 +461,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-022 | Open | Participant and endpoint recovery after server restart | MC-ID-004, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
 | MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-003, MC-ID-010 |
