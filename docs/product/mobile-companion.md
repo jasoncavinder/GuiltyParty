@@ -24,8 +24,9 @@ The mobile app does not become a Host Console.
 Phones and tablets are first-class Companion form factors. In particular, iPad
 must have a deliberate tablet layout rather than merely running an enlarged or
 compatibility-mode iPhone interface. Android tablet support is part of the
-long-term mobile target; its delivery timing and implementation strategy remain
-open.
+long-term mobile target. [ADR 0017](../adr/0017-android-prototype-entry-checkpoint.md)
+defines the evidence required before the first narrow Android prototype begins;
+it does not add Android to the current MVP.
 
 ## Identity and Continuity
 

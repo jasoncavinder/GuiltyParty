@@ -24,6 +24,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0014](0014-room-microphone-arbitration.md) | Accepted | Grant one short-lived room-audible capture lease with explicit speaker intent and break-before-make transfer. |
 | [0015](0015-native-mobile-client-strategy.md) | Accepted | Build separate native SwiftUI and Jetpack Compose Companions that share contracts and behavioral evidence rather than a mobile runtime. |
 | [0016](0016-generated-mobile-contract-models.md) | Accepted | Generate committed Swift and Kotlin transport DTOs from canonical schemas behind handwritten application boundaries. |
+| [0017](0017-android-prototype-entry-checkpoint.md) | Accepted | Begin the first narrow Android slice after the generated contract and complete iOS gameplay baseline are proven. |
 
 ## Adding an ADR
 

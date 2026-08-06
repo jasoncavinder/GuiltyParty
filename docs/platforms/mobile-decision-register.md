@@ -40,23 +40,56 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ARCH-003: Android Prototype Timing
+### MC-ARCH-004: Desktop Host Application with Embedded LAN Server
 
 **Status:** Active
 
-**Why next:** The native client languages and generated contract boundary are
-now accepted. The next unblocked architecture question is when Android work
-begins and what proven iOS/server slice should precede it, so the project avoids
-both indefinite Android deferral and premature duplication of unstable behavior.
+**Why next:** The mobile strategy and Android entry checkpoint are accepted,
+and the LAN trust model already permits the same installation-specific server
+identity if a future desktop host application supervises the server. Deciding
+the product boundary now clarifies the intended isolated-LAN operating model
+without selecting a desktop framework or authorizing implementation.
 
-**Decision question:** At what point should the Android prototype begin, and
-which server and iOS Companion capabilities, contracts, and tests must be stable
-before the first Kotlin and Jetpack Compose vertical slice is authorized?
+**Decision question:** Should a future host-oriented desktop application embed,
+install, start, stop, update, monitor, and recover the Guilty Party LAN server;
+which responsibilities remain in the server; and what lifecycle, storage,
+migration, trust, and failure boundaries must the combined product preserve?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ARCH-003: Android Prototype Timing
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Android remains outside the current MVP. The first Android
+prototype begins after the version 1 schemas and fixtures are stable; a pinned
+pipeline reproducibly generates usable Swift and Kotlin DTOs; the server and
+physical iOS/iPadOS Companion complete joining, authorized private projection,
+participant actions, voting, outcome, deterministic replay, and temporary
+disconnection recovery; the owner accepts at least one full playtest as a
+sufficiently stable baseline; and MC-DEL-001 establishes the minimum supported
+Android version. Once that checkpoint is met, Android begins before substantial
+new iOS-only product expansion. Its first slice is limited to generated Kotlin
+DTOs, an adaptive Compose phone/tablet shell, development-LAN connection and
+join, private projection display, one idempotent player action, reconnection,
+and checks on a representative physical phone and tablet-class device.
+Production accounts, media, payments, notifications, analytics, distribution,
+and unrelated parity are excluded from that slice.
+
+**Rationale:** The checkpoint avoids duplicating unstable prototype work while
+ensuring Android validates the cross-platform contract before Apple-specific
+assumptions or indefinite deferral become entrenched.
+
+**Consequences:** Android waits for the contract, iOS gameplay, resumption,
+playtest, and OS-support evidence. Some iOS expansion may pause while the
+Android baseline catches up, and representative Android hardware is required.
+
+**Recorded in:** [ADR 0017](../adr/0017-android-prototype-entry-checkpoint.md)
 
 ### MC-NET-002: Generated Contract Models
 
@@ -1151,7 +1184,6 @@ No open items. Accepted decisions remain in the history above.
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
 | MC-ARCH-002 | Open | Measurable duplication, staffing, test, or delivery threshold that would justify adopting Kotlin Multiplatform | MC-ARCH-001, MC-ORG-001 |
-| MC-ARCH-004 | Open | Whether a future desktop host application embeds and manages the LAN server, including lifecycle, storage, migration, and recovery | MC-ARCH-001, MC-NET-006 |
 
 ### Delivery, Compliance, and Maintenance
 
