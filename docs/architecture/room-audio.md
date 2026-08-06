@@ -4,8 +4,9 @@
 
 This document consolidates the existing room-aware audio and mix-minus
 requirements. ADR 0010 selects WebRTC, an SFU topology, and a self-hostable
-LiveKit reference adapter. It does not select a codec or decide ownership of
-platform audio processing, mixing, or echo cancellation.
+LiveKit reference adapter. ADR 0011 assigns endpoint acoustic processing,
+playback mixing and ducking, control-plane authority, and SFU mix-minus. It does
+not select a codec.
 
 ## Purpose
 
@@ -31,8 +32,15 @@ A room should receive authorized remote audio without receiving its own local
 microphone feed back from the network. Routing must account for every active
 input and output associated with the room.
 
-The SFU forwards authorized tracks. The exact placement of acoustic processing,
-room mixing, and mix-minus remains open under MC-MEDIA-002.
+The capturing endpoint owns acoustic echo cancellation, noise suppression, and
+automatic gain control through its platform or WebRTC voice-processing path.
+The rendering endpoint owns its local playback mix and Guilty Party audio
+ducking. The SFU forwards authorized tracks and enforces logical mix-minus as
+directed by the control plane; it does not normally decode or combine them.
+
+Logical mix-minus remains required even when acoustic echo cancellation is
+active. Echo cancellation is neither a routing control nor an authorization
+boundary.
 
 ## Public Speech
 
@@ -46,6 +54,18 @@ The documented interaction may use push-to-talk and Stage ducking:
 
 Ducking applies only to media controlled by Guilty Party. The application must
 not assume it can control physical television or receiver volume.
+
+When all Guilty Party playback audible to a microphone shares that endpoint, or
+a headphone route has no separate room speaker coupled to the microphone,
+native voice processing may permit full-duplex speech and push-to-talk is
+optional unless another policy requires it. When a Companion microphone and a
+separate Stage or room speaker form the acoustic route, push-to-talk is required,
+only one room-audible microphone may transmit, and the Stage must acknowledge
+ducking before capture opens.
+
+A shared microphone is the room's selected capture endpoint. While it owns the
+public route, individual Companions in that room do not also publish
+room-audible speech. Exact arbitration and handoff UX remains MC-MEDIA-005.
 
 ## Private Audio and Whispers
 
@@ -72,12 +92,16 @@ retention, and access control.
 If a required audio capability is unavailable, the session should provide an
 understandable fallback where possible, such as text participation or another
 authorized endpoint. Failure must not reroute private audio to a public output.
+Loss of the expected input, output, voice-processing profile, private headphone
+route, ducking acknowledgment, media grant, or room mapping stops the affected
+transmission before recovery begins.
 
 ## Open Decisions
 
-- echo-cancellation ownership across platforms
 - active-microphone arbitration within a room
 - reconnection and route-revocation timing
 - accessibility caption generation and retention
 - consent UX for optional recording or transcription
 - observable health and diagnostics without unnecessary surveillance
+
+See [ADR 0011](../adr/0011-room-audio-processing-ownership.md).

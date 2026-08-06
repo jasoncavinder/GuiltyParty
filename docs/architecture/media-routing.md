@@ -258,3 +258,23 @@ off by default. Any server-side processor is an explicit, consented route with
 a documented purpose and retention policy.
 
 See [ADR 0010](../adr/0010-media-plane-protocol-and-provider.md).
+
+---
+
+# Audio Processing Boundary
+
+The microphone endpoint owns acoustic echo cancellation, noise suppression, and
+automatic gain control. The playback endpoint owns its local mix and Guilty
+Party audio ducking. The control plane selects the active room capture endpoint
+and authorized audience, while the SFU enforces track forwarding and logical
+mix-minus.
+
+Full duplex may be used when all Guilty Party playback audible to the microphone
+shares that endpoint, or a personal headphone route has no separate room speaker
+coupled to the microphone. When a Companion microphone and separate public
+Stage speaker form the acoustic path, push-to-talk and acknowledged Stage
+ducking are required, and only one room-audible microphone transmits at a time.
+Private routes fail closed if they become publicly audible or lose the required
+route.
+
+See [ADR 0011](../adr/0011-room-audio-processing-ownership.md).

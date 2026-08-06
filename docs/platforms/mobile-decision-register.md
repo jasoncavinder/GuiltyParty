@@ -40,24 +40,60 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-MEDIA-002: Room Audio Processing Ownership
+### MC-PRIV-005: Capture Indicators and Consent UX
 
 **Status:** Active
 
-**Why next:** The WebRTC/SFU protocol and provider boundary are accepted. Room
-audio processing ownership is the next unblocked decision and shapes microphone
-arbitration, echo behavior, interruption handling, platform audio integration,
-and the eventual mobile implementation strategy.
+**Why next:** The media boundary and room-audio ownership are accepted. Capture
+indicators and consent are now unblocked and must be settled before private-route
+failure behavior, recording or transcription features, store disclosures, and
+the detailed interruption experience.
 
-**Decision question:** Which endpoint or infrastructure component owns acoustic
-echo cancellation, noise suppression, gain control, room mixing, and mix-minus,
-and how should those responsibilities change between a shared room microphone,
-individual Companion microphones, headphones, and public Stage audio?
+**Decision question:** What persistent and event-level indicators, permission
+prompts, consent records, and host or participant controls are required when a
+microphone, camera, captions, transcription, recording, or AI media route is
+available, requested, active, paused, denied, or revoked?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-MEDIA-002: Room Audio Processing Ownership
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** The capturing endpoint owns acoustic echo cancellation, noise
+suppression, and automatic gain control through its platform or WebRTC
+voice-processing path. The rendering endpoint owns its local playback mix and
+Guilty Party audio ducking. The control plane owns physical-room membership,
+active-microphone authority, route policy, and audience authorization; the
+media adapter and SFU enforce track forwarding and logical mix-minus without
+normally decoding or mixing media. Full duplex may be used when all Guilty Party
+playback audible to the microphone shares its endpoint, or a private headphone
+route has no separate room speaker coupled to that microphone. When a Companion
+microphone and separate public Stage speaker form the acoustic path,
+push-to-talk, one room-audible microphone at a time, and acknowledged Stage
+ducking are required. A shared microphone becomes the selected room capture
+endpoint. Private routes may coexist only while remaining personal and fail
+closed on unexpected route or capability change. Server-side processing
+requires a separately approved feature and privacy boundary.
+
+**Rationale:** Only the capture endpoint normally has the hardware route and
+playback reference needed for reliable acoustic processing, while the SFU can
+prevent incorrect network return paths without gaining plaintext mixing duties.
+The split preserves privacy, room awareness, and predictable behavior across
+shared and personal endpoints.
+
+**Consequences:** Clients need platform voice-processing integration and route
+monitoring. Split-device rooms require coordinated push-to-talk and Stage
+ducking. The provider contract needs enforceable room-derived subscriptions,
+and physical-device tests must cover coupled, split, shared, and private audio
+routes.
+
+**Recorded in:** [ADR 0011](../adr/0011-room-audio-processing-ownership.md)
 
 ### MC-MEDIA-001: Media-Plane Protocol and Boundary
 
@@ -931,7 +967,6 @@ No open items. Accepted decisions remain in the history above.
 |---|---|---|---|
 | MC-PRIV-003 | Open | Platform-specific behavior and honest user messaging for screenshot and screen-recording detection or restriction | MC-DEL-001 |
 | MC-PRIV-004 | Open | Crash-report fields, scrubbing, consent, retention, access, and provider constraints | MC-PRIV-002, MC-DEL-006 |
-| MC-PRIV-005 | Open | Persistent indicators and consent UX for microphone, camera, captions, transcription, and recording | MC-MEDIA-001 |
 
 ### Media and Device Interruptions
 
