@@ -40,20 +40,44 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-002: Minimum Permanent-Account Data
+### MC-ID-009: Permanent-Account Sign-In Methods
 
 **Status:** Active
 
-**Why next:** Data minimization must constrain identity-provider selection,
-recovery, client storage, privacy disclosures, and account linking.
+**Why next:** Passkeys are accepted as a launch requirement. The other initial
+authentication bindings determine platform coverage, recovery paths, account
+linking, and provider dependencies.
 
-**Decision question:** What is the minimum information a permanent Guilty Party
-player account must contain beyond its internal authentication identifier?
+**Decision question:** Which other sign-in methods should launch alongside
+passkeys for permanent Guilty Party accounts?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-002: Minimum Permanent-Account Data
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** A permanent account requires only an opaque internal user ID, at
+least one verified authentication binding, security metadata, and records of
+applicable terms and privacy acceptance. Passkeys must launch alongside any
+other supported authentication bindings. Real names, persistent display names,
+email addresses, phone numbers, birth dates, avatars, and locations are not
+mandatory. Session display names are session-specific, and recovery contact
+information remains optional unless a later approved requirement justifies it.
+
+**Rationale:** This provides continuity and secure authentication while
+preserving data minimization and avoiding unnecessary persistent identity data.
+
+**Consequences:** The other launch authentication methods, provider
+requirements, recovery methods, and credential implementation remain separate
+decisions.
+
+**Recorded in:** [MC-PROD-003](../product/mobile-companion.md#mc-prod-003-minimal-account-required)
 
 ### MC-ID-001: Account Entry on an Isolated LAN
 
@@ -96,7 +120,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-009 | Open | Approved permanent-account sign-in methods and provider requirements | MC-ID-002 |
 | MC-ID-010 | Open | Permanent-account recovery methods and support boundaries | MC-ID-002, MC-ID-009 |
 | MC-ID-003 | Open | Pairing invitation scope, expiry, consumption, retry, and revocation rules | MC-ID-001, MC-ID-002, MC-ID-009 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |

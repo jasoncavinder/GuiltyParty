@@ -34,6 +34,19 @@ A player must establish at least a minimal Guilty Party account before using a
 Companion in a session. Account creation should be low friction and may use
 federated sign-in such as Apple or Google.
 
+A permanent account requires only:
+
+- an opaque internal user identifier
+- at least one verified authentication binding
+- security metadata and records of applicable terms and privacy acceptance
+
+Passkeys must be available when permanent-account authentication launches,
+alongside any other supported authentication bindings rather than as a later
+enhancement. A real name, persistent display name, email address, phone number,
+birth date, avatar, and location are not mandatory account fields. A player may
+choose a session-specific display name. Recovery contact information remains
+optional unless a later approved requirement justifies collecting it.
+
 An otherwise functional LAN session must not require internet access merely for
 a player to join:
 
@@ -46,9 +59,9 @@ a player to join:
   account to a permanent account
 
 The provisional account provides session identity without granting unrelated
-account capabilities. This requirement does not settle the identity provider,
-minimum permanent-account data, credential design, linking mechanics, or
-recovery model. It also does not add accounts to the account-free local MVP.
+account capabilities. This requirement does not settle the additional identity
+providers, credential design, linking mechanics, or recovery model. It also
+does not add accounts to the account-free local MVP.
 
 ### MC-PROD-004: Move Between Personal Devices
 
