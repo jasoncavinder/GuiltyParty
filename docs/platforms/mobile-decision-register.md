@@ -40,22 +40,52 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-005: Native Companion Credential Storage
+### MC-ID-023: Browser Companion Credential Storage
 
 **Status:** Active
 
-**Why next:** Client and server restart behavior is accepted. Automatic
-resumption now needs a concrete boundary for which credential material an
-installed Companion may persist and where it is protected.
+**Why next:** The browser fallback must support account continuity and temporary
+disconnection without treating browser-accessible storage as equivalent to the
+native Keychain or Keystore boundary.
 
-**Decision question:** Which account and session credentials may the native iOS
-and Android Companions persist, and which platform-protected storage must hold
-them?
+**Decision question:** Which account and session credential material may the
+browser Companion persist, and which browser storage mechanisms may hold it?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-005: Native Companion Credential Storage
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Passkey private keys remain in the operating system credential
+manager, and short-lived access tokens remain in memory. The native Companion
+may persist only an opaque, device-bound refresh credential and the minimum
+opaque session-resume credential. iOS and iPadOS use Keychain storage with
+device-only accessibility. Android uses application-private ciphertext
+protected by an app-specific, non-exportable Android Keystore key. Session
+authority does not sync, transfer, or migrate to another device; another device
+reauthenticates and receives new endpoint authority. Non-secret identifiers may
+use ordinary application-private storage, but credentials never enter
+`UserDefaults`, ordinary `SharedPreferences`, logs, analytics, source files, or
+general backups. Sign-out, account removal, endpoint revocation, or
+unrecoverable authority deletes the applicable local credential and invalidates
+it server-side where applicable.
+
+**Rationale:** Platform-protected, device-bound storage permits low-friction
+resumption without turning portable client storage, backups, or diagnostic
+systems into bearer-credential channels.
+
+**Consequences:** Browser credential storage and server-side verifier storage
+remain separate decisions. This decision does not authorize persistent caching
+of private gameplay content, which remains deliberately deferred under
+MC-PRIV-002.
+
+**Recorded in:** [Native Companion Credential Storage](../security/security-model.md#native-companion-credential-storage)
 
 ### MC-ID-022: Participant Recovery After Server Restart
 
@@ -487,7 +517,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-023 | Open | Browser Companion credential and session-authority storage | MC-ID-005, MC-NET-006 |
 | MC-ID-024 | Open | Server-side storage and protection of credential verifiers and session authority | MC-ID-005, MC-NET-006 |
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
 | MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-003, MC-ID-010 |

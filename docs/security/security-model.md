@@ -118,6 +118,33 @@ and abandoned authenticated devices.
 
 Required response: scope, expire, validate, and revoke pairing authority.
 
+### Native Companion Credential Storage
+
+Passkey private keys remain under the operating system's credential manager and
+are never exported into Guilty Party application storage. Short-lived access
+tokens exist only in process memory.
+
+An installed Companion may persist only opaque, device-bound credentials needed
+to refresh account authority or resume an authorized session. On iOS and
+iPadOS, those credentials are stored in the Keychain with device-only
+accessibility appropriate to their required availability. On Android, they are
+stored as ciphertext in application-private storage using an app-specific,
+non-exportable Android Keystore key. Session authority does not sync through
+cloud backup, migrate to another device, or serve as proof for a different
+endpoint. A player using another device reauthenticates and receives new
+endpoint authority.
+
+Non-secret identifiers may use ordinary application-private storage. Access,
+refresh, or session-resume credentials must never appear in `UserDefaults`,
+ordinary `SharedPreferences`, logs, analytics, source files, or general device
+backups. Sign-out, account removal, endpoint revocation, or detection that the
+credential can no longer represent valid authority deletes the corresponding
+local credential and invalidates it server-side where applicable.
+
+This boundary does not authorize persistent caching of private gameplay
+content. Browser storage, server-side verifier storage, and private-content
+cache lifetime are separate decisions.
+
 ### Media Privacy Failure
 
 Examples include whisper audio reaching a Stage, stale routes after permission
@@ -158,7 +185,7 @@ Future implementations should include:
 
 Human approval is required for:
 
-- authentication and account recovery model
+- browser and server-side credential storage and protection
 - administrative and support-access policy
 - encryption and key-management design
 - provider selection and data residency
