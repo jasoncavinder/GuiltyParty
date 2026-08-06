@@ -16,6 +16,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0006](0006-link-local-service-discovery.md) | Accepted | Discover LAN control-plane servers using a privacy-minimized, untrusted DNS-SD advertisement. |
 | [0007](0007-control-plane-transport-security.md) | Accepted | Require HTTPS/WSS before real authentication, private data, external distribution, or production use. |
 | [0008](0008-lan-server-certificate-trust.md) | Accepted | Pair native clients to an installation-specific LAN server authority and fail closed on unauthenticated identity change. |
+| [0009](0009-connection-resumption-policy.md) | Accepted | Use application heartbeats, bounded retry, idempotent commands, and authorized projection resumption across disconnects. |
 
 ## Adding an ADR
 

@@ -125,3 +125,26 @@ If the exact scenario version is unavailable, journal replay fails, or required
 durable state cannot be validated, the session fails closed for host
 intervention. The server must not guess, partially reconstruct, or silently
 start a different state.
+
+## Client Connection Resumption
+
+Transport presence remains separate from the journal and canonical scenario
+state. The server uses an application heartbeat every 15 seconds. After 30
+seconds without authenticated activity, a client covers private content and
+disables actions; after 45 seconds the endpoint is disconnected; after five
+minutes host tools may label it stale. None of those presence states revokes the
+endpoint or changes participant, character, or primary authority.
+
+On reconnect, an authenticated client presents its endpoint-bound resume
+authority, last applied server sequence, current primary-authority generation,
+and unresolved command identifiers. The server returns either an available
+recipient-authorized projection delta or a complete fresh projection. It never
+accepts the client's cached state as canonical and does not send raw journal
+events in place of a privacy-filtered projection.
+
+Clients apply resumption atomically before revealing private content or enabling
+actions. Sequence gaps, impossible regressions, and unexpected critical
+messages cause controlled resynchronization. State-changing commands carry an
+idempotency identifier and authority generation; a timed-out result remains
+unknown until queried or resolved during resumption rather than being submitted
+again under a new identifier.

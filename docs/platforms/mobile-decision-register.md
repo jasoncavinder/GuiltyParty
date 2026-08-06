@@ -40,23 +40,59 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-NET-007: Connection and Resumption Policy
+### MC-PRIV-006: Missing Private-Capability Fallback
 
 **Status:** Active
 
-**Why next:** Contract negotiation, discovery, secure transport, and LAN server
-identity are accepted. Clients now need deterministic timeout, heartbeat,
-retry, resumption, and stale-endpoint behavior across temporary disconnection.
+**Why next:** The remaining networking items depend on unresolved mobile
+architecture or delivery decisions. The browser fallback is accepted, so the
+next unblocked privacy question is what happens when neither an installed app
+nor a browser endpoint can provide a required private capability accessibly and
+without exposing it on a shared Stage.
 
-**Decision question:** What connection, heartbeat, timeout, retry, backoff,
-resumption, sequence-gap, and stale-endpoint rules should apply without
-duplicating commands, revealing cached private state, or mistaking transport
-presence for canonical scenario state?
+**Decision question:** How should the experience adapt, pause, reroute, or seek
+host assistance when a participant lacks an accessible private display, input,
+audio, or other required capability, and which fallbacks are never permitted
+because they would expose private information?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-NET-007: Connection and Resumption Policy
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Connection establishment allows ten seconds for transport and five
+seconds for authenticated negotiation. The server sends application heartbeats
+every 15 seconds. At 30 seconds without authenticated activity, clients enter a
+connection-uncertain state, cover private content, and disable actions; at 45
+seconds they disconnect; after five minutes host tools label the endpoint stale.
+One immediate retry follows an interface or foreground change, then full-jitter
+backoff progresses around 1, 2, 4, 8, 15, and 30 seconds, capped at 30 seconds
+and reset after 60 stable seconds. Certificate, identity, protocol, revocation,
+removal, and session-end failures stop automatic retry. Background connectivity
+is not promised. Resume requests provide endpoint authority, last server
+sequence, authority generation, and unresolved command IDs. The server returns
+an authorized delta or fresh projection and never accepts client state as
+canonical. Clients apply it atomically. Gaps or impossible state trigger resync.
+State-changing commands use idempotency IDs and authority generations; unknown
+outcomes are resolved rather than resubmitted under new IDs. Disconnected or
+stale presence never revokes an endpoint or changes participant, character, or
+primary authority.
+
+**Rationale:** Shared health and resumption rules preserve privacy and
+determinism through ordinary network loss, app suspension, and server restart
+without duplicate actions or false canonical state.
+
+**Consequences:** Projection deltas and idempotency outcomes need bounded
+retention. Poor connections may cover private content, and every client needs a
+tested resynchronization state machine.
+
+**Recorded in:** [ADR 0009](../adr/0009-connection-resumption-policy.md)
 
 ### MC-NET-006: Local Certificate and Trust Model
 
@@ -832,7 +868,6 @@ No open items. Accepted decisions remain in the history above.
 | MC-PRIV-003 | Open | Platform-specific behavior and honest user messaging for screenshot and screen-recording detection or restriction | MC-DEL-001 |
 | MC-PRIV-004 | Open | Crash-report fields, scrubbing, consent, retention, access, and provider constraints | MC-PRIV-002, MC-DEL-006 |
 | MC-PRIV-005 | Open | Persistent indicators and consent UX for microphone, camera, captions, transcription, and recording | MC-MEDIA-001 |
-| MC-PRIV-006 | Open | Accessibility and privacy-safe behavior when the installed app and browser fallback both lack a required private capability | MC-PROD-011 (accepted) |
 
 ### Media and Device Interruptions
 
