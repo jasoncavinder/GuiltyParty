@@ -40,22 +40,56 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-NET-001: Versioned Control-Plane Contract
+### MC-NET-003: LAN Service Discovery Metadata
 
 **Status:** Active
 
-**Why next:** The identity, pairing, credential, and recovery sequence is now
-complete. HTTP and WebSocket clients need one evolvable contract before the
-project can decide model generation, discovery metadata, or connection policy.
+**Why next:** The versioned control-plane contract is accepted. Model generation
+still depends on the mobile architecture decision, while LAN discovery metadata
+can now advertise compatible servers without exposing private session state.
 
-**Decision question:** How are HTTP routes, WebSocket messages, schemas,
-compatibility negotiation, errors, deprecations, and breaking changes versioned
-across the server, native Companions, browser Companion, Host Console, and Stage?
+**Decision question:** What DNS-SD service type and minimal TXT metadata should
+Guilty Party advertise, how broadly is it discoverable, and how do clients
+handle several servers or naming collisions without treating discovery as
+authentication?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-NET-001: Versioned Control-Plane Contract
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Control-plane protocol version `1.0` begins with major-versioned
+HTTP routes under `/api/v1/...` and a negotiated, major-versioned WebSocket
+subprotocol such as `guiltyparty.control.v1`. An unversioned, non-private
+compatibility endpoint advertises supported majors and upgrade information.
+JSON Schema Draft 2020-12 is canonical for payloads; OpenAPI 3.1-compatible
+documents describe HTTP, and WebSocket documentation reuses the same schemas
+with optional AsyncAPI metadata. WebSocket messages share a typed envelope with
+message and correlation identifiers, applicable session and endpoint context,
+server sequence, command idempotency, and a validated payload. Additive fields
+and negotiated features remain within a major; incompatible input, meaning,
+authorization, secrecy, or ordering changes require a new major. Servers do not
+send unnegotiated features. HTTP errors use RFC 9457 Problem Details, while
+WebSocket errors use matching safe codes in the envelope. Schemas, fixtures,
+compatibility tests, privacy tests, and deterministic transport tests precede
+generated or manually maintained client models. Supported native clients retain
+a compatible server protocol through a documented migration window.
+
+**Rationale:** Explicit, language-neutral negotiation and evolution rules keep
+independently released clients interoperable without allowing contract changes
+to weaken privacy, authorization, or deterministic scenario behavior.
+
+**Consequences:** Contract artifacts and compatibility support add maintenance.
+The exact model-generation strategy, discovery metadata, retry policy, and
+major-version retirement window remain separate decisions.
+
+**Recorded in:** [ADR 0005](../adr/0005-versioned-control-plane-contract.md)
 
 ### MC-ID-006: Host Controls for Lost Endpoints
 
@@ -689,7 +723,6 @@ No open items. Accepted decisions remain in the history above.
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
 | MC-NET-002 | Open | Whether Swift and Kotlin contract models are generated from schemas or maintained manually | MC-NET-001, MC-ARCH-001 |
-| MC-NET-003 | Open | Bonjour/DNS-SD service type, TXT metadata, discovery scope, and collision behavior | MC-NET-001 |
 | MC-NET-004 | Open | Android NSD discovery behavior and nearby-network permission experience | MC-NET-003, MC-DEL-001 |
 | MC-NET-005 | Open | The milestone at which HTTP/WS is no longer permitted and HTTPS/WSS becomes mandatory | MC-ID-002 |
 | MC-NET-006 | Open | Local certificate issuance, trust establishment, rotation, and failure recovery | MC-NET-005, MC-ID-003 |

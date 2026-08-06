@@ -12,6 +12,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0002](0002-scenario-versioning.md) | Accepted | Published scenario versions are immutable and events reference one version. |
 | [0003](0003-modular-monolith.md) | Accepted | Begin with a modular monolith with explicit internal boundaries. |
 | [0004](0004-mvp-technology-stack.md) | Accepted | Use a lean Rust/vanilla-web/Swift local prototype stack with deterministic replay and explicit authorization boundaries. |
+| [0005](0005-versioned-control-plane-contract.md) | Accepted | Version the HTTP and WebSocket control plane around shared schemas, explicit compatibility, and safe evolution rules. |
 
 ## Adding an ADR
 
