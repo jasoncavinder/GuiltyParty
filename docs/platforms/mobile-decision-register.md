@@ -40,21 +40,42 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-014: Automatic Pairing-Invitation Renewal
+### MC-ID-015: Invitation Rotation Grace Period
 
 **Status:** Active
 
-**Why next:** The invitation's authority boundary and 15-minute lifetime are
-accepted. The Stage's behavior at expiry determines whether joining requires
-host intervention.
+**Why next:** Automatic renewal is accepted. A brief overlap may prevent a code
+from failing while a player is scanning or submitting it at the rotation
+boundary, but it also extends the old invitation's effective lifetime.
 
-**Decision question:** While joining remains open, should the Stage
-automatically obtain and display a replacement when an invitation expires?
+**Decision question:** After the Stage displays a replacement invitation,
+should the immediately previous invitation remain redeemable for a short grace
+period?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-014: Automatic Pairing-Invitation Renewal
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** While joining remains open, the Stage automatically obtains and
+displays a replacement when the current pairing invitation expires. Automatic
+renewal stops when joining closes, joining is revoked, or the session ends.
+
+**Rationale:** Renewal lets guests continue arriving without repeatedly
+interrupting the host, while the host and session lifecycle retain control over
+whether joining remains available.
+
+**Consequences:** Rotation overlap, grace period, server-clock behavior,
+disconnection behavior, consumption, reuse, and replay protection remain
+separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
 
 ### MC-ID-011: Pairing Invitation Lifetime
 
@@ -216,8 +237,8 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-015 | Open | Pairing invitation rotation overlap, grace period, and clock behavior | MC-ID-011, MC-ID-014 |
-| MC-ID-012 | Open | Pairing invitation consumption, reuse, replay rejection, and retry behavior | MC-ID-003, MC-ID-011, MC-ID-014, MC-ID-015 |
+| MC-ID-016 | Open | Pairing invitation server-clock and disconnection behavior | MC-ID-011, MC-ID-014, MC-ID-015 |
+| MC-ID-012 | Open | Pairing invitation consumption, reuse, replay rejection, and retry behavior | MC-ID-003, MC-ID-011, MC-ID-014, MC-ID-015, MC-ID-016 |
 | MC-ID-013 | Open | Pairing invitation revocation authority and user experience | MC-ID-003, MC-ID-011 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |

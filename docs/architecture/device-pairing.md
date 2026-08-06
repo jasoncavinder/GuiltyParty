@@ -71,8 +71,12 @@ Pairing credentials must be:
 
 A pairing invitation is valid for 15 minutes from its server-issued time. It
 expires sooner if the session ends or the host revokes joining. Code length,
-automatic renewal, admission approval policy, and invitation reuse behavior
-remain human and implementation decisions.
+admission approval policy, invitation reuse behavior, and behavior during
+server disconnection remain human and implementation decisions.
+
+While joining remains open, the Stage automatically obtains and displays a
+replacement invitation when the current invitation expires. Automatic renewal
+stops when joining closes, joining is revoked, or the session ends.
 
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
