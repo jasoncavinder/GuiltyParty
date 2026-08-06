@@ -40,25 +40,64 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-DEL-002: Physical-Device Test Matrix
+### MC-DEL-003: Mobile Beta Distribution
 
 **Status:** Active
 
-**Why next:** The supported mobile OS floors and route-interruption policy are
-accepted, so representative physical coverage can now be defined without
-guessing which versions, routes, lifecycle states, and room behaviors the
-product promises to verify.
+**Why next:** Supported OS floors and the physical-device qualification matrix
+are accepted. The next unblocked delivery question is how pre-release builds
+reach internal, invited, and broader external testers without confusing beta
+access with production availability or retaining feedback indefinitely.
 
-**Decision question:** Which physical iPhones, iPads, Android phones, Android
-tablets, OS versions, network conditions, audio routes, accessibility modes,
-and physical-room arrangements must be exercised for development, pull-
-request validation, beta qualification, and release readiness; which checks
-may use simulators or emulators, and which require real hardware?
+**Decision question:** How should TestFlight and Android beta distribution be
+structured across internal, invited, and broader cohorts; who may receive each
+build, how are synthetic and real-session boundaries communicated, how are
+feedback and diagnostics handled, and when do builds and tester access expire?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-DEL-002: Physical-Device Test Matrix
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile qualification uses four tiers: automated virtual coverage
+on applicable pull requests, targeted physical validation for affected native
+hardware and platform behavior, regular core-lab smoke coverage while mobile
+work is active, and a complete beta or release matrix. The target core pool
+covers minimum and latest-stable iPhone and iPad roles, minimum and latest-
+stable Google-reference Android phones, a current Samsung midrange phone, and
+a representative Android tablet. Upcoming previews are additional coverage,
+not substitutes for supported stable cells. Real hardware is required for
+authentication hardware, protected storage, LAN discovery and permissions,
+capture protection, microphone and audio routes, Bluetooth, AirPlay, lifecycle,
+endpoint transfer, hands-on accessibility, performance, and physical-room
+claims. Release scenarios include official remote and isolated-LAN operation,
+network recovery, one-room and multi-room arrangements, split and shared
+microphones, Stage ducking, phone-to-tablet transfer, and browser fallback.
+Approved cloud and external coverage may supplement but not replace the local
+core matrix and must use synthetic data. Exact equipment is maintained in a
+living inventory and reviewed annually, before beta, and when OS floors or
+field evidence change.
+
+**Rationale:** Tiered coverage gives privacy-, media-, LAN-, and room-sensitive
+behavior real-hardware evidence without imposing the entire matrix on every
+low-risk change. Coverage roles remain stable while exact consumer models and
+available equipment can evolve with a small project's resources.
+
+**Consequences:** The project needs access to additional mobile hardware over
+time, must preserve minimum-version devices deliberately, and must maintain
+physical run evidence. The current environment provides a preview iPhone,
+Apple TV, LG webOS Stage, Apple-Silicon development host, browsers, and
+simulators, but physical iPad and Android coverage and supported stable/minimum
+mobile OS cells remain planned gaps rather than immediate purchase mandates.
+
+**Recorded in:** [ADR 0023](../adr/0023-physical-device-test-matrix.md) and the
+living [Mobile Test Matrix](mobile-test-matrix.md)
 
 ### MC-MEDIA-003: Mobile Audio Routes and Interruptions
 
@@ -1364,7 +1403,6 @@ No open items. Accepted decisions remain in the history above.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-DEL-003 | Open | TestFlight and Android beta channels, cohorts, feedback handling, and build expiry | MC-DEL-001 |
 | MC-DEL-004 | Open | App Store and Play privacy disclosures, account-deletion obligations, capture claims, and review preparation | MC-ID-002, MC-PRIV-002, MC-PRIV-004 |
 | MC-DEL-005 | Open | Required feature parity, permitted platform differences, and release synchronization | MC-ARCH-001, MC-ORG-001 |
 | MC-DEL-006 | Open | Dependency and SDK intake, licensing, privacy-manifest, update, and removal process | None |

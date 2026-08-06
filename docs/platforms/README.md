@@ -27,6 +27,8 @@ Browser display, casting, and screen mirroring are fallback paths.
 - [Android LAN discovery and permission UX](../adr/0020-android-lan-discovery-and-permission-ux.md)
 - [Mobile screen-capture protection and Stage casting](../adr/0021-mobile-screen-capture-and-stage-casting.md)
 - [Mobile audio routes and interruptions](../adr/0022-mobile-audio-route-and-interruption-policy.md)
+- [Physical-device test-matrix policy](../adr/0023-physical-device-test-matrix.md)
+- [Living mobile test matrix and available environment](mobile-test-matrix.md)
 - [Open and deliberately deferred mobile decision register](mobile-decision-register.md)
 
 The decision register identifies exactly one active discussion at a time and
