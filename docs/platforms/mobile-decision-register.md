@@ -40,25 +40,77 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-PRIV-004: Mobile Crash Reporting and Diagnostics
+### MC-PRIV-001: Lock-Screen Notification Content
 
 **Status:** Active
 
-**Why next:** The Companion-local data lifecycle and third-party dependency
-governance are accepted, so the project can now decide whether and how mobile
-crash reporting operates. Store disclosure and review preparation depend on
-this result.
+**Why next:** Mobile crash reporting and diagnostics are accepted. This item
+was deliberately deferred until notifications or store privacy preparation;
+that revisit point has now arrived because it is the last unresolved privacy
+input before store disclosure and review preparation.
 
-**Decision question:** Which crash and diagnostic fields may be collected,
-which fields and payloads are prohibited, where scrubbing occurs, whether user
-consent or notice is required, who may access reports, how long they remain,
-which provider constraints apply, and what happens when safe collection cannot
-be guaranteed?
+**Decision question:** Which notification categories may appear on a locked
+device, what title and body content is safe by default, which content requires
+an unlocked in-app view, how do previews, actions, grouped notifications,
+watches, vehicle displays, and shared devices behave, and what controls may a
+player choose without exposing private or creator-controlled content?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-PRIV-004: Mobile Crash Reporting and Diagnostics
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** The initial mobile diagnostic strategy uses Apple and Google
+platform-provided crash and health evidence with accurate notice, local tools
+on project-owned test devices, and a separate user-initiated **Share Diagnostic
+Report** action after recovery. It adds no third-party crash, analytics, remote-
+logging, screen-recording, or session-replay SDK and no automatic first-party
+upload. The player chooses **Send once** or **Not now**; a revocable **Always
+offer minimized diagnostics** preference never becomes automatic-send consent.
+The first-party bundle accepts only application build, OS version, device model
+without a persistent identifier, failure class, sanitized symbolic application
+stack frames, protocol and schema versions, fixed lifecycle, connection,
+media-route, capability, and feature enums, bucketed resource state, a random
+per-report identifier, minute-rounded time, and at most 50 fixed breadcrumb
+enums covering two minutes. It prohibits identity; account, session,
+participant, character, room, endpoint, scenario, installation, pairing, and
+host identifiers; credentials and secrets; private content, messages, actions,
+media, captions, AI content, screenshots, UI hierarchy, input, pasteboard,
+addresses, network identifiers, raw logs, traces, dumps, databases, dynamic
+messages, and replay. On-device allowlist construction precedes file or network
+activity, receiving validation rejects unknown fields, and unsafe construction
+produces no report. A local bundle is deleted after sharing or within 24 hours;
+directly received or exported raw reports within 30 days; and a minimized
+engineering record 180 days after its last occurrence. Platform-provider
+retention is disclosed rather than falsely controlled. During solo operation,
+only the human owner accesses portals or raw reports; agents may receive only
+an explicitly authorized minimized issue extract. Reports are not connected to
+accounts or sessions or used for gameplay, advertising, marketing, profiling,
+or model training. Any future SDK, provider, automatic collector, or expanded
+integration requires ADR 0025 intake, store reconciliation, consent
+enforcement, exact retention and deletion, and removal evidence. If safe
+scrubbing, disclosure, or provider behavior cannot be verified, collection or
+the affected distribution does not proceed.
+
+**Rationale:** Platform evidence and explicit voluntary sharing provide useful
+reliability data without adding a silent collector or allowing diagnostic
+convenience to expose player identity, private gameplay, or proprietary
+content.
+
+**Consequences:** Some rare failures may lack reproduction context. The project
+must maintain strict schemas, canary-secret tests, physical crash evidence,
+access reviews, truthful platform notices, and deletion verification. Apple and
+Google retain some evidence under provider-controlled behavior. A richer
+collector remains a separately reviewed future decision.
+
+**Recorded in:** [ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md)
+and [Mobile Diagnostics Policy Checklist](../security/mobile-diagnostics.md)
 
 ### MC-PRIV-002: Companion Data Cache and Deletion Lifecycle
 
@@ -90,10 +142,10 @@ last-known session end or last authenticated contact when no end is known.
 Startup and every read path enforce expiry. Sign-out, endpoint removal, local
 reset, and connected account deletion are distinct user controls; an offline
 client may clear local data but cannot claim remote deletion. Uninstall is not
-proof of server revocation. Application diagnostics remain unauthorized until
-MC-PRIV-004 is accepted. This decision governs Companion-local storage only and
-does not approve server-side consent, safety, journal, diagnostic, AI, media,
-or account retention.
+proof of server revocation. Application diagnostics are authorized only within
+the later, narrow ADR 0030 boundary. This decision governs Companion-local
+storage only and does not approve server-side consent, safety, journal,
+diagnostic, AI, media, or account retention.
 
 **Rationale:** Memory-only private content minimizes exposure from lost,
 restored, transferred, or stale devices while narrowly scoped opaque metadata
@@ -311,9 +363,10 @@ receive human-reviewed proprietary beta terms and plain-language limitations.
 Feedback uses one identified route, structured reproduction data, and only
 explicit attachments with synthetic content; raw attachments are deleted
 promptly after triage and durable issues retain minimized technical summaries.
-Beta membership is not a marketing list. Only platform-provided beta health
-may be inspected initially; no third-party crash, analytics, session-replay, or
-diagnostic SDK is authorized. Internal builds expire when superseded or after
+Beta membership is not a marketing list. Only platform-provided beta health and
+the user-initiated diagnostic bundle approved by ADR 0030 may be used initially;
+no third-party crash, analytics, session-replay, or diagnostic SDK is
+authorized. Internal builds expire when superseded or after
 14 days. Invitation-only builds are supported for 30 days and have an absolute
 60-day lifetime. Security, privacy, authorization, licensing, or deterministic-
 integrity defects trigger immediate revocation, and expired clients receive a
@@ -326,9 +379,9 @@ platforms more closely than their native testing limits do.
 
 **Consequences:** External testing requires reviewed notices and terms, staging
 separation, cohort records, feedback triage and artifact deletion, supported-
-build enforcement, and emergency revocation. Open beta and richer diagnostics
-remain blocked on their prerequisite privacy, dependency, store, security, and
-support decisions.
+build enforcement, and emergency revocation. Open beta and any diagnostic
+collector beyond ADR 0030 remain blocked on their prerequisite privacy,
+dependency, store, security, and support decisions.
 
 **Recorded in:** [ADR 0024](../adr/0024-mobile-beta-distribution.md) and the
 [Mobile Beta Distribution checklist](mobile-beta-distribution.md)
@@ -1636,12 +1689,8 @@ decisions.
 
 ## Deliberately Deferred Decisions
 
-These items were explicitly tabled by the project owner. They stay visible
-until the owner chooses to reopen them.
-
-| ID | Decision | Revisit trigger |
-|---|---|---|
-| MC-PRIV-001 | Content permitted in lock-screen notifications | Before implementing notifications or preparing store privacy disclosures |
+No items are currently deferred. MC-PRIV-001 has moved to **Current
+Discussion** because its store-privacy preparation trigger has been reached.
 
 ## Ordered Open Decision Queue
 
@@ -1658,7 +1707,7 @@ No open items. Accepted decisions remain in the history above.
 
 ### Privacy and Safety
 
-No open items. MC-PRIV-004 is the current discussion above.
+No open items. MC-PRIV-001 is the current discussion above.
 
 ### Media and Device Interruptions
 

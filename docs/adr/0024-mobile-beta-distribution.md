@@ -136,9 +136,10 @@ restricted to authorized project roles. The data is not exported, combined
 with advertising or behavioral profiles, or used to infer private gameplay.
 
 No third-party crash-reporting, analytics, session-replay, screen-recording, or
-diagnostic SDK is added under this decision. Richer crash collection remains
-blocked until MC-PRIV-004 and MC-DEL-006 approve fields, scrubbing, consent,
-retention, provider, licensing, update, and removal behavior. Store-provided
+diagnostic SDK is added under this decision. ADR 0030 now permits accurate use
+of platform-provided crash evidence and a separate user-initiated, allowlisted
+diagnostic bundle; it does not authorize automatic collection or a diagnostic
+dependency. Any provider remains subject to ADR 0025 intake. Store-provided
 information does not authorize the application to log tokens, projections,
 private content, messages, raw media, or scenario secrets.
 

@@ -37,6 +37,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0027](0027-kotlin-multiplatform-reconsideration-thresholds.md) | Accepted | Keep separate native clients unless sustained duplication or divergence triggers a bounded, reversible KMP experiment that passes explicit benefit and quality gates. |
 | [0028](0028-mobile-release-parity.md) | Accepted | Require equivalent core product guarantees across supported native clients while permitting disclosed native adaptations and evidence-governed sequential delivery. |
 | [0029](0029-companion-local-data-lifecycle.md) | Accepted | Keep private gameplay content memory-only while permitting narrowly scoped, device-bound continuity data with explicit backup exclusions and deletion backstops. |
+| [0030](0030-mobile-crash-reporting-and-diagnostics.md) | Accepted | Begin with platform crash evidence and voluntary allowlisted diagnostic bundles, without automatic collection or a third-party SDK. |
 
 ## Adding an ADR
 

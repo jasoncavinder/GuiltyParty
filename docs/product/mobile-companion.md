@@ -287,6 +287,30 @@ offline client may clear its own storage but does not claim that remote account
 data has been deleted. See
 [ADR 0029](../adr/0029-companion-local-data-lifecycle.md).
 
+### MC-PROD-015: Voluntary, Minimized Mobile Diagnostics
+
+The initial Companion uses Apple and Google platform-provided crash evidence
+with accurate notice and offers a separate, user-initiated **Share Diagnostic
+Report** action after recovery. It does not automatically upload a Guilty Party
+report or embed a third-party diagnostic, analytics, remote-logging, or session-
+replay SDK.
+
+The optional report contains only allowlisted technical build, platform,
+failure, symbolic stack, protocol, lifecycle, connection, route, capability,
+resource-bucket, random report, rounded-time, and bounded breadcrumb fields. It
+contains no direct identity, persistent device identifier, account or session
+link, private gameplay, participant action, credential, communication, media,
+AI content, raw log, memory dump, screenshot, or session replay. Scrubbing
+occurs before the report is written or shared and fails closed.
+
+The player chooses **Send once** or **Not now**. An optional **Always offer**
+preference never becomes automatic-send consent. Local bundles expire after
+sharing or within 24 hours, received raw reports within 30 days, and minimized
+issue records 180 days after their last occurrence. Raw reports are restricted
+to the human owner during solo operation; AI agents receive only explicitly
+authorized minimized issue extracts. See
+[ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md).
+
 ### MC-PROD-007: Protect App-Switcher Snapshots
 
 Private session content must be obscured in operating-system app-switcher and

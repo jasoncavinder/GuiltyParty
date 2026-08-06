@@ -188,6 +188,10 @@ consent, provider behavior, access, retention, and deletion before the product
 collects or uploads mobile diagnostics. Private content and raw credential
 material remain prohibited regardless of that later decision.
 
+ADR 0030 subsequently authorizes platform-provided evidence and one voluntary,
+allowlisted diagnostic-bundle lifecycle. It does not broaden any other local
+category in this ADR.
+
 ## Verification
 
 Automated and physical-device evidence must verify:
@@ -261,13 +265,14 @@ durable script-readable cache would expand the private-content attack surface.
 ## Authorize Diagnostics Under the Same Decision
 
 Rejected because diagnostic fields, scrubbing, consent, access, provider, and
-retention require the separate MC-PRIV-004 review.
+retention required the separate review now recorded in ADR 0030.
 
 # References
 
 - [ADR 0008: LAN Server Certificate Trust](0008-lan-server-certificate-trust.md)
 - [ADR 0009: Connection and Resumption Policy](0009-connection-resumption-policy.md)
 - [ADR 0021: Mobile Screen Capture and Stage Casting](0021-mobile-screen-capture-and-stage-casting.md)
+- [ADR 0030: Mobile Crash Reporting and Diagnostics](0030-mobile-crash-reporting-and-diagnostics.md)
 - [Apple: Restricting Keychain Item Accessibility](https://developer.apple.com/documentation/security/restricting-keychain-item-accessibility)
 - [Android: Back Up User Data with Auto Backup](https://developer.android.com/identity/data/autobackup)
 - [Android Keystore System](https://developer.android.com/privacy-and-security/keystore)

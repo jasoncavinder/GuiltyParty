@@ -14,6 +14,9 @@ Security and privacy are product requirements, not later implementation tasks.
 - [ADR 0029](../adr/0029-companion-local-data-lifecycle.md) prohibits persistent
   private gameplay caches and defines device, browser, backup, and deletion
   boundaries for the player Companion.
+- [Mobile diagnostics](mobile-diagnostics.md) records the field allowlist,
+  prohibited-data tests, choice, access, and retention evidence required by
+  [ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md).
 - [ADR 0025](../adr/0025-third-party-dependency-governance.md) defines the
   security, privacy, provenance, update, and removal gate for dependencies,
   SDKs, services, models, and external assets.

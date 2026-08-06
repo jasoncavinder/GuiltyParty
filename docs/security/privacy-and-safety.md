@@ -229,10 +229,13 @@ production creator libraries, or unapproved AI media access.
 Feedback attachments require an explicit tester action and use synthetic
 content. Raw screenshots, logs, and similar artifacts are access-restricted and
 deleted promptly after triage; durable issues keep only a minimized technical
-summary. Beta membership is not consent for marketing. No third-party crash,
-analytics, session-replay, or diagnostic SDK is authorized until its fields,
-scrubbing, provider, retention, licensing, update, and removal behavior are
-approved. See [ADR 0024](../adr/0024-mobile-beta-distribution.md).
+summary. Beta membership is not consent for marketing. ADR 0030 permits
+platform crash evidence and a user-initiated, allowlisted diagnostic bundle; it
+does not authorize automatic collection or a third-party crash, analytics,
+session-replay, or diagnostic SDK. Any provider still requires approved fields,
+scrubbing, consent, retention, licensing, update, and removal behavior. See
+[ADR 0024](../adr/0024-mobile-beta-distribution.md) and
+[ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md).
 
 ---
 

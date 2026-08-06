@@ -203,9 +203,15 @@ non-secret preferences without account, endpoint, session, scenario,
 participant, pairing, or authority identifiers may use ordinary browser
 storage or backup.
 
-Application diagnostics remain unauthorized until MC-PRIV-004 defines their
-fields, scrubbing, consent, access, provider, retention, and deletion. ADR 0029
-does not approve any server-side retention category.
+[ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md) permits
+platform-provided crash evidence and a user-initiated, allowlisted diagnostic
+bundle. It prohibits automatic first-party upload, account or session
+correlation, private content, raw logs and dumps, session replay, and an
+unapproved third-party SDK. On-device construction and receiving validation
+fail closed; local bundles expire within 24 hours, raw received or exported
+reports within 30 days, and minimized issue records 180 days after their last
+occurrence. ADR 0029 still does not approve any other server-side retention
+category.
 
 ### Server-Side Credential Storage
 
