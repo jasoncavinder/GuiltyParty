@@ -40,22 +40,40 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-017: Invitation Expiry Clock Authority
+### MC-ID-012: Invitation Reuse Across Players
 
 **Status:** Active
 
-**Why next:** Renewal now fails closed during disconnection. A single authority
-for expiry is needed so incorrect endpoint clocks cannot lengthen or shorten an
-invitation unpredictably.
+**Why next:** Timing and rotation are settled. The system must now decide
+whether a Stage invitation is consumed by the first admission request or may
+serve the small group arriving together.
 
-**Decision question:** Should the Guilty Party server be the sole authority for
-issuing and expiring pairing invitations, regardless of the Stage or Companion
-wall clock?
+**Decision question:** May the same valid Stage invitation initiate admission
+requests for multiple players?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-017: Invitation Expiry Clock Authority
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The Guilty Party server is the sole authority for invitation
+issuance, expiration, and redemption. Stage and Companion clocks cannot extend
+validity. Clients derive informational countdowns from server timing, use
+monotonic timers locally, and resynchronize when timing materially disagrees.
+
+**Rationale:** A single authority prevents clock skew or endpoint manipulation
+from unpredictably changing the invitation's validity.
+
+**Consequences:** Client countdowns are advisory, server redemption decisions
+are final, and exact resynchronization thresholds remain implementation details.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
 
 ### MC-ID-016: Invitation Renewal During Disconnection
 
@@ -278,7 +296,8 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-012 | Open | Pairing invitation consumption, reuse, replay rejection, and retry behavior | MC-ID-003, MC-ID-011, MC-ID-014, MC-ID-015, MC-ID-016, MC-ID-017 |
+| MC-ID-018 | Open | Pairing redemption transaction replay rejection and idempotency | MC-ID-012 |
+| MC-ID-019 | Open | Pairing admission retry and rate-limit behavior | MC-ID-012, MC-ID-018 |
 | MC-ID-013 | Open | Pairing invitation revocation authority and user experience | MC-ID-003, MC-ID-011 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |

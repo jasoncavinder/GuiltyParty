@@ -92,6 +92,12 @@ that joining remains open before displaying a fresh server-issued invitation.
 This pairing failure does not by itself remove already joined participants or
 decide how cached Stage presentation behaves during disconnection.
 
+The server is the sole authority for invitation issuance and expiry. Stage and
+Companion wall clocks cannot extend validity. Clients derive informational
+countdowns from server-provided timing and use monotonic timers locally. A
+material timing disagreement triggers resynchronization; the server's
+redemption decision remains authoritative.
+
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
 
