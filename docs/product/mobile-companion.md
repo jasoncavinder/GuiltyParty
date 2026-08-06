@@ -299,7 +299,7 @@ still require an accepted ADR. In particular, this document does not select:
 - an authentication provider or account recovery design
 - a media protocol, provider, or mixing topology
 - production transport security or local certificate handling
-- minimum operating-system versions or release cadence
+- release cadence
 
 The accepted MVP technology decision remains
 [ADR 0004](../adr/0004-mvp-technology-stack.md): the first Companion slice is a
@@ -309,3 +309,8 @@ accounts remain outside that prototype.
 For the target product, [ADR 0015](../adr/0015-native-mobile-client-strategy.md)
 selects separate native SwiftUI and Jetpack Compose applications. It does not
 bring Android or production mobile capabilities into the MVP scope.
+
+[ADR 0019](../adr/0019-initial-mobile-os-support-baseline.md) establishes the
+first supported product baseline at iOS/iPadOS 18 and Android 13/API 33. It
+separates deployment minimums from current store build and target SDK
+requirements and does not expand the local MVP.

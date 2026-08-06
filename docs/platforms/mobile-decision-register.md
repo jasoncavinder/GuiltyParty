@@ -40,25 +40,58 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-DEL-001: Minimum Supported Mobile Operating-System Versions
+### MC-NET-004: Android NSD Discovery and Local-Network Permission UX
 
 **Status:** Active
 
-**Why next:** The native architecture, media boundary, Android entry checkpoint,
-and future desktop-host boundary are accepted. A concrete iOS, iPadOS, and
-Android support baseline now unblocks Android discovery and permission UX,
-capture behavior, interruption handling, the physical-device matrix, and beta
-distribution planning.
+**Why next:** Android 13/API 33 is now the accepted deployment floor, current
+builds target API 36, and Android 17/API 37 will enforce new local-network
+protections. The discovery experience must preserve ADR 0006's untrusted,
+privacy-minimized DNS-SD boundary while handling platform permission changes
+without misleading fallbacks.
 
-**Decision question:** Which minimum iOS, iPadOS, and Android versions should the
-first supported product target, how should capability and audience evidence
-justify them, and when should the project raise or temporarily extend those
-minimums?
+**Decision question:** How should the Android Companion discover and select a
+local `_guiltyparty._tcp` service across API 33 and later, when should it use a
+system-mediated NSD picker or request broad local-network access, and what UX is
+required for denial, revocation, retry, manual connection, and QR pairing?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-DEL-001: Minimum Supported Mobile Operating-System Versions
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** The first supported Companion product uses iOS 18.0, iPadOS 18.0,
+and Android 13/API 33 as its deployment minimums, with one minimum per platform
+for both phones and tablets. At this decision date, Apple release builds use
+Xcode 26 and an iOS/iPadOS 26 SDK while retaining deployment target 18; Android
+release builds compile against and target API 36 while retaining `minSdk` 33.
+Build and target SDKs track stable store requirements independently of
+deployment minimums. Preview testing covers relevant upcoming behavior,
+including Android 17/API 37 local-network protection. Minimums are reviewed at
+least annually and before public beta using security and SDK support, aggregate
+store reach, support evidence, defects, device cost, and fallback availability,
+without adding behavioral tracking. A time-bounded older-version extension is
+permitted only when all required security, privacy, accessibility, networking,
+media, and dependency behavior remains intact. Releases test the minimum,
+latest stable, and relevant next preview; MC-DEL-002 defines the fuller device
+matrix.
+
+**Rationale:** These floors retain broad capable-device coverage while bounding
+the permission, lifecycle, adaptive-layout, security, and testing surface for a
+small team. Separating deployment from build targets follows both stores'
+evolution models.
+
+**Consequences:** Older devices require a browser or another supported personal
+endpoint. The project accepts annual review, preview testing, and representative
+minimum-version hardware work. This does not add Android to the current MVP.
+
+**Recorded in:** [ADR 0019](../adr/0019-initial-mobile-os-support-baseline.md)
 
 ### MC-ARCH-004: Desktop Host Application with Embedded LAN Server
 
@@ -1200,7 +1233,6 @@ No open items. Accepted decisions remain in the history above.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-NET-004 | Open | Android NSD discovery behavior and nearby-network permission experience | MC-NET-003, MC-DEL-001 |
 
 ### Privacy and Safety
 
