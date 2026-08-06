@@ -278,3 +278,20 @@ Private routes fail closed if they become publicly audible or lose the required
 route.
 
 See [ADR 0011](../adr/0011-room-audio-processing-ownership.md).
+
+---
+
+# Capture Transparency
+
+System microphone or camera permission never publishes a track by itself. Live
+capture requires an endpoint-owner action and a current authorized route, and
+it displays a persistent, named indicator alongside platform privacy
+indicators. Public-route activity may be shown to the Stage; private-route
+activity is shown only to its authorized audience.
+
+Verified local, ephemeral captions are a private accessibility accommodation.
+External captions, transcription, recording, and AI media access require
+affirmative consent from every affected participant and persistent labels that
+name the actual processing. Scope changes or consent withdrawal stop the route.
+
+See [ADR 0012](../adr/0012-capture-indicators-and-consent.md).

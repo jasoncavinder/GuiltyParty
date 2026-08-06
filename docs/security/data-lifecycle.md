@@ -45,11 +45,23 @@ Recording requires explicit consent, clear notice, a visible status indicator,
 an approved retention policy, and a deletion path. All participants must know
 when recording occurs.
 
+The minimum consent evidence uses opaque session and participant references and
+records only the feature, purpose, channels, audience, processor class, policy
+versions, decision, and server-authoritative lifecycle times. It does not store
+the reason for denial or communication content. Production collection remains
+blocked until the retention, access, deletion, backup, and export lifecycle is
+approved under MC-PRIV-002.
+
 ### Transcription and Captions
 
 Live accessibility output does not automatically authorize transcript storage.
 The product must separately define capture, display, recipient, provider, and
 retention behavior.
+
+Verified local, ephemeral accessibility captions may be enabled by an
+authorized recipient without group approval when neither audio nor caption text
+leaves that endpoint or persists. External caption processing requires consent
+from every affected participant.
 
 ### AI Features
 

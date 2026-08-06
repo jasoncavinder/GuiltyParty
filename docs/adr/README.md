@@ -19,6 +19,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0009](0009-connection-resumption-policy.md) | Accepted | Use application heartbeats, bounded retry, idempotent commands, and authorized projection resumption across disconnects. |
 | [0010](0010-media-plane-protocol-and-provider.md) | Accepted | Use WebRTC through an SFU and a control-plane-authorized, self-hostable media-provider boundary. |
 | [0011](0011-room-audio-processing-ownership.md) | Accepted | Keep acoustic processing at capture endpoints, logical mix-minus at the SFU boundary, and room-audio authority in the control plane. |
+| [0012](0012-capture-indicators-and-consent.md) | Accepted | Separate device permission from scoped consent and require persistent, audience-appropriate indicators for capture and processing. |
 
 ## Adding an ADR
 

@@ -150,6 +150,55 @@ Recording requires:
 
 All participants should know when recording occurs.
 
+ADR 0012 requires affirmative consent from every affected participant before
+recording, transcription, external caption processing, or AI media access. A
+host may request or stop a feature but cannot consent for participants. Scope or
+participant changes pause the feature for renewed consent, and withdrawal stops
+the route. Recording, transcription, and AI media access remain off by default.
+
+---
+
+# Capture Permission and Indicators
+
+Operating-system microphone or camera permission is requested just in time
+after a user initiates the feature. Permission makes a capability available; it
+does not publish media or authorize recording, transcription, retention, or AI
+access.
+
+Active microphone and camera capture has a persistent, labeled in-product
+indicator in addition to platform indicators. Push-to-talk shows when it is
+actually live, an open microphone requires an explicit session-scoped choice,
+and camera publication includes a local preview. Mobile capture does not
+continue in the background initially. Restart, endpoint replacement,
+interruption, or unexpected route change returns capture to ready or paused
+until the user resumes it.
+
+Public-route state may appear on the Stage and affected endpoints. Private-route
+state appears only to authorized senders, recipients, and host roles; it must
+not reveal a whisper or accessibility choice publicly.
+
+Recording, transcription, external captions, and AI media routes name the
+actual operation with an unhideable active label and appropriate start, pause,
+resume, and stop notices. A generic microphone icon is not sufficient.
+
+---
+
+# Accessibility Caption Consent
+
+A recipient may privately enable verified local, ephemeral accessibility
+captions for media that recipient may already hear. Caption text is not stored,
+exported, retransmitted, or sent to another processor, and other participants
+cannot veto the accommodation. Session entry discloses that this capability may
+be used without identifying who uses it.
+
+If local and ephemeral behavior cannot be verified, captions are treated as
+external processing and require affirmative consent from every affected
+participant. Caption access never authorizes transcript retention.
+
+These rules are a product minimum. Applicable regional, age-related, recording,
+and multi-party-consent requirements require legal review before distribution,
+and stricter requirements take precedence.
+
 ---
 
 # Whisper Privacy
@@ -214,6 +263,10 @@ AI access should be:
 - Explicitly authorized.
 - Limited to necessary data.
 - Logged.
+
+If AI receives participant media, every affected participant must consent to
+the named route, purpose, processor, and retention policy. Public-route consent
+does not authorize whisper or private-conversation access.
 
 ---
 
@@ -318,4 +371,5 @@ Trust should be considered part of the product experience.
 - [Data lifecycle and decision register](data-lifecycle.md)
 - [Session journal boundaries](../architecture/session-journal.md)
 - [AI Stage Manager boundaries](../architecture/ai-stage-manager.md)
+- [Capture indicators and consent](../adr/0012-capture-indicators-and-consent.md)
 - [Repository security policy](../../SECURITY.md)

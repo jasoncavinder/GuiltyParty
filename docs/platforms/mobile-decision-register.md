@@ -40,24 +40,60 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-PRIV-005: Capture Indicators and Consent UX
+### MC-MEDIA-004: Private-Audio Route Failure
 
 **Status:** Active
 
-**Why next:** The media boundary and room-audio ownership are accepted. Capture
-indicators and consent are now unblocked and must be settled before private-route
-failure behavior, recording or transcription features, store disclosures, and
-the detailed interruption experience.
+**Why next:** Capture indicators and consent are accepted, which unblocks the
+private-audio failure decision. Safe recovery must now define what the player,
+host, recipients, and Stage observe when a private route cannot remain private.
 
-**Decision question:** What persistent and event-level indicators, permission
-prompts, consent records, and host or participant controls are required when a
-microphone, camera, captions, transcription, recording, or AI media route is
-available, requested, active, paused, denied, or revoked?
+**Decision question:** When a private-audio route is unavailable, becomes
+publicly audible, loses authorization or E2EE, changes output, or fails during a
+whisper, what must stop immediately, what privacy-safe status may each audience
+see, and which recovery choices may be offered without leaking content or
+pressuring the participant?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-PRIV-005: Capture Indicators and Consent UX
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** System microphone and camera permissions are requested just in
+time after a user action and never publish or authorize processing by
+themselves. Live microphone and camera capture requires endpoint-owner
+activation, persistent labeled in-product and platform indicators, immediate
+stop controls, and affirmative resume after restart, endpoint replacement, or
+unexpected interruption. Public route state is visible to affected public
+surfaces, while private-route state remains within its authorized audience.
+Verified recipient-local, ephemeral accessibility captions may be used without
+group veto or identifying the user; they cannot persist, leave the endpoint, or
+reach another processor. External captions, transcription, recording, and AI
+media access require affirmative consent from every affected participant,
+specific purpose, scope, audience, processor, and retention notice, named
+persistent indicators, and renewed consent after scope change. Hosts cannot
+consent for players or expose who declined. Withdrawal stops the route. Minimal
+consent evidence is control-plane audit data, not scenario truth or media
+content, and its production collection is blocked until MC-PRIV-002 approves a
+retention and deletion lifecycle. Background mobile capture is not initially
+supported.
+
+**Rationale:** Separating permission, live transport, derived processing, and
+retained records gives people meaningful control while preserving private
+accessibility accommodations and avoiding public disclosure of private routes.
+
+**Consequences:** Clients and servers need acknowledged capture states,
+persistent cross-surface indicators, scoped consent and withdrawal, aggregate
+host readiness, and fail-closed restart behavior. Higher-risk media features
+remain blocked on the deferred data-lifecycle decision.
+
+**Recorded in:** [ADR 0012](../adr/0012-capture-indicators-and-consent.md)
 
 ### MC-MEDIA-002: Room Audio Processing Ownership
 
@@ -973,7 +1009,6 @@ No open items. Accepted decisions remain in the history above.
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
 | MC-MEDIA-003 | Open | Bluetooth changes, calls, headphones, route changes, backgrounding, and interruption recovery | MC-MEDIA-001, MC-DEL-001 |
-| MC-MEDIA-004 | Open | Fail-closed behavior and user recovery when a private-audio route is unavailable | MC-MEDIA-001, MC-PRIV-005 |
 | MC-MEDIA-005 | Open | Arbitration and consent when a shared room microphone competes with participant microphones | MC-MEDIA-001, MC-MEDIA-002 |
 
 ### Mobile Architecture and Platform Scope
