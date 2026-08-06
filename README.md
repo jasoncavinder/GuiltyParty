@@ -64,10 +64,12 @@ The Stage has only been exercised as a browser proof of concept. It is not yet p
 - [Documentation index](docs/)
 - [Product vision](docs/product/vision.md)
 - [Experience model](docs/product/experience-model.md)
+- [Mobile Companion product decisions](docs/product/mobile-companion.md)
 - [Architecture notes](docs/architecture/README.md)
 - [Security and privacy](docs/security/)
 - [Architectural decision records](docs/adr/)
 - [Platform documentation](docs/platforms/)
+- [Mobile decision register](docs/platforms/mobile-decision-register.md)
 - [Product roadmap](docs/roadmap/)
 - [Contributing](CONTRIBUTING.md)
 - [Security reporting](SECURITY.md)
@@ -88,7 +90,7 @@ They may:
 - purchase seats in public events
 - maintain preferences
 - save history
-- participate anonymously or with an account
+- participate through a low-friction or full account
 
 ---
 

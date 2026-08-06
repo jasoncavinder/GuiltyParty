@@ -28,11 +28,12 @@ A player may:
 
 Players may participate:
 
-- With an account
-- As a guest
+- With a minimal or full account
+- Through a low-friction guest account
 - Through private invitations
 
-Accounts are optional but provide benefits such as:
+Companion participation requires at least a minimal account. The exact identity
+and recovery model remains open. A fuller account may provide benefits such as:
 
 - Saved preferences
 - Event history
