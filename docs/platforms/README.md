@@ -34,6 +34,8 @@ Browser display, casting, and screen mirroring are fallback paths.
 - [Third-party dependency and SDK governance](../adr/0025-third-party-dependency-governance.md)
 - [Solo-owner and future mobile-team policy](../adr/0026-solo-owner-ai-assisted-mobile-ownership.md)
 - [Current mobile ownership and agent roles](mobile-ownership.md)
+- [Kotlin Multiplatform reconsideration thresholds](../adr/0027-kotlin-multiplatform-reconsideration-thresholds.md)
+- [Kotlin Multiplatform evidence and experiment record](kmp-reconsideration-evidence.md)
 - [Open and deliberately deferred mobile decision register](mobile-decision-register.md)
 
 The decision register identifies exactly one active discussion at a time and

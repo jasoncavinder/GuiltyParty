@@ -347,3 +347,8 @@ bring Android or production mobile capabilities into the MVP scope.
 first supported product baseline at iOS/iPadOS 18 and Android 13/API 33. It
 separates deployment minimums from current store build and target SDK
 requirements and does not expand the local MVP.
+
+[ADR 0027](../adr/0027-kotlin-multiplatform-reconsideration-thresholds.md)
+keeps Kotlin Multiplatform outside the current architecture and defines the
+evidence, experiment, and exit thresholds required before it may be proposed
+again. Meeting a reconsideration trigger does not authorize adoption.

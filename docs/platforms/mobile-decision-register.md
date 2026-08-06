@@ -40,25 +40,69 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ARCH-002: Kotlin Multiplatform Reconsideration Threshold
+### MC-DEL-005: Mobile Release Parity
 
 **Status:** Active
 
-**Why next:** The native-client strategy and solo-owner growth model are
-accepted. The next unblocked question is what measured evidence—not preference
-or framework enthusiasm—could justify revisiting the current decision not to
-share a Kotlin Multiplatform runtime.
+**Why next:** The native-client strategy, ownership model, and threshold for
+reconsidering Kotlin Multiplatform are accepted. The next unblocked question is
+which product guarantees must remain equivalent across separately maintained
+native clients and how a solo operation may sequence their delivery.
 
-**Decision question:** Which sustained duplication, defect, staffing,
-maintenance, test, performance, or delivery evidence would justify proposing
-Kotlin Multiplatform; which code is eligible to share, which native boundaries
-must remain separate, and what experiment and exit criteria are required before
-changing ADR 0015?
+**Decision question:** Which features and guarantees require parity between
+iOS/iPadOS and Android, which platform-specific differences or delays are
+permitted, when may one platform ship first, and how must gaps be disclosed,
+tracked, and resolved?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ARCH-002: Kotlin Multiplatform Reconsideration Threshold
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Separate native SwiftUI and Jetpack Compose clients remain the
+default. Kotlin Multiplatform is not authorized for the MVP or initial native
+baselines, and solo staffing alone does not justify it. Reconsideration first
+requires both native baselines, at least two meaningful beta or release cycles
+per client, use of generated contracts and shared evidence, and measurable
+effort, defect, code, build, and binary baselines. A proposal then requires at
+least one sustained trigger: 5,000 substantially equivalent hand-maintained
+non-UI lines across the clients; equivalent logic comprising at least 20
+percent of each client's hand-maintained non-UI logic; three eligible
+cross-platform divergence defects in a rolling quarter; or at least 30 percent
+additional second-platform effort across three consecutive shared slices.
+Generated DTOs, native UI and accessibility, platform adapters and policy,
+intentionally independent tests, and vendored code are excluded. Only pure,
+non-authoritative client logic may be evaluated; UI, authentication, secure
+storage, discovery, capture protection, media, lifecycle, notifications,
+stores, and server authority remain native or server-side. Compose
+Multiplatform and other shared UI are excluded. Any evaluation is a separate,
+UI-free branch limited to ten working days or two weeks and must compare a
+native baseline using identical fixtures. Adoption requires every benefit,
+build, binary, quality, privacy, security, determinism, licensing,
+reproducibility, debugging, and removal gate in ADR 0027 to pass. Even then, a
+new owner-approved ADR is required; a passing experiment never enters
+production automatically.
+
+**Rationale:** Real maintenance evidence is a sounder basis than anticipated
+duplication or framework preference. The bounded experiment preserves native
+platform quality and server authority while allowing a future shared-runtime
+proposal when it can demonstrate material benefit to the solo owner.
+
+**Consequences:** Some eligible logic may remain duplicated while evidence
+accumulates. The project must classify code and measure effort, divergence,
+builds, binaries, physical behavior, and removal cost before reconsideration.
+Experimental Swift interoperability cannot become a critical production
+dependency without separate reevaluation. Failure or boundary drift ends the
+experiment without lowering the thresholds.
+
+**Recorded in:** [ADR 0027](../adr/0027-kotlin-multiplatform-reconsideration-thresholds.md)
+and [Kotlin Multiplatform Reconsideration Evidence](kmp-reconsideration-evidence.md)
 
 ### MC-ORG-001: Mobile Team Ownership
 
@@ -1529,14 +1573,13 @@ No open items. Accepted decisions remain in the history above.
 
 ### Mobile Architecture and Platform Scope
 
-No open items. MC-ARCH-002 is the current discussion above.
+No open items. Accepted decisions remain in the history above.
 
 ### Delivery, Compliance, and Maintenance
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
 | MC-DEL-004 | Open | App Store and Play privacy disclosures, account-deletion obligations, capture claims, and review preparation | MC-ID-002, MC-PRIV-002, MC-PRIV-004 |
-| MC-DEL-005 | Open | Required feature parity, permitted platform differences, and release synchronization | MC-ARCH-001, MC-ORG-001 |
 
 ### Team Ownership
 
