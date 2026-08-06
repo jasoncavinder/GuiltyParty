@@ -124,6 +124,10 @@ The Companion provides:
 
 The Companion represents the individual player's perspective.
 
+The installed mobile Companion is a player-only surface. Host controls remain
+in the Host Console and may later be provided by desktop applications. Mobile
+phone and tablet layouts are both first-class product targets.
+
 ---
 
 # Host Console

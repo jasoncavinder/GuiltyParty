@@ -23,7 +23,9 @@ A room is not merely a collection of network connections.
 
 ## User
 
-A user represents a real-world person with an optional Guilty Party account.
+A user represents a real-world person. Companion players establish at least a
+minimal Guilty Party account; the production identity and recovery model
+remains open.
 
 A user may have:
 
@@ -33,7 +35,8 @@ A user may have:
 - Payment information
 - Event history
 
-Account creation is optional for basic participation.
+The local account-free MVP uses synthetic participant identities and does not
+change the target-product account requirement.
 
 ---
 
@@ -336,7 +339,8 @@ No microphone:
 
 No Companion:
 
-- Use browser fallback.
+- Use an individually authorized browser Companion fallback.
+- Never expose private participant content through a shared public Stage.
 
 ---
 

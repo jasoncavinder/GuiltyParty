@@ -5,6 +5,7 @@
 - [Vision](product/vision.md)
 - [Ecosystem](product/ecosystem.md)
 - [Experience model](product/experience-model.md)
+- [Mobile Companion product decisions](product/mobile-companion.md)
 - [Roadmap status](roadmap/)
 
 ## Architecture
@@ -12,6 +13,7 @@
 - [Architecture index and vocabulary](architecture/)
 - [Architectural decision records](adr/)
 - [Platform documentation](platforms/)
+- [Mobile decision register](platforms/mobile-decision-register.md)
 
 ## Privacy and Security
 

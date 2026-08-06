@@ -93,6 +93,12 @@ individual votes in its API payloads.
 The Companion is the single native-client exception for this prototype. It may
 be a development build and does not require App Store distribution.
 
+Longer-term product decisions for the player-only mobile Companion are recorded
+in [docs/product/mobile-companion.md](docs/product/mobile-companion.md), and
+unresolved questions are preserved in
+[docs/platforms/mobile-decision-register.md](docs/platforms/mobile-decision-register.md).
+Those target-product decisions do not expand this account-free, iOS-only MVP.
+
 It provides:
 
 - LAN server discovery or explicit connection setup

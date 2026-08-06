@@ -19,6 +19,14 @@ Browser display, casting, and screen mirroring are fallback paths.
 - [Browser Host and Stage runbook](browser-prototype.md)
 - [iOS Companion setup status](ios-setup.md)
 
+## Mobile Direction
+
+- [Accepted Mobile Companion product decisions](../product/mobile-companion.md)
+- [Open and deliberately deferred mobile decision register](mobile-decision-register.md)
+
+The decision register identifies exactly one active discussion at a time and
+preserves the remaining queue across conversations and handoffs.
+
 ## Deferred Targets
 
 Deferred television targets include:
