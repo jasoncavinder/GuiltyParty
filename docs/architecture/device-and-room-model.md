@@ -189,6 +189,35 @@ capability lease to another endpoint without granting a second general-purpose
 private endpoint. Endpoint revocation invalidates its credentials and ends its
 connection.
 
+## Host Endpoint Management
+
+The primary host and co-hosts explicitly granted participant-management
+authority may view a minimal operational endpoint roster, revoke a selected
+endpoint, transfer primary authority among endpoints already authenticated for
+the participant, remove a participant from the session, or approve narrowly
+scoped host-assisted recovery.
+
+Host-assisted recovery is available when a replacement endpoint cannot present
+usable account proof. The host selects the existing participant and explicitly
+confirms the requesting endpoint. The server revokes the participant's former
+endpoints by default and grants the replacement session-only authority. This
+does not authenticate or alter the permanent account, create an account binding,
+change recovery information, or grant authority outside the current session.
+The authenticated account owner may later reclaim the participant and revoke
+the replacement.
+
+Endpoint revocation immediately stops private projections, participant actions,
+and media authority, invalidates session credentials, and remains effective for
+an offline endpoint. Offline status by itself never revokes authority. Removing
+a participant revokes every session endpoint associated with that participant
+without deleting or suspending the account.
+
+These operations require explicit confirmation and produce minimal
+control-plane audit records without credential or private scenario content.
+Character reassignment and other changes to deterministic participation state
+are separate, explicit scenario-journal events. The AI Stage Manager and
+support personnel cannot perform or override host endpoint-management actions.
+
 ---
 
 # Endpoint Capabilities

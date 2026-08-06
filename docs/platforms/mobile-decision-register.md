@@ -40,23 +40,57 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-006: Host Controls for Lost Endpoints
+### MC-NET-001: Versioned Control-Plane Contract
 
 **Status:** Active
 
-**Why next:** Endpoint identity, recovery, simultaneous connection, and primary
-authority transfer are accepted. The remaining identity question is the host's
-limited authority to revoke a lost endpoint or help a participant recover
-within a session when normal account proof is unavailable.
+**Why next:** The identity, pairing, credential, and recovery sequence is now
+complete. HTTP and WebSocket clients need one evolvable contract before the
+project can decide model generation, discovery metadata, or connection policy.
 
-**Decision question:** Which endpoint and participant recovery operations may an
-authorized host perform, what proof or confirmation is required, and which
-permanent-account powers must remain unavailable to the host?
+**Decision question:** How are HTTP routes, WebSocket messages, schemas,
+compatibility negotiation, errors, deprecations, and breaking changes versioned
+across the server, native Companions, browser Companion, Host Console, and Stage?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-006: Host Controls for Lost Endpoints
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The primary host and co-hosts explicitly authorized to manage
+participants may inspect a minimal operational endpoint roster, revoke an
+endpoint, transfer primary authority among endpoints already authenticated for
+the participant, remove a participant from the session, or approve session-only
+recovery when a replacement endpoint lacks usable account proof. Host-assisted
+recovery requires selecting the existing participant and confirming the
+requesting endpoint; it revokes the participant's former endpoints by default
+and grants authority that ends with the session. It cannot authenticate or
+modify the permanent account, create authentication bindings, change recovery
+information, or grant access outside the session. Normal account authentication
+may reclaim the participant. Revocation immediately stops private projections,
+actions, and media authority, invalidates session credentials, and remains
+effective while the endpoint is offline. Removing a participant revokes all
+their session endpoints without affecting the account. Offline status alone
+does not revoke authority. Operations require explicit confirmation and a
+minimal control-plane audit record. Character reassignment and deterministic
+participation changes are explicit scenario-journal events. The AI Stage
+Manager and support personnel cannot perform or override these operations.
+
+**Rationale:** Hosts can resolve live-session device failures without acquiring
+permanent account-recovery power, viewing credentials, or silently changing
+canonical story state.
+
+**Consequences:** The UI must distinguish endpoint revocation, session-only
+recovery, participant removal, and character reassignment. Concrete audit
+retention and user-facing labels remain later decisions.
+
+**Recorded in:** [Host Endpoint Management](../architecture/device-and-room-model.md#host-endpoint-management) and [MC-PROD-004](../product/mobile-companion.md#mc-prod-004-move-between-personal-devices)
 
 ### MC-ID-008: Simultaneous Personal Endpoints
 
@@ -648,14 +682,12 @@ discarded merely because it moves.
 
 ### Identity, Pairing, and Recovery
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
+No open items. Accepted decisions remain in the history above.
 
 ### Control-Plane Networking
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-NET-001 | Open | Versioning, compatibility, error, and evolution rules for HTTP and WebSocket contracts | None |
 | MC-NET-002 | Open | Whether Swift and Kotlin contract models are generated from schemas or maintained manually | MC-NET-001, MC-ARCH-001 |
 | MC-NET-003 | Open | Bonjour/DNS-SD service type, TXT metadata, discovery scope, and collision behavior | MC-NET-001 |
 | MC-NET-004 | Open | Android NSD discovery behavior and nearby-network permission experience | MC-NET-003, MC-DEL-001 |

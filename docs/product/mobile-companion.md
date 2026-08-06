@@ -129,6 +129,30 @@ capability-specific roles—such as using another device for a microphone—may 
 designed later without creating a second general-purpose primary endpoint.
 Revoking an endpoint invalidates its credentials and disconnects it.
 
+The primary host, and co-hosts explicitly authorized to manage participants,
+may inspect a minimal endpoint roster and revoke a lost endpoint. The roster
+shows only operational information such as the participant, a friendly device
+label, platform, capabilities, connection status, last-seen time, and
+primary-or-standby state. Revocation immediately ends the endpoint's private,
+action, and media authority and remains effective while it is offline.
+
+When a replacement endpoint cannot present usable account proof, an authorized
+host may approve session-only recovery for an existing participant. The host
+selects the participant and confirms the requesting endpoint; the server
+revokes the participant's former endpoints by default and grants the replacement
+authority that ends with the session. This operation does not authenticate or
+modify the permanent account, add an authentication binding, change recovery
+information, or grant access outside the session. Normal account authentication
+may reclaim the participant and revoke the session-only replacement.
+
+Removing a participant revokes all of that participant's session endpoints but
+does not delete or suspend the account. Offline status alone never causes
+automatic revocation. Endpoint operations require explicit confirmation and a
+minimal control-plane audit record. Any character reassignment or participation
+change that affects deterministic story state remains an explicit scenario
+journal event. The AI Stage Manager and support personnel cannot perform or
+override these host operations.
+
 The Companion does not display cached private content until the server
 reauthorizes the endpoint and sends a fresh projection. It clears stale private
 content and requires explicit sign-in or rejoining if authority expired or was
