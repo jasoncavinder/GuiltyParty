@@ -76,9 +76,25 @@ request should:
 - Ensure all tests pass before requesting review.
 
 ## AI Agent / Automated Contributions
-AI Stage Managers and development agents operating on this repository must strictly adhere to this workflow. 
+
+Guilty Party is currently a solo human operation assisted by task-scoped AI
+agents. Agents are collaborators within an authorized task; they are not
+durable product or platform owners and cannot accept legal, privacy, security,
+licensing, merge, deployment, or release authority on behalf of the project
+owner.
+
+AI Stage Managers and development agents operating on this repository must
+strictly adhere to this workflow.
+
 - Agents must create feature or bugfix branches off `dev`.
 - Agents must open Pull Requests for review rather than force-merging, to maintain security boundaries and intellectual property protections.
+- Agents must identify assumptions, generated or third-party material,
+  validation performed, known limitations, and decisions requiring the owner.
+- Agent or automated review is useful evidence but does not replace explicit
+  human acceptance where project policy requires it.
+
+The current and future mobile ownership model is recorded in
+[ADR 0026](docs/adr/0026-solo-owner-ai-assisted-mobile-ownership.md).
 
 ## Architecture Changes
 

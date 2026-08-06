@@ -40,25 +40,66 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ORG-001: Mobile Team Ownership
+### MC-ARCH-002: Kotlin Multiplatform Reconsideration Threshold
 
 **Status:** Active
 
-**Why next:** Dependency governance is accepted. Team ownership is now the only
-unblocked decision and must be resolved before the project can define release
-parity or a measurable threshold for reconsidering shared Kotlin Multiplatform
-code.
+**Why next:** The native-client strategy and solo-owner growth model are
+accepted. The next unblocked question is what measured evidence—not preference
+or framework enthusiasm—could justify revisiting the current decision not to
+share a Kotlin Multiplatform runtime.
 
-**Decision question:** Should one shared mobile team own both native apps with
-platform specialization inside that team, should separate platform owners
-coordinate through shared contracts, or should another ownership model apply;
-who is accountable for cross-platform behavior, platform-specific quality,
-release readiness, and resolving parity differences as the project grows?
+**Decision question:** Which sustained duplication, defect, staffing,
+maintenance, test, performance, or delivery evidence would justify proposing
+Kotlin Multiplatform; which code is eligible to share, which native boundaries
+must remain separate, and what experiment and exit criteria are required before
+changing ADR 0015?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ORG-001: Mobile Team Ownership
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Guilty Party is currently a solo operation with one accountable
+human project owner assisted by task-scoped AI agents. The owner retains final
+authority for product scope, architecture, platform differences, privacy,
+security, safety, licensing, legal escalation, third parties, credentials,
+merges, beta promotion, store submission, and release. Agents may research,
+propose, document, implement, test, simulate, review, and prepare handoffs
+within authorized tasks, but they hold no standing platform, product, legal,
+privacy, security, credential, merge, or release ownership; agent review does
+not replace required human acceptance. The owner presently holds shared mobile,
+iOS/iPadOS, Android, contract, evidence, parity, sequencing, and release
+accountability. Work may be sequential across platforms, and native strategy
+does not promise simultaneous implementation or release. When human mobile
+contributors are added, they first form one shared mobile product team with
+iOS/iPadOS and Android specialization. Shared behavior, contracts, privacy and
+security guarantees, fixtures, design semantics, evidence, and release
+coordination remain collective; platform maintainers own idiomatic native
+quality. Separate platform teams are considered only after sustained
+independent roadmaps, adequate accountable human staffing and review continuity
+on both platforms, measured coordination delay, and preservation of shared
+human product and contract authority.
+
+**Rationale:** This describes the current business honestly, keeps human
+judgment and accountability clear despite substantial AI assistance, permits
+capacity-aware sequential delivery, and provides a native-specialist growth
+path without prematurely creating platform silos.
+
+**Consequences:** The owner remains a capacity, review, release, and continuity
+bottleneck; agent parallelism does not create human support or approval
+capacity. Repository decisions, contracts, tests, physical evidence, small
+slices, and handoffs mitigate but do not eliminate that risk. Human hires join
+one shared team initially, and AI agents never fill a vacant accountable role.
+
+**Recorded in:** [ADR 0026](../adr/0026-solo-owner-ai-assisted-mobile-ownership.md)
+and [Mobile Ownership](mobile-ownership.md)
 
 ### MC-DEL-006: Dependency and SDK Intake
 
@@ -1488,9 +1529,7 @@ No open items. Accepted decisions remain in the history above.
 
 ### Mobile Architecture and Platform Scope
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-ARCH-002 | Open | Measurable duplication, staffing, test, or delivery threshold that would justify adopting Kotlin Multiplatform | MC-ARCH-001, MC-ORG-001 |
+No open items. MC-ARCH-002 is the current discussion above.
 
 ### Delivery, Compliance, and Maintenance
 
@@ -1501,7 +1540,7 @@ No open items. Accepted decisions remain in the history above.
 
 ### Team Ownership
 
-No open items. MC-ORG-001 is the current discussion above.
+No open items. Accepted decisions remain in the history above.
 
 ## Decision Record Template
 
