@@ -40,24 +40,54 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-007: Independent Identity Recovery
+### MC-ID-008: Simultaneous Personal Endpoints
 
 **Status:** Active
 
-**Why next:** Account, client, and server credential boundaries are accepted.
-Moving between devices now requires explicit rules for recovering the durable
-account, the session-specific participant, and the newly connecting endpoint
-without confusing them or duplicating participation.
+**Why next:** A replacement device receives a new endpoint identity attached to
+the existing participant. The product must now decide whether old and new
+personal endpoints may remain connected together and which endpoint may receive
+private content or submit participant actions.
 
-**Decision question:** When a player reconnects or changes devices, which proof
-recovers the account and existing participant, when must a new endpoint identity
-be created, and which relationships may never be inferred from device identity
-alone?
+**Decision question:** May several personal endpoints remain connected to one
+participant, and how is active authority for private projections and participant
+actions selected, transferred, and revoked?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-007: Independent Identity Recovery
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** A durable account is recovered only through accepted account
+authentication or recovery proof. After authentication, the server recovers
+the existing account-to-session participant relationship instead of creating a
+duplicate; by default, one account has at most one active participant identity
+in a session. A valid endpoint-bound resume credential recovers that endpoint,
+while another app installation or browser profile receives a new endpoint
+identity and is separately attached to the recovered participant. It never
+inherits the former endpoint's credentials. Character assignment and private
+state follow the participant rather than the endpoint. Display names, device
+identifiers, network addresses, proximity, and pairing invitations cannot prove
+or recover an account or participant. A LAN server may accept a valid
+offline-admission assertion; without usable account proof, it requires an
+explicit host-assisted recovery path rather than inferring identity.
+
+**Rationale:** Independent identity layers let a player change devices without
+duplicating participation or treating a device as a person, while preserving
+server-side authorization and private-state boundaries.
+
+**Consequences:** Whether old and replacement endpoints may remain active
+together, and which endpoint may receive private content or submit participant
+actions, remains MC-ID-008. The host-assisted recovery mechanism remains
+MC-ID-006.
+
+**Recorded in:** [Identity Recovery Boundaries](../architecture/device-and-room-model.md#identity-recovery-boundaries) and [MC-PROD-004](../product/mobile-companion.md#mc-prod-004-move-between-personal-devices)
 
 ### MC-ID-024: Server-Side Credential Storage
 
@@ -590,7 +620,6 @@ discarded merely because it moves.
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |
-| MC-ID-008 | Open | Whether several personal endpoints may be connected and which one may actively receive private content or submit actions | MC-ID-007 |
 
 ### Control-Plane Networking
 

@@ -24,8 +24,8 @@ A room is not merely a collection of network connections.
 ## User
 
 A user represents a real-world person. Companion players establish at least a
-minimal Guilty Party account; the production identity and recovery model
-remains open.
+minimal Guilty Party account under the accepted authentication and recovery
+model.
 
 A user may have:
 
@@ -126,7 +126,10 @@ The system understands that Alice and Bob are separate players even though they 
 
 # Endpoint
 
-An endpoint is a connected device.
+An endpoint is one registered client context, such as an app installation,
+browser profile, television application, or desktop application. A physical
+device may host an endpoint, but its hardware identity is not account or
+participant identity.
 
 Examples:
 
@@ -138,6 +141,32 @@ Examples:
 - Streaming device
 
 Endpoints advertise capabilities.
+
+---
+
+# Identity Recovery Boundaries
+
+The system recovers three identities independently:
+
+- A **user account** is durable and is recovered only through accepted account
+  authentication or recovery proof.
+- A **participant** is session-specific. After account authentication, the
+  server recovers the existing account-to-participant relationship. By default,
+  one account has at most one active participant identity in a session.
+- An **endpoint** is recovered only with valid endpoint-bound resume authority.
+  A different installation or browser profile receives a new endpoint identity
+  and is then attached to the recovered participant.
+
+Recovering an account does not clone an endpoint credential. Recovering a
+participant does not create a new character assignment. Character control and
+private state belong to the participant and are projected only to currently
+authorized endpoints.
+
+Display names, device identifiers, network addresses, physical proximity, and
+pairing invitations cannot establish or recover an account or participant by
+themselves. On an isolated LAN, a bounded offline-admission assertion may prove
+the account relationship. Without usable account proof, recovery requires an
+explicit host-assisted process rather than inference.
 
 ---
 

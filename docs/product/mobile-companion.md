@@ -91,6 +91,27 @@ session authority remains valid, it resumes the same participant, character,
 and endpoint without creating duplicates. It shows clear reconnecting and
 rejoined states.
 
+Account, participant, and endpoint identity recover independently. The account
+is recovered only through an accepted authentication or account-recovery
+method. After authentication, the server uses the durable account-to-session
+relationship to recover the existing participant and its character rather than
+creating a duplicate. By default, one account has at most one active participant
+identity in a session.
+
+A valid device-bound resume credential may recover an existing endpoint. A
+different app installation or browser profile receives a new endpoint identity
+after authorization and is attached to the recovered participant; it never
+inherits the previous endpoint's credential. Display names, device identifiers,
+network addresses, proximity, and pairing invitations do not prove an account
+or participant identity. Character ownership follows the participant, not the
+endpoint.
+
+On an isolated LAN, a valid offline-admission assertion may prove the account
+relationship. If a replacement endpoint has no usable account proof, the system
+requires a defined host-assisted recovery path rather than inferring identity.
+Whether old and replacement endpoints may remain active simultaneously is a
+separate decision.
+
 The Companion does not display cached private content until the server
 reauthorizes the endpoint and sends a fresh projection. It clears stale private
 content and requires explicit sign-in or rejoining if authority expired or was
