@@ -70,9 +70,17 @@ when no governing agreement exists.
 
 ## Accessibility
 
-Authoring and validation should support accessibility metadata and alternatives
-for media where practical. Concrete requirements belong in future product and
-platform specifications.
+Authoring must classify required private capabilities and define an ordered,
+privacy-preserving fallback or an explicit session-pause outcome. Alternatives
+may change modality, input method, or timing, but must preserve canonical truth,
+audience restrictions, and participant agency.
+
+Publication validation rejects a required private interaction that has neither
+a safe alternative nor explicit pause behavior. Preview and simulation must let
+creators exercise each capability fallback without exposing participant-private
+content through public surfaces. AI may propose accessible alternatives, but a
+creator reviews them and deterministic scenario constraints remain
+authoritative.
 
 ## Open Decisions
 

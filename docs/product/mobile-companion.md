@@ -213,6 +213,39 @@ bypass a certificate warning. A zero-install consumer browser fallback on a
 completely isolated LAN is therefore not guaranteed initially; native
 Companions remain the normal isolated-LAN private surface.
 
+### MC-PROD-013: Safe Private-Capability Degradation
+
+Scenarios declare each required private capability and an ordered set of safe
+alternatives. Before a session starts, each participant completes a functional
+capability check without being asked for a diagnosis. The host sees readiness
+and available remedies, not private accessibility settings or the reason an
+alternative is needed.
+
+A private-capability fallback follows this order:
+
+1. another independently authorized personal endpoint for the participant
+2. an equivalent private modality on the same endpoint, including private
+   text, captions, screen-reader content, private audio, alternate input, or an
+   untimed or extended-time interaction
+3. a predefined scenario adaptation that preserves canonical truth and secrecy
+4. participant-consented host assistance using only the minimum necessary
+   information and explicit participant confirmation for consequential actions
+5. pausing the affected interaction or session
+
+The product pauses applicable timers without penalty and keeps private content
+hidden while adapting. Other participants receive a generic technical or
+accessibility pause message without the participant's identity or reason. AI
+may suggest only authorized, scenario-defined alternatives and receives no
+private accessibility information.
+
+Private content is never rerouted to a shared Stage or speaker, another
+participant's Companion, a lock-screen notification, unsecured communication,
+or recording or transcription without explicit authorization. The product does
+not automatically reveal it to the host or AI, require disability disclosure,
+or pressure a participant to accept a public workaround. If no safe path
+exists, the session pauses rather than weakening privacy, accessibility,
+participant agency, or creator-content protection.
+
 ## Availability and Networking
 
 ### MC-PROD-006: Connected Experience with Reconnection

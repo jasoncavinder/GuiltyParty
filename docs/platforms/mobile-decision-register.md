@@ -40,25 +40,55 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-PRIV-006: Missing Private-Capability Fallback
+### MC-MEDIA-001: Media-Plane Protocol and Boundary
 
 **Status:** Active
 
-**Why next:** The remaining networking items depend on unresolved mobile
-architecture or delivery decisions. The browser fallback is accepted, so the
-next unblocked privacy question is what happens when neither an installed app
-nor a browser endpoint can provide a required private capability accessibly and
-without exposing it on a shared Stage.
+**Why next:** Private-capability degradation is accepted. The media protocol,
+provider, deployment topology, and abstraction boundary are now the next
+unblocked decision and must be settled before echo cancellation, interruptions,
+private-route failure, capture indicators, or long-term mobile architecture.
 
-**Decision question:** How should the experience adapt, pause, reroute, or seek
-host assistance when a participant lacks an accessible private display, input,
-audio, or other required capability, and which fallbacks are never permitted
-because they would expose private information?
+**Decision question:** Which realtime media protocol and deployment model should
+carry audio, video, whispers, and captions, what provider abstraction should
+Guilty Party own, and which authorization and privacy responsibilities must
+remain in the control plane rather than the media provider?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-PRIV-006: Missing Private-Capability Fallback
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Scenarios declare required private capabilities and ordered safe
+alternatives. Preflight asks about functional readiness without diagnoses, and
+hosts see only readiness and remedies. Fallback order is another authorized
+personal endpoint; an equivalent private modality or timing alternative; a
+predefined scenario adaptation preserving truth and secrecy; explicit-consent,
+minimum-information host assistance with participant confirmation; then a pause.
+Timers pause without penalty, content remains hidden, and other participants
+receive a generic pause message. AI may suggest only authorized scenario-defined
+alternatives and receives no private accessibility information. Private content
+never falls back to a shared Stage or speaker, another participant's endpoint,
+lock-screen notification, unsecured channel, AI disclosure, or unauthorized
+recording or transcription. The product neither requires disability disclosure
+nor pressures a public workaround. Publication validation rejects a required
+private interaction without a safe fallback or explicit pause behavior.
+
+**Rationale:** Accessibility and reduced capability must preserve secrecy,
+participant agency, deterministic truth, and creator rights rather than turning
+a missing endpoint feature into public disclosure.
+
+**Consequences:** Scenario schemas, creator validation, preflight UX, timer
+control, alternative modalities, and consent-limited host assistance all require
+implementation and testing. Some sessions must pause when no safe path exists.
+
+**Recorded in:** [MC-PROD-013](../product/mobile-companion.md#mc-prod-013-safe-private-capability-degradation)
 
 ### MC-NET-007: Connection and Resumption Policy
 
@@ -873,7 +903,6 @@ No open items. Accepted decisions remain in the history above.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-MEDIA-001 | Open | Media protocol, provider, deployment topology, and abstraction boundary | None |
 | MC-MEDIA-002 | Open | Ownership of echo cancellation, room mixing, and mix-minus across clients and media infrastructure | MC-MEDIA-001 |
 | MC-MEDIA-003 | Open | Bluetooth changes, calls, headphones, route changes, backgrounding, and interruption recovery | MC-MEDIA-001, MC-DEL-001 |
 | MC-MEDIA-004 | Open | Fail-closed behavior and user recovery when a private-audio route is unavailable | MC-MEDIA-001, MC-PRIV-005 |

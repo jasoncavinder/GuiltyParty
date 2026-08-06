@@ -421,6 +421,15 @@ No Companion:
 - Use an individually authorized browser Companion fallback.
 - Never expose private participant content through a shared public Stage.
 
+Required private capability unavailable:
+
+- Try another authorized personal endpoint.
+- Use an equivalent private modality or scenario-defined accessible variant.
+- With participant consent, allow narrowly scoped host assistance.
+- Pause the affected interaction when no safe fallback exists.
+- Never reroute private content to a shared display, speaker, another
+  participant's endpoint, or an unsecured channel.
+
 ---
 
 ## Future Compatibility

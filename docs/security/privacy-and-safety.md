@@ -244,6 +244,18 @@ Support:
 - Keyboard navigation
 - Controller navigation
 
+Capability preflight asks what functions are available or needed, not for a
+medical diagnosis. Hosts see only readiness and remediation choices. When a
+required private capability is missing, the product uses another authorized
+personal endpoint, an equivalent private modality, a scenario-approved
+accessible variant, or participant-consented minimum host assistance. If none
+is safe, it pauses.
+
+Accessibility does not justify exposing private content through a Stage, shared
+speaker, another participant's endpoint, lock-screen notification, unsecured
+channel, AI prompt, recording, or transcription. A pause must not identify the
+affected participant or reveal why assistance is needed.
+
 ---
 
 # Security Requirements

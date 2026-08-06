@@ -90,6 +90,10 @@ Before publication, validation must be able to identify:
 - contradictory state transitions
 - missing resolution conditions
 - unsupported capability requirements
+- required private capabilities without an ordered safe fallback or explicit
+  pause behavior
+- fallback variants that change canonical truth or broaden the authorized
+  audience
 - referenced assets without sufficient source and rights information
 
 The exact validation language and severity levels remain open.
