@@ -40,21 +40,44 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-013: Pairing Invitation Revocation Authority
+### MC-ID-021: Pairing Invitation Revocation Effects and UX
 
 **Status:** Active
 
-**Why next:** Pairing invitation scope, timing, reuse, idempotency, and
-throttling are accepted. The system must now define who can invalidate an
-invitation before its normal expiry.
+**Why next:** Revocation authority is accepted. The effects on pending requests,
+Stage presentation, applicants, and operational records must be understandable
+without exposing unnecessary information.
 
-**Decision question:** Which human roles and automatic server conditions may
-revoke a pairing invitation?
+**Decision question:** What should happen to pending admission requests and
+what should each surface show after an invitation is revoked?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-013: Pairing Invitation Revocation Authority
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The primary host and a co-host explicitly granted authority to
+manage joining may revoke an invitation. The server revokes automatically
+when joining closes, the session ends or is cancelled, the invitation is
+rotated, its Stage or room is removed, or its security context becomes invalid.
+Players, endpoints acting independently, the AI Stage Manager, and ordinary
+support personnel cannot revoke invitations. Temporary Stage disconnection and
+ordinary throttling do not revoke invitations by themselves.
+
+**Rationale:** Revocation belongs to explicit human session authority and
+server-enforced lifecycle or security conditions, without granting policy
+control to public endpoints, players, AI, or broad support access.
+
+**Consequences:** Revocation effects, pending-request handling, messaging,
+audit records, and recovery UX remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
 
 ### MC-ID-020: Pairing Admission Throttle and Retry UX
 
@@ -387,7 +410,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-021 | Open | Pairing invitation revocation messaging, audit, and recovery UX | MC-ID-013 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
 | MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-008, MC-ID-013 |

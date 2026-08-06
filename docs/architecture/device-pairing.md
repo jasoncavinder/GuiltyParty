@@ -133,6 +133,14 @@ warning and may rotate the invitation without receiving unnecessary
 participant details. These defaults require review against observed security
 and usability outcomes.
 
+The primary host and a co-host explicitly granted joining-management authority
+may revoke an invitation. The server revokes automatically when joining closes,
+the session ends or is cancelled, the invitation is rotated, its Stage or room
+is removed, or its security context becomes invalid. Players, endpoints acting
+independently, the AI Stage Manager, and ordinary support personnel do not have
+revocation authority. A temporary Stage disconnection or ordinary throttling
+does not revoke an invitation by itself.
+
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
 
