@@ -98,6 +98,12 @@ countdowns from server-provided timing and use monotonic timers locally. A
 material timing disagreement triggers resynchronization; the server's
 redemption decision remains authoritative.
 
+One valid Stage invitation may initiate admission requests for multiple
+players. It is not consumed by the first request. Each player authenticates or
+establishes a provisional account independently, submits a separate admission
+request, and receives distinct participant and endpoint authority. Expiration,
+joining closure, or revocation prevents further use by every player.
+
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
 

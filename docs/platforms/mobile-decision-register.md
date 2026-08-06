@@ -40,21 +40,41 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-012: Invitation Reuse Across Players
+### MC-ID-018: Pairing Redemption Idempotency
 
 **Status:** Active
 
-**Why next:** Timing and rotation are settled. The system must now decide
-whether a Stage invitation is consumed by the first admission request or may
-serve the small group arriving together.
+**Why next:** Multi-player invitation reuse is accepted. Repeated delivery of
+one player's request must not create duplicate participants, endpoints, or
+side effects when a network response is lost.
 
-**Decision question:** May the same valid Stage invitation initiate admission
-requests for multiple players?
+**Decision question:** How should the server handle the same pairing redemption
+request when it is submitted more than once?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-012: Invitation Reuse Across Players
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** One valid Stage invitation may initiate admission requests for
+multiple players and is not consumed by the first request. Each player
+authenticates or establishes a provisional account independently, submits a
+separate admission request, and receives distinct participant and endpoint
+authority. Expiration, joining closure, or revocation stops further use.
+
+**Rationale:** The Stage invitation is a group entry point for a small party,
+not a personal credential or participant identity.
+
+**Consequences:** Redemption transactions still require duplicate suppression,
+replay protection, and rate limits, which remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
 
 ### MC-ID-017: Invitation Expiry Clock Authority
 
@@ -296,7 +316,6 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-018 | Open | Pairing redemption transaction replay rejection and idempotency | MC-ID-012 |
 | MC-ID-019 | Open | Pairing admission retry and rate-limit behavior | MC-ID-012, MC-ID-018 |
 | MC-ID-013 | Open | Pairing invitation revocation authority and user experience | MC-ID-003, MC-ID-011 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
