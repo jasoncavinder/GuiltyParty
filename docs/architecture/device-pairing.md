@@ -26,6 +26,26 @@ The documented preferred flow is:
 
 The flow should avoid requiring substantial text entry with a television remote.
 
+## Invitation Authority
+
+A Stage-displayed QR code or short code authorizes only:
+
+- locating the intended Guilty Party server and session
+- requesting admission as a Companion endpoint
+- viewing the minimum non-private lobby information needed to confirm the
+  intended session
+- suggesting the physical room associated with the displaying Stage
+
+Possession of the invitation does not create a participant identity, grant
+session membership, assign a character or permissions, expose rosters or
+scenario information, or activate endpoint capabilities such as microphones or
+cameras. A suggested room is not an authoritative room assignment.
+
+After following the invitation, the player authenticates or establishes an
+authorized provisional account, confirms the session and suggested room, and
+requests membership. The server remains responsible for granting membership,
+room association, participant authority, and access to private information.
+
 ## Control-Plane Responsibility
 
 Pairing belongs to the control plane. The authoritative service must verify:
@@ -49,8 +69,8 @@ Pairing credentials must be:
 - revocable when a device is removed or a session ends
 - free of embedded private participant or scenario information
 
-Exact lifetimes, code lengths, and authentication requirements remain human and
-implementation decisions.
+Exact lifetimes, code lengths, admission approval policy, and invitation reuse
+behavior remain human and implementation decisions.
 
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
@@ -80,7 +100,7 @@ Recovery must not silently broaden access.
 
 ## Open Decisions
 
-- guest identity and account requirements
+- provisional-account linking and recovery behavior
 - invitation lifetime and retry limits
 - room creation and approval authority
 - device reauthentication and revocation UX

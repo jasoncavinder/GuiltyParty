@@ -40,20 +40,42 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-ID-003: Pairing Invitation Scope
+### MC-ID-011: Pairing Invitation Lifetime
 
 **Status:** Active
 
-**Why next:** The invitation's authority boundary must be settled before its
-lifetime, reuse, retry, and revocation rules can be evaluated.
+**Why next:** The invitation's authority boundary is accepted. Its lifetime
+must be settled before renewal, reuse, replay, and revocation rules.
 
-**Decision question:** What should a Stage-displayed QR code or short code
-authorize before the player authenticates or establishes a provisional account?
+**Decision question:** How long should one Stage-displayed pairing invitation
+remain valid?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-ID-003: Pairing Invitation Scope
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** A Stage-displayed QR code or short code authorizes only discovery
+of the intended server and session, a Companion admission request, minimum
+non-private lobby information, and a suggested physical room. It does not
+create participant identity or membership, assign permissions or characters,
+expose private or scenario information, or activate endpoint capabilities. The
+player must authenticate or establish an authorized provisional account,
+confirm the session and room, and receive server-authorized membership.
+
+**Rationale:** A copied or photographed invitation permits an admission request
+but does not itself grant gameplay or private-data authority.
+
+**Consequences:** Invitation lifetime, renewal, consumption, retry, replay
+protection, revocation, and admission approval remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#invitation-authority)
 
 ### MC-ID-010: Permanent-Account Recovery
 
@@ -173,8 +195,8 @@ discarded merely because it moves.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-ID-011 | Open | Pairing invitation lifetime, renewal, and clock behavior | MC-ID-003 |
-| MC-ID-012 | Open | Pairing invitation consumption, reuse, replay rejection, and retry behavior | MC-ID-003, MC-ID-011 |
+| MC-ID-014 | Open | Pairing invitation renewal, rotation, and clock behavior | MC-ID-011 |
+| MC-ID-012 | Open | Pairing invitation consumption, reuse, replay rejection, and retry behavior | MC-ID-003, MC-ID-011, MC-ID-014 |
 | MC-ID-013 | Open | Pairing invitation revocation authority and user experience | MC-ID-003, MC-ID-011 |
 | MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
 | MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-009, MC-NET-006 |
