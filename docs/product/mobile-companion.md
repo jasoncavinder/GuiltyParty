@@ -303,6 +303,27 @@ are on different endpoints and coordinated ducking is required. It may be
 optional in configurations that do not need ducking, subject to visible capture
 indicators and the no-passive-monitoring privacy rule.
 
+## Mobile Audio Routes and Interruptions
+
+The Companion treats microphone input and audio output as separate, current
+capabilities. It does not infer that a Bluetooth device is personal or that an
+operating-system route selection authorizes private media.
+
+Connecting a verified personal headphone output may preserve private playback
+when microphone input, audience, and room acoustics remain unchanged.
+Headphone removal, Bluetooth loss or switching, speaker or unknown output,
+microphone-route change, calls, audio-focus loss, backgrounding, locking, and
+media-service reset stop affected private media and microphone publication.
+Private playback and capture require route revalidation and a fresh participant
+action; push-to-talk never resumes automatically and private audio never falls
+back to a speaker.
+
+The initial product does not support background Companion capture or private
+session-media playback. A separately authorized public Stage route remains an
+independent endpoint and may continue only while its public audience and route
+remain valid. See
+[ADR 0022](../adr/0022-mobile-audio-route-and-interruption-policy.md).
+
 ## Authority and Scope
 
 These decisions are product requirements. Significant implementation choices

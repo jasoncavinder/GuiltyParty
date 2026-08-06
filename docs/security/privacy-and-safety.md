@@ -173,6 +173,16 @@ continue in the background initially. Restart, endpoint replacement,
 interruption, or unexpected route change returns capture to ready or paused
 until the user resumes it.
 
+Mobile microphone input and audio output are validated separately. Headphone
+removal, Bluetooth loss or switching, speaker or unknown output, microphone-
+route change, calls, audio-focus loss, backgrounding, locking, and media-
+service reset stop private playback and microphone publication. Private audio
+never falls back to a speaker, pending audio is not replayed, and capture does
+not resume automatically. Host and server surfaces receive only the minimum
+generic readiness needed for operation, not call details, Bluetooth history,
+hardware identifiers, or private device activity. See
+[ADR 0022](../adr/0022-mobile-audio-route-and-interruption-policy.md).
+
 A shared room microphone is disclosed during session entry and is never
 passive. A participant or shared-endpoint user explicitly activates it, and an
 indicator remains visible within the physical room. A host may request or stop

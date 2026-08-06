@@ -29,6 +29,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0019](0019-initial-mobile-os-support-baseline.md) | Accepted | Initially support iOS/iPadOS 18 and Android 13 while building against current stable store-required SDKs. |
 | [0020](0020-android-lan-discovery-and-permission-ux.md) | Accepted | Prefer foreground Android NSD and the API 37 system picker, reserving broad LAN access for optional user-chosen conveniences. |
 | [0021](0021-mobile-screen-capture-and-stage-casting.md) | Accepted | Block or shield active Companion capture where supported while allowing a separately authorized public Stage casting route. |
+| [0022](0022-mobile-audio-route-and-interruption-policy.md) | Accepted | Revalidate mobile input and output after route or lifecycle changes, stopping private media and microphones until safe resumption is confirmed. |
 
 ## Adding an ADR
 

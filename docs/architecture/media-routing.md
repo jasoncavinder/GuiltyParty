@@ -341,3 +341,29 @@ confirmation when selected, and a latched activation requires explicit speaker
 renewal after 120 seconds. AI may suggest an order but has no lease authority.
 
 See [ADR 0014](../adr/0014-room-microphone-arbitration.md).
+
+---
+
+# Mobile Route and Interruption Handling
+
+Mobile endpoints model microphone input and audio output separately. Connecting
+a verified personal headphone output may continue already-authorized private
+playback only when input, audience, and acoustic relationships are unchanged.
+Headphone removal, Bluetooth loss or switching, speaker or unknown output,
+microphone-route change, calls, focus loss, backgrounding, locking, and media-
+service reset stop private playback and microphone publication.
+
+Private output never falls back to a speaker. Recovery clears pending private
+media, revalidates route and authority, obtains fresh grants and key state where
+needed, and requires an explicit participant action. Push-to-talk remains
+released after interruption. Control-plane reconnection and eligible public
+playback may recover independently when their authority remains valid.
+
+Operating-system route observations do not establish participant identity,
+physical-room membership, or media authorization. Diagnostics use generalized
+route classes and do not upload Bluetooth addresses, hardware identifiers, call
+details, or unnecessary device names. A separately authorized public Stage
+route is independent of private Companion media.
+
+See
+[ADR 0022](../adr/0022-mobile-audio-route-and-interruption-policy.md).

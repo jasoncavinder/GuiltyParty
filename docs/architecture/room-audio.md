@@ -122,12 +122,21 @@ Loss of the expected input, output, voice-processing profile, private headphone
 route, ducking acknowledgment, media grant, or room mapping stops the affected
 transmission before recovery begins.
 
+On mobile endpoints, headphone removal, Bluetooth switching or loss,
+microphone-route change, calls, audio-focus loss, backgrounding, locking, and
+media-service reset close affected capture and private playback before route
+recovery. A room-microphone lease and Stage-ducking reservation are released;
+push-to-talk does not resume. The participant confirms the validated input and
+output before new capture or private playback begins. See
+[ADR 0022](../adr/0022-mobile-audio-route-and-interruption-policy.md).
+
 ## Open Decisions
 
-- platform-specific interruption and route-change timing
 - accessibility caption generation and retention
 - observable health and diagnostics without unnecessary surveillance
 
 See [ADR 0011](../adr/0011-room-audio-processing-ownership.md) and
 [ADR 0013](../adr/0013-private-audio-route-failure.md). Microphone arbitration
-is defined by [ADR 0014](../adr/0014-room-microphone-arbitration.md).
+is defined by [ADR 0014](../adr/0014-room-microphone-arbitration.md). Mobile
+route and interruption behavior is defined by
+[ADR 0022](../adr/0022-mobile-audio-route-and-interruption-policy.md).

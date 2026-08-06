@@ -40,26 +40,64 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-MEDIA-003: Mobile Audio Routes and Interruptions
+### MC-DEL-002: Physical-Device Test Matrix
 
 **Status:** Active
 
-**Why next:** The media protocol, room processing, private-route failure,
-microphone arbitration, capture consent, and supported OS floors are accepted.
-The remaining unblocked media question is how native Companions preserve those
-rules through calls, Bluetooth and headphone changes, audio focus, route loss,
-backgrounding, and media-service resets.
+**Why next:** The supported mobile OS floors and route-interruption policy are
+accepted, so representative physical coverage can now be defined without
+guessing which versions, routes, lifecycle states, and room behaviors the
+product promises to verify.
 
-**Decision question:** How should iOS/iPadOS and Android handle audio-route
-selection and changes, calls and other interruptions, Bluetooth transitions,
-headphone removal, audio-focus loss, app backgrounding, and media-service
-resets; when may media resume automatically, and when is fresh participant
-confirmation required?
+**Decision question:** Which physical iPhones, iPads, Android phones, Android
+tablets, OS versions, network conditions, audio routes, accessibility modes,
+and physical-room arrangements must be exercised for development, pull-
+request validation, beta qualification, and release readiness; which checks
+may use simulators or emulators, and which require real hardware?
 
 No answer or recommendation is recorded yet. The next discussion should address
 only this question.
 
 ## Accepted Decision History
+
+### MC-MEDIA-003: Mobile Audio Routes and Interruptions
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile endpoints track microphone input and audio output
+separately and treat operating-system routes as capabilities rather than
+identity or authority. Connecting a verified personal headphone output may
+continue already-authorized private playback only when input, audience, and
+acoustic relationships are unchanged. Headphone removal, Bluetooth loss or
+switching, speaker or unknown output, microphone-route change, and authority or
+privacy uncertainty immediately pause private playback, close microphone
+publication, release room-microphone and ducking authority, clear pending
+private media, and require route revalidation and participant confirmation.
+Calls, assistants, audio-focus loss, backgrounding, locking, process restart,
+and media-service reset stop microphone publication and private playback;
+control transport may reconnect automatically, but private media and capture
+never resume automatically. Push-to-talk remains ended. The initial product
+does not support background Companion capture or private playback. Public audio
+and an independently authorized Stage route may continue only when their public
+audience and acoustic route remain valid. Route diagnostics are privacy-
+minimized, non-canonical, and exclude hardware identifiers and private device
+activity.
+
+**Rationale:** Fail-closed private routing prevents a routine platform change
+from exposing private or creator-controlled content, while narrow automatic
+continuation for a verified personal output and independent public Stage routes
+avoids unnecessary disruption. Current native routing and focus APIs provide
+observable transitions without turning device state into scenario truth.
+
+**Consequences:** Native clients need separate input/output state, modern
+platform callbacks, break-before-make transitions, explicit resume UX, buffer
+and grant invalidation, privacy-minimized readiness, and real-device coverage
+for headphones, Bluetooth, calls, focus, lifecycle, reset, push-to-talk,
+ducking, and casting. Background private media is excluded initially.
+
+**Recorded in:** [ADR 0022](../adr/0022-mobile-audio-route-and-interruption-policy.md)
 
 ### MC-PRIV-003: Screenshot and Screen-Recording Behavior
 
@@ -1326,7 +1364,6 @@ No open items. Accepted decisions remain in the history above.
 
 | ID | Status | Decision needed | Depends on |
 |---|---|---|---|
-| MC-DEL-002 | Open | Physical-device test matrix covering representative phones, tablets, OS versions, network conditions, audio routes, and room arrangements | MC-DEL-001, MC-MEDIA-003 |
 | MC-DEL-003 | Open | TestFlight and Android beta channels, cohorts, feedback handling, and build expiry | MC-DEL-001 |
 | MC-DEL-004 | Open | App Store and Play privacy disclosures, account-deletion obligations, capture claims, and review preparation | MC-ID-002, MC-PRIV-002, MC-PRIV-004 |
 | MC-DEL-005 | Open | Required feature parity, permitted platform differences, and release synchronization | MC-ARCH-001, MC-ORG-001 |
