@@ -25,6 +25,7 @@ Browser display, casting, and screen mirroring are fallback paths.
 
 ## Mobile Direction
 
+- [Mobile contract generation runbook](mobile-contract-generation.md)
 - [Accepted Mobile Companion product decisions](../product/mobile-companion.md)
 - [Native mobile client strategy](../adr/0015-native-mobile-client-strategy.md)
 - [Initial mobile OS support baseline](../adr/0019-initial-mobile-os-support-baseline.md)

@@ -1,4 +1,4 @@
-.PHONY: setup run-server run-host run-stage build-stage check-contracts test-remote check-scenario-wasm check-cloudflare rehearse-packaged-stage test
+.PHONY: setup run-server run-host run-stage build-stage check-contracts generate-mobile-contracts check-mobile-contracts test-remote check-scenario-wasm check-cloudflare rehearse-packaged-stage test
 
 setup:
 	@echo "Checking dependencies..."
@@ -31,6 +31,16 @@ build-stage:
 check-contracts:
 	@python3 tooling/check_contract_artifacts.py
 	@npm run --silent check:contracts:standard
+
+generate-mobile-contracts:
+	@$(MAKE) check-contracts
+	@python3 -m unittest tooling/test_mobile_contracts.py
+	@python3 tooling/mobile_contracts.py --mode generate
+
+check-mobile-contracts:
+	@$(MAKE) check-contracts
+	@python3 -m unittest tooling/test_mobile_contracts.py
+	@python3 tooling/mobile_contracts.py --mode check
 
 test-remote:
 	@npm run --silent test:remote

@@ -286,7 +286,7 @@ export class SqliteSessionStore {
          WHERE ticket_digest IN (
            SELECT ticket_digest FROM websocket_tickets
            WHERE endpoint_id = ?
-           ORDER BY expires_at_unix_ms DESC
+           ORDER BY expires_at_unix_ms DESC, ticket_digest DESC
            LIMIT -1 OFFSET ?
          )`,
         authority.endpointId,
