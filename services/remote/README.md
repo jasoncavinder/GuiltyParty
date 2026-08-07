@@ -27,12 +27,17 @@ intakes, and deployment gates are complete.
 
 Runtime source is first-party ECMAScript and uses only Cloudflare Worker
 platform APIs. Tests use Node's built-in test runner and the repository's
-already-approved Ajv development tool. No Cloudflare package, Wrangler version,
-or WebAssembly build dependency is approved or added by this slice.
+already-approved Ajv development tool. The owner-approved temporary tooling
+exception pins `wrangler@4.119.0` with an exact `undici@7.29.0` override for
+internal development, the first synthetic deployment, and credential-free CI
+validation. It is excluded from the Worker bundle and is not approved for
+production deployment authority or product redistribution. No WebAssembly
+build dependency is approved or added by this slice.
 
-After owner approval of the exact tool intake, install the pinned tooling with
-scripts disabled and run Wrangler locally. Do not use an unpinned `npx` command
-as a release or CI path.
+Install the locked tooling with scripts disabled through `make setup`. Do not
+use an unpinned `npx` command as a development, release, or CI path. See the
+[tooling evaluation](../../docs/architecture/cloudflare-tooling-evaluation.md)
+for the exact exception and review triggers.
 
 ## Local Verification
 
