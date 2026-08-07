@@ -85,6 +85,31 @@ test("browser cookie authority is bound to the exact HTTPS origin", async () => 
     status: 403,
     code: "authority_origin_mismatch",
   });
+
+  const bearerReplayWithoutOrigin = await resolveFriendsAuthority(
+    new Request("https://api.example.test/ws/v1", {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+    { ENVIRONMENT_PROFILE: "friends-mvp-development", AUTHORITY_SIGNING_KEY: signingKey },
+  );
+  assert.deepEqual(bearerReplayWithoutOrigin, {
+    ok: false,
+    status: 403,
+    code: "browser_origin_required",
+  });
+});
+
+test("native bearer authority remains valid without an Origin", async () => {
+  const token = await issueAuthorityToken(claims(), signingKey);
+  const accepted = await resolveFriendsAuthority(
+    new Request("https://api.example.test/ws/v1", {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+    { ENVIRONMENT_PROFILE: "friends-mvp-development", AUTHORITY_SIGNING_KEY: signingKey },
+  );
+
+  assert.equal(accepted.ok, true);
+  assert.equal(accepted.authority.origin, null);
 });
 
 test("Host bootstrap compares the configured digest instead of storing raw proof", async () => {

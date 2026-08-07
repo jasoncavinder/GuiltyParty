@@ -8,6 +8,7 @@ import worker from "../src/gateway.js";
 import { CONTROL_SUBPROTOCOL } from "../src/constants.js";
 import { issueAuthorityToken, sha256Hex } from "../src/friends-auth.js";
 import schema from "../../../contracts/control-plane/v1/control-plane.schema.json" with { type: "json" };
+import openapi from "../../../contracts/http/v1/openapi.json" with { type: "json" };
 
 globalThis.crypto ??= webcrypto;
 
@@ -57,6 +58,17 @@ test("compatibility response conforms to the canonical v1 schema", async () => {
   const validate = ajv.getSchema(`${schema.$id}#/$defs/CompatibilityResponse`);
   assert.ok(validate);
   assert.equal(validate(value), true, JSON.stringify(validate.errors));
+});
+
+test("OpenAPI declares the session admission failures returned at runtime", () => {
+  const createResponses = openapi.paths["/api/v1/sessions"].post.responses;
+  const joinResponses = openapi.paths["/api/v1/join"].post.responses;
+
+  assert.ok(createResponses["413"]);
+  for (const status of ["404", "413", "429", "503"]) {
+    assert.ok(joinResponses[status], `missing join response ${status}`);
+  }
+  assert.equal(joinResponses["500"], undefined);
 });
 
 test("Host creates a bounded session and receives HttpOnly cookie authority", async () => {

@@ -311,6 +311,10 @@ export class GameSession extends DurableObject {
       sendError(socket, attachment, correlationId, result.code, result.title);
       return;
     }
+    if (!this.store.validateAuthority(authorityFromAttachment(attachment), Date.now()).ok) {
+      socket.close(1008, "Authority no longer valid");
+      return;
+    }
     socket.send(JSON.stringify({
       protocol_version: PROTOCOL_VERSION,
       type: "projection",
@@ -342,6 +346,15 @@ export class GameSession extends DurableObject {
           idempotencyId: envelope.idempotency_id,
           command: envelope.payload.command,
           timestampUnixMs: Date.now(),
+          assertCommitAllowed: () => {
+            const validation = this.store.validateAuthority(
+              authorityFromAttachment(attachment),
+              Date.now(),
+            );
+            if (!validation.ok) {
+              throw new SessionFault(validation.code, "Authority no longer valid");
+            }
+          },
           createEvent: async (command) => {
             const event = eventForCommand(command, attachment);
             const candidate = journalEntry(journal.length + 1, Date.now(), event);

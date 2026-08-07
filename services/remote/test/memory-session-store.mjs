@@ -20,7 +20,9 @@ export class MemorySessionStore {
     fingerprint,
     result,
     maximumRecordsPerEndpoint,
+    assertCommitAllowed,
   }) {
+    assertCommitAllowed();
     if (this.failNextAppend) {
       this.failNextAppend = false;
       throw new Error("synthetic storage failure");

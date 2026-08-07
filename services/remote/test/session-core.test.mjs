@@ -116,6 +116,42 @@ test("sequence advances only after the journal and idempotency commit succeeds",
   assert.equal(accepted.server_sequence, 1);
 });
 
+test("authority is rechecked inside the append boundary after event creation", async () => {
+  const store = new MemorySessionStore();
+  const core = createCore(store);
+  await core.load(async () => {});
+  let authorityValid = true;
+  let guardCalls = 0;
+
+  await assert.rejects(
+    () =>
+      core.commitCommand({
+        endpointId: "participant-endpoint",
+        idempotencyId: "command-after-revocation",
+        command: { type: "cast_vote", target_character_id: "character-1" },
+        createEvent: async () => {
+          authorityValid = false;
+          return {
+            type: "vote_cast",
+            participant_id: "participant-1",
+            target_character_id: "character-1",
+          };
+        },
+        assertCommitAllowed: () => {
+          guardCalls += 1;
+          if (!authorityValid) {
+            throw new SessionFault("invalid_authority", "Authority no longer valid");
+          }
+        },
+      }),
+    (error) => error instanceof SessionFault && error.code === "invalid_authority",
+  );
+
+  assert.equal(guardCalls, 2);
+  assert.equal(store.entries.length, 0);
+  assert.equal(await store.getIdempotency("participant-endpoint", "command-after-revocation"), null);
+});
+
 test("concurrent command deliveries are serialized before sequence assignment", async () => {
   const store = new MemorySessionStore();
   const core = createCore(store);

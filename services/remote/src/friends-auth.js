@@ -90,10 +90,15 @@ export async function resolveFriendsAuthority(request, env, nowUnixMs = Date.now
 
   const requestOrigin = request.headers.get("Origin");
   const authorityOrigin = verified.authority.origin;
-  if (requestOrigin !== null) {
-    if (authorityOrigin === null || requestOrigin !== authorityOrigin) {
+  if (authorityOrigin !== null) {
+    if (requestOrigin === null) {
+      return { ok: false, status: 403, code: "browser_origin_required" };
+    }
+    if (requestOrigin !== authorityOrigin) {
       return { ok: false, status: 403, code: "authority_origin_mismatch" };
     }
+  } else if (requestOrigin !== null) {
+    return { ok: false, status: 403, code: "authority_origin_mismatch" };
   } else if (cookieToken && !bearerToken) {
     return { ok: false, status: 403, code: "browser_origin_required" };
   }

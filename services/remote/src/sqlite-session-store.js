@@ -428,8 +428,13 @@ export class SqliteSessionStore {
     fingerprint,
     result,
     maximumRecordsPerEndpoint,
+    assertCommitAllowed,
   }) {
     this.storage.transactionSync(() => {
+      // This second authority check shares the transaction boundary with the
+      // append, preventing revocation, end, or expiry from winning between a
+      // request-level check and canonical mutation.
+      assertCommitAllowed();
       this.insertJournalEntry(entry);
       this.sql.exec(
         `INSERT INTO command_idempotency (
