@@ -2,9 +2,9 @@
 
 ## Status
 
-Dependency intake prepared, 2026-08-06. Owner approval and the executable
-compatibility spike remain pending. No generator, build plugin, runtime, or
-transitive dependency is approved or added by this document.
+Executable compatibility spike completed, 2026-08-06. `quicktype-core@26.0.0`
+is rejected for adoption. No generator, build plugin, runtime, transitive
+dependency, or generated source is added by this document.
 
 ## Required Fit
 
@@ -73,8 +73,8 @@ provides the required engine.
 
 `quicktype-core` is the official quicktype engine as a library and exposes the
 same Swift and Kotlin renderers without the CLI's GraphQL and TypeScript input
-packages. A lock-only, scripts-disabled resolution produced 29 non-root
-packages: 2 Apache-2.0, 25 MIT, 1 BSD-3-Clause, and 1 ISC. Every resolved entry
+packages. A lock-only, scripts-disabled resolution produced 29 packages total:
+2 Apache-2.0, 25 MIT, 1 BSD-3-Clause, and 1 ISC. Every resolved entry
 had an integrity value and license identifier; none declared an install script,
 native-platform selector, or deprecation, and the isolated npm audit reported
 zero known vulnerabilities. npm supplies a registry signature and SLSA
@@ -103,9 +103,9 @@ Sources:
 - [`oneOf` array issue](https://github.com/glideapps/quicktype/issues/2310)
 - [Swift 6 `Sendable` issue](https://github.com/glideapps/quicktype/issues/2858)
 
-Result: preferred candidate for an isolated executable compatibility spike,
-subject to the proposed ADR 0025 intake and explicit owner approval. It is not
-approved for repository, CI, Xcode, Gradle, or product use.
+Result: selected for the isolated executable compatibility spike after its ADR
+0025 intake and exact owner approval. The measured result is recorded below; it
+remains unapproved for repository, CI, Xcode, Gradle, or product use.
 
 ### Swift OpenAPI Generator
 
@@ -119,23 +119,20 @@ Source: [Apple Swift OpenAPI Generator](https://github.com/apple/swift-openapi-g
 Result: not selected for this contract-model role. It may be reconsidered for
 a different, explicitly approved Swift HTTP boundary.
 
-## Recommendation
+## Spike Acceptance Criteria
 
-Authorize a disposable, non-production `quicktype-core@26.0.0` spike under the
-exact scope in the proposed ADR 0025 intake. Do not authorize the full
-`quicktype` CLI. The spike runs outside ordinary Xcode and Gradle builds, uses
-only committed synthetic schemas and fixtures, pins the exact package and
-transitive lock, disables lifecycle scripts, and commits no generated output
-until review.
+The approved disposable spike ran outside ordinary Xcode and Gradle builds,
+used only committed synthetic schemas and fixtures, pinned the exact package
+and transitive lock, disabled lifecycle scripts, and committed no generated
+output. The full `quicktype` CLI and any Kotlin serialization framework were
+outside its scope.
 
-The spike should use a small first-party Node wrapper with no schema-fetching
-store and an explicit preflight rejection of non-fragment `$ref` values. It
-should exercise Swift's platform-only `Codable` output and compare Kotlin's
-plain-types and serializer-bearing output so any proposed mobile runtime
-dependency is visible rather than silently adopted. A Kotlin serialization
-framework is outside this approval scope.
+The spike used a small first-party Node wrapper with no schema-fetching store
+and an explicit preflight rejection of non-fragment `$ref` values. It exercised
+Swift's platform-only `Codable` output and compared Kotlin's plain-types and
+serializer-bearing output so generated runtime requirements were visible.
 
-Approval requires evidence that both generated languages:
+Adoption would have required evidence that both generated languages:
 
 1. compile on the accepted platform baselines;
 2. decode every positive and privacy fixture;
@@ -146,8 +143,71 @@ Approval requires evidence that both generated languages:
 7. regenerate byte-for-byte identically; and
 8. introduce no runtime networking or logging dependency.
 
-Passing the spike would permit a separate adoption proposal; it would not make
-the generator approved automatically. If quicktype-core fails, compare a
-narrowly scoped first-party generator against manual DTO maintenance. Either
-fallback is a separate owner decision; this evaluation does not silently choose
-one.
+The spike failed criteria 1, 3, 4, and 5; criteria 2 and 6 remained incomplete
+for Kotlin; and criteria 7 and 8 passed. Compare a narrowly scoped first-party
+generator against manual DTO maintenance as a separate owner decision; this
+evaluation does not silently choose either fallback.
+
+## Executable Compatibility Spike
+
+### Approved Scope and Environment
+
+The project owner approved exactly `quicktype-core@26.0.0` for one disposable,
+local, synthetic-data Swift/Kotlin compatibility spike under the controls in
+the component intake. The approval did not cover permanent adoption, CI,
+committed generated output, a Kotlin serialization runtime, the full quicktype
+CLI, private or production data, or distribution.
+
+The spike ran outside the repository with:
+
+- Node.js 26.6.0 and npm 12.0.2
+- a lock containing the exact 29-package reviewed graph
+- `npm ci --ignore-scripts` and a zero-vulnerability npm audit result
+- Apple Swift 6.3.3 from the installed Xcode toolchain
+- the committed control-plane v1 schema and 18 synthetic fixtures only
+- a first-party wrapper that rejected non-fragment `$ref` values, did not
+  instantiate `FetchingJSONSchemaStore`, trapped `fetch`, and failed on console
+  output
+
+The installed Android Studio and Kotlin compiler reported in the earlier device
+inventory were not accessible in this execution environment. No replacement
+compiler, Gradle distribution, generated runtime, or other dependency was
+downloaded. This prevented a Kotlin compiler check, but the language-neutral
+semantic failures and Swift 6 failure were already independently dispositive.
+
+### Measured Results
+
+| Requirement | Result | Evidence |
+| --- | --- | --- |
+| Emit Swift and Kotlin | Partial pass | Codable Swift, Sendable Swift, plain Kotlin, and Jackson Kotlin sources were emitted. |
+| Compile accepted native baselines | Fail | Plain Swift compiled in Swift 5 mode. Both ordinary and Sendable output failed Swift 6: generated `JSONCodingKey` is a non-final `Sendable` class, and Sendable models also contain non-Sendable `JSONAny`. Kotlin compilation was unavailable. |
+| Decode positive and privacy fixtures | Partial pass | Swift 5 decoded all 12 expected-valid fixtures, including both privacy projections. |
+| Reject negative fixtures | Fail | Generated Swift incorrectly accepted 3 of 6: missing command idempotency, Stage join with `display_name`, and explicit-null private objective. |
+| Preserve required-nullable versus optional-absent | Fail | Both became ordinary optionals. A Stage join response missing the required-nullable `participant_id` was accepted, and absent versus explicit-null private objective became indistinguishable. |
+| Preserve discriminated variants | Fail | `ClientCommand`, `ClientEnvelope`, and `ServerEnvelope` became structs with a discriminator enum and merged optional fields instead of distinct variants. An incomplete cast vote and a command payload paired with `get_projection` were both accepted. |
+| Additive and unknown-critical compatibility | Pass in Swift test | The committed additive-field fixture decoded, while the unknown message-type fixture failed decoding. |
+| Deterministic regeneration | Pass | Five fresh processes for each of four configurations produced one byte-identical SHA-256 per configuration. |
+| No generator network or logging | Pass | All four generation modes completed with the network and console traps untouched. Generated Swift imported only Foundation; plain Kotlin imported no runtime. |
+| No unapproved generated runtime | Fail for serializer-bearing Kotlin | Plain Kotlin omitted serialization names and metadata. Serializer-bearing Kotlin imported Jackson packages that are outside the approved scope. |
+
+The five-run output hashes were:
+
+- Swift Codable: `a0d0808e0559774a83956a465c65b7a04fc129248a0c4f51387b0582834e859d`
+- Swift Codable plus Sendable: `3baafc23ba585c6a126334bcfff90ecff3704e85cc07c0c212f475128e67f507`
+- Kotlin plain types: `f5998493e61f1621ec8edeb07e682e1c51f83a34c114ba8298d241d5f66346d8`
+- Kotlin Jackson: `2070c21b661d4449422cf686837a0435cb1f7fd9ae636f3c431c45f9ce0fe462`
+
+### Decision
+
+Reject `quicktype-core@26.0.0` for Guilty Party mobile contract generation. Its
+output is deterministic and can tolerate additive fields, but it does not
+preserve the v1 contract's required-nullable semantics or discriminated
+variants, fails Swift 6 compilation, and cannot provide usable Kotlin
+serialization without an additional runtime. A handwritten predecoder could
+reimplement the lost constraints, but doing so would duplicate the canonical
+schema and defeat the purpose of choosing this generator.
+
+No generated source, wrapper, package manifest, lockfile, or installed package
+from the spike is retained in the repository. The next owner decision is the
+already identified comparison between a narrow first-party generator and manual
+Swift/Kotlin DTO maintenance.

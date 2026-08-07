@@ -164,12 +164,14 @@ those tools into a release still require review.
   network, schema-source, or distribution change requires renewed review. No
   exception is requested.
 
-## Proposed Mobile Contract Generator Spike
+## Completed Mobile Contract Generator Spike
 
 ### quicktype-core
 
-- **Status:** Proposed for one disposable compatibility spike only. Not
-  approved, installed in the repository, executed, or adopted by this record.
+- **Status:** The exact disposable spike was owner-approved and completed on
+  2026-08-06. Rejected for repository, CI, build, generated-source, or product
+  adoption. The package was never added to this repository or a distributed
+  artifact.
 - **Category and risk:** Elevated development/build tool. The package executes
   JavaScript that parses canonical schemas and emits source code, includes
   optional file/URL-loading APIs, and may generate language-runtime imports.
@@ -182,25 +184,25 @@ those tools into a release still require review.
   resolution produced 107 packages and included unused GraphQL and TypeScript
   input stacks, `typescript-json-schema`, `ts-node`, and `vm2`. OpenAPI
   Generator's published Kotlin limitations overlap the contract. A narrowly
-  scoped first-party generator and manual DTO maintenance remain fallbacks if
-  this spike fails.
+  scoped first-party generator and manual DTO maintenance remain alternatives
+  after this spike's failure.
 - **Canonical source and publisher:** npm package `quicktype-core`, described as
   the quicktype engine as a library and maintained by the quicktype project;
   canonical repository
   [glideapps/quicktype](https://github.com/glideapps/quicktype). npm lists David
   Siegel (`dvdsgl`) and Mark Probst (`mark.probst`) as maintainers.
-- **Package coordinates and exact version:** Proposed npm development dependency
-  `quicktype-core@26.0.0`, exact version only. Published 2026-07-20. It is the
+- **Package coordinates and exact version:** Disposable npm development tool
+  `quicktype-core@26.0.0`, exact version only. Published 2026-07-20. It was the
   current npm release as of 2026-08-06. The package declares Node.js 20 or later;
   the upstream release notes require Node.js 20.19 or later, which is the
-  stricter proposed baseline.
-- **Platforms and artifacts:** The proposed spike runs only in a disposable
-  local Node workspace on the owner's development Mac. It is outside ordinary
+  stricter spike baseline.
+- **Platforms and artifacts:** The spike ran only in a disposable local Node
+  workspace on the owner's development Mac. It was outside ordinary
   Xcode and Gradle builds. Neither the package nor its transitive graph may
   enter the Rust server, browser clients, native applications, Stage package,
-  production service, or distributed product. Generated output is not committed
-  until separate review, and CI use or permanent repository adoption requires a
-  later owner decision.
+  production service, or distributed product. No generated output was
+  committed. CI use or permanent repository adoption requires a new owner
+  decision.
 - **Provenance, signing, and integrity evidence:** npm registry integrity
   `sha512-tLSe2RkSj7c7ocTc+QMuQDGgEetGhZvKXLv1vNwpAQX2x8oOGYU9KSgJdIP9Qvy5hm47S2k3ZAX1LQAdS75JaA==`;
   SHA-1 `48dc480a67527f3eed8e58e17b2781218dcd0d6d`; independently
@@ -229,18 +231,18 @@ those tools into a release still require review.
   `unicode-trie@2.0.0`, `urijs@1.19.11`, and `wordwrap@1.0.0`.
   The published core artifact also retains an adapted Ajv date-time routine's
   MIT notice and a Mersenne Twister BSD-style notice in source comments.
-- **Enabled features, build scripts, native code, and endpoints:** Install, if
-  approved, with an exact lock and `npm ci --ignore-scripts`. The resolved graph
+- **Enabled features, build scripts, native code, and endpoints:** Installation
+  used an exact lock and `npm ci --ignore-scripts`. The resolved graph
   declared no install scripts, native-platform selectors, deprecated entries,
   or non-registry artifact hosts; every entry had an integrity value. The
   package publishes prebuilt CommonJS and ESM JavaScript and declares only its
-  own source-build scripts, which the spike does not invoke. A small first-party
-  wrapper may import `quicktype`, `InputData`, and `JSONSchemaInput` only. It
-  must not instantiate `FetchingJSONSchemaStore`, use URL inputs, enable debug
-  logging, or permit non-fragment `$ref` values. Inputs are supplied as local
-  in-memory strings. Swift and Kotlin are the only render targets. Kotlin's
-  Jackson default is not approved; plain-types and serializer-bearing outputs
-  may be compared without adding any generated runtime dependency.
+  own source-build scripts, which the spike did not invoke. A small first-party
+  wrapper imported `quicktype`, `InputData`, and `JSONSchemaInput` only. It did
+  not instantiate `FetchingJSONSchemaStore`, use URL inputs, enable debug
+  logging, or permit non-fragment `$ref` values. Inputs were supplied as local
+  in-memory strings. Swift and Kotlin were the only render targets. Kotlin's
+  Jackson default was not approved; plain-types and serializer-bearing outputs
+  were compared without adding any generated runtime dependency.
 - **License, copyright, patent, attribution, and redistribution evidence:** The
   canonical project and package metadata identify Apache-2.0, including its
   express patent grant and notice obligations. The published
@@ -255,22 +257,22 @@ those tools into a release still require review.
   spike does not change Guilty Party's proprietary license.
 - **Data, purpose, recipients, retention, deletion, and consent:** Input is
   limited to committed Guilty Party schemas and synthetic contract fixtures.
-  Processing and temporary generated output remain local on the owner's Mac.
+  Processing and temporary generated output remained local on the owner's Mac.
   No account, participant, gameplay, credential, private communication,
   unpublished creator content, or production data is supplied. No content is
-  uploaded or shared, and disposable output and package state may be deleted
-  after evidence is recorded.
+  uploaded or shared. Disposable output and package state were deleted after
+  evidence was recorded.
 - **Permissions, entitlements, sensitive APIs, and background behavior:** None.
   The spike receives no secret, mobile permission, entitlement, persistent
   identifier, background mode, production authority, or network credential.
   Filesystem access is limited to its disposable workspace and committed
   synthetic contract inputs.
 - **Apple privacy manifest, signature, required-reason, and label impact:** Not
-  applicable to the proposed spike because the tool is not linked, bundled, or
+  applicable to the completed spike because the tool was not linked, bundled, or
   executed in the iOS/iPadOS app. Generated Swift must be reviewed to confirm it
   uses only approved platform APIs before adoption.
 - **Android manifest, SDK Index, Data Safety, and policy impact:** Not applicable
-  to the proposed spike because the tool is not linked, bundled, or executed in
+  to the completed spike because the tool was not linked, bundled, or executed in
   the Android app. Generated Kotlin must not silently introduce Jackson,
   Klaxon, KotlinX, permissions, or another runtime dependency.
 - **Security advisories, update source, and support status:** The repository was
@@ -283,32 +285,45 @@ those tools into a release still require review.
   open-value helpers. The release documents selected Draft 2020-12 features but
   does not claim complete Draft 2020-12 conformance. Updates come only from npm
   after renewed intake; no automatic update may merge.
-- **Test, rollback, and complete-removal plan:** If approved, the spike must
-  compile generated Swift and Kotlin at the accepted baselines; decode all
-  positive and privacy fixtures; reject negative fixtures at a handwritten
-  boundary; preserve absent versus null; represent discriminators without
-  ambiguous merging; tolerate additive fields while failing safely on unknown
-  critical variants; regenerate byte-for-byte identically in repeated fresh
-  runs; and prove no runtime network or logging dependency. Failure ends the
-  spike without adoption. Removal deletes the disposable package manifest,
-  lock, wrapper, installed packages, and generated output; canonical contracts
-  and fixtures remain unchanged.
-- **Required notices and SBOM evidence:** Retain the exact lock, registry
-  integrity and provenance evidence, canonical Apache-2.0 text, transitive
-  license evidence, and bundled-source notices with the spike report. If later
-  adopted, include the development tool in the development SBOM and reconcile
-  committed generated output separately. It must be absent from product SBOMs
-  and release artifacts unless a new distribution review expressly approves it.
-- **Reviewer and explicit owner decision:** Research prepared by an AI agent for
-  project-owner review on 2026-08-06. Explicit owner approval is pending and
-  must name `quicktype-core@26.0.0` and the disposable synthetic-data spike
-  scope. Approval of the spike would not approve permanent adoption, CI use,
-  generated code, a Kotlin serialization runtime, or the full quicktype CLI.
-- **Approval date, scope, review triggers, and exception expiry:** Pending. Any
-  execution, version, transitive, script, license, provenance, maintainer,
-  network, input-data, generated-runtime, CI, build, distribution, or permanent
-  repository-use change requires renewed owner review. No exception is
-  requested.
+- **Test, rollback, and complete-removal result:** The spike emitted four output
+  configurations and regenerated each byte-for-byte identically in five fresh
+  processes. Its network and console traps remained untouched. Swift 5 decoded
+  all 12 expected-valid fixtures, tolerated the additive field, and rejected an
+  unknown message type. It incorrectly accepted 3 of 6 negative fixtures, a
+  missing required-nullable value, an incomplete cast vote, and a discriminator
+  paired with the wrong payload. Required-nullable and optional-absent values
+  collapsed to the same representation, and discriminated unions became merged
+  structs with optional members. Ordinary and Sendable output failed the
+  installed Swift 6 compiler. Plain Kotlin omitted serialization metadata and
+  Jackson Kotlin required an unapproved runtime; an accessible Kotlin compiler
+  was unavailable, and no replacement was downloaded. These failures ended the
+  spike without adoption. The complete evidence is in the
+  [mobile contract generator evaluation](../architecture/mobile-contract-generator-evaluation.md#executable-compatibility-spike).
+  Disposable package state, wrapper, generated output, compiler cache, and
+  task-specific npm cache were removed after evidence was recorded; canonical
+  contracts and fixtures remain unchanged.
+- **Required notices and SBOM evidence:** This record retains the registry
+  integrity and provenance identifiers, resolved component list, license
+  classifications, and bundled-source notice findings. The disposable lock was
+  removed with the spike. Any later adoption proposal must resolve and review a
+  fresh exact lock, include the development tool in the development SBOM, and
+  reconcile committed generated output separately. It must be absent from
+  product SBOMs and release artifacts unless a new distribution review expressly
+  approves it.
+- **Reviewer and explicit owner decision:** Research prepared by an AI agent and
+  reviewed by the project owner. On 2026-08-06 the owner explicitly approved
+  `quicktype-core@26.0.0` for one disposable, local, synthetic-data Swift/Kotlin
+  compatibility spike under this record's controls. The measured failures reject
+  the package for adoption; the agent does not convert the limited execution
+  approval into broader authority.
+- **Approval date, scope, review triggers, and exception expiry:** Approved
+  2026-08-06 only for the single completed spike. That scope is exhausted. It
+  did not approve permanent repository adoption, CI, committed generated code,
+  a Kotlin serialization runtime, the full quicktype CLI, private or production
+  data, or distribution. Any further execution, version, transitive, script,
+  license, provenance, maintainer, network, input-data, generated-runtime, CI,
+  build, distribution, or repository use requires renewed owner review. No
+  exception was requested or granted.
 
 ## Retrospective Review Work
 
