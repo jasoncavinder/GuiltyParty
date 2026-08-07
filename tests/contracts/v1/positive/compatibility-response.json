@@ -1,0 +1,6 @@
+{
+  "supported_protocol_majors": [1],
+  "preferred_protocol_version": "1.0",
+  "required_upgrade": false,
+  "features": []
+}

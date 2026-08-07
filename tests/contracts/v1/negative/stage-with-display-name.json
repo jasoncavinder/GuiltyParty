@@ -1,0 +1,9 @@
+{
+  "protocol_version": "1.0",
+  "kind": "stage",
+  "display_name": "A Stage is not a participant",
+  "endpoint": {
+    "platform": "webos",
+    "capabilities": ["public_display"]
+  }
+}

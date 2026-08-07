@@ -1,0 +1,13 @@
+{
+  "protocol_version": "1.0",
+  "type": "submit_command",
+  "message_id": "message-client-invalid-002",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-player-001",
+  "primary_authority_generation": 3,
+  "payload": {
+    "command": {
+      "type": "open_voting"
+    }
+  }
+}

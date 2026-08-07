@@ -178,6 +178,8 @@ Users should understand when information is captured and why.
 - [Session journal boundaries](session-journal.md)
 - [AI Stage Manager boundaries](ai-stage-manager.md)
 - [Creator tool boundaries](creator-tools.md)
+- [Control-plane v1 migration](control-plane-v1-migration.md)
+- [Mobile contract generator evaluation](mobile-contract-generator-evaluation.md)
 
 Related documentation:
 
@@ -188,7 +190,7 @@ Related documentation:
 
 # Open Architecture Work
 
-These documents define boundaries but intentionally defer concrete implementation
-choices such as schema serialization, authentication, media providers, AI
-providers, retention periods, and platform frameworks. Those choices require
+These documents define boundaries. Some concrete choices are now recorded in
+the ADR index; remaining provider selections, dependency adoption, production
+authentication implementation, and operational retention details still require
 evidence, human approval, and ADRs where significant.

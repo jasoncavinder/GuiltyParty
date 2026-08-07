@@ -1,4 +1,4 @@
-.PHONY: setup run-server run-host run-stage build-stage test
+.PHONY: setup run-server run-host run-stage build-stage check-contracts test
 
 setup:
 	@echo "Checking dependencies..."
@@ -24,5 +24,9 @@ build-stage:
 	@test -f clients/stage/appinfo.json || (echo "Stage packaging metadata and original placeholder icons are not yet present; see known limitations." && exit 1)
 	@ares-package clients/stage
 
+check-contracts:
+	@python3 tooling/check_contract_artifacts.py
+
 test:
+	@python3 tooling/check_contract_artifacts.py
 	cd server && cargo test --locked

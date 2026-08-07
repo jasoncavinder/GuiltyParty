@@ -1,0 +1,9 @@
+{
+  "protocol_version": "1.0",
+  "kind": "participant",
+  "display_name": "Synthetic ʻIolana",
+  "endpoint": {
+    "platform": "ios",
+    "capabilities": ["private_display", "touch_input"]
+  }
+}

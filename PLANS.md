@@ -24,11 +24,12 @@ Product direction belongs in:
 
 ### Status
 
-Approved.
+Approved; implementation in progress.
 
-The product scope in this plan is approved. Implementation is gated on a
-technology ADR proposed by the implementing agent and accepted by the project
-owner.
+The product scope in this plan is approved. The original technology gate was
+satisfied by accepted [ADR 0004](docs/adr/0004-mvp-technology-stack.md).
+Subsequent architectural and dependency changes remain subject to their own
+documented approval gates.
 
 ### Objective
 
@@ -226,7 +227,7 @@ It does not implement the production media plane. Any temporary interface used
 to represent media-related capabilities must remain separate from scenario
 truth.
 
-### Required Technology ADR
+### Required Technology ADR (Satisfied)
 
 Before implementation, the assigned agent must propose an ADR covering:
 

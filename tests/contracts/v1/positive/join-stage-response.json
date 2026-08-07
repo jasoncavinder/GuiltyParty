@@ -1,0 +1,8 @@
+{
+  "protocol_version": "1.0",
+  "token": "synthetic-stage-authority-never-use-as-a-real-secret",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-stage-001",
+  "room_id": "room-synthetic-001",
+  "participant_id": null
+}
