@@ -7,28 +7,39 @@ invitation until the project owner records the final decision below.
 
 ## Candidate Deployment
 
-- Reviewed source commit: `TBD`
-- Worker version and artifact digest: `TBD`
+- Reviewed source commit: `2501ff021b5a033c1357d9c9cea4f414a233fd6a`
+- Worker version: `53c5d110-d305-4322-82c5-170842116f1d`
+- Provider script ETag:
+  `1e6df89f84ba45a75a9a9b852a9d477dd8eec0f32be6a543d40371b7efa0055c`
+- Wrangler 4.119.0 dry-run runtime artifact manifest:
+
+  - `worker.js` SHA-256:
+    `6b7ec8358e613ae53501d3042fef14634dca44cf5cb7e09d289528f1f4371f82`
+  - `85b31fdbd5ef4c5f690c397f89cbbb70b9af79d5-gp_scenario_wasm.wasm`
+    SHA-256:
+    `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`
+
 - API hostname: `api.test.guiltyparty.app`
 - Browser Host origin: `https://host.test.guiltyparty.app`
 - Browser Companion fallback origin: `https://play.test.guiltyparty.app`
 - Packaged Stage transport: opaque `null` Origin plus realtime connect ticket
-- Deployment operator and date: `TBD`
-- Rollback version: `TBD`
+- Deployment operator and date: project owner through authenticated Wrangler,
+  2026-08-07 HST
+- Proven rollback version: `dddc679c-3ea9-424a-a432-b7c2fea832d7`
 
 Do not record account identifiers, raw secrets, pairing proofs, bearer
 authority, connect tickets, player names, or private scenario content here.
 
 ## Service Evidence
 
-- [ ] Clean checkout passes `make test` and `make check-cloudflare`.
-- [ ] Custom Domain DNS and certificate are active.
-- [ ] `/health` reports `friends-mvp-development` and `test-gated`.
-- [ ] Host and join edge limits return safe `429` responses under rehearsal.
-- [ ] Invalid or unavailable rate-limit bindings fail admission closed.
+- [x] Clean checkout passes `make test` and `make check-cloudflare`.
+- [x] Custom Domain DNS and certificate are active.
+- [x] `/health` reports `friends-mvp-development` and `test-gated`.
+- [x] Host and join edge limits return safe `429` responses under rehearsal.
+- [x] Invalid or unavailable rate-limit bindings fail admission closed.
 - [ ] Invalid Host bootstrap and invalid, expired, rotated, and closed pairing
       proofs fail before unauthorized state is created.
-- [ ] A packaged Stage obtains bearer authority without a cookie, mints a
+- [x] A packaged Stage obtains bearer authority without a cookie, mints a
       30-second connect ticket, and connects without a URL credential.
 - [ ] A consumed, expired, tampered, revoked, or stale-generation connect
       ticket fails.
@@ -36,7 +47,7 @@ authority, connect tickets, player names, or private scenario content here.
       connection and journal-derived projection.
 - [ ] Disconnect and reconnect issue a new connect ticket and restore only the
       Stage projection.
-- [ ] Explicit session end revokes all authority and schedules deletion.
+- [x] Explicit session end revokes all authority and schedules deletion.
 - [ ] Alarm expiry and active-storage deletion are observed in the deployed
       environment within the approved lifecycle.
 - [ ] Emergency disable, restoration, rollback, and redeployment succeed.
