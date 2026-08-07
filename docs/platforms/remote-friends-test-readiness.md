@@ -7,28 +7,31 @@ invitation until the project owner records the final decision below.
 
 ## Candidate Deployment
 
-- Reviewed source commit: `TBD`
-- Worker version and artifact digest: `TBD`
+- Reviewed source commit: `2501ff021b5a033c1357d9c9cea4f414a233fd6a`
+- Worker version: `53c5d110-d305-4322-82c5-170842116f1d`
+- Dry-run artifact SHA-256:
+  `8711d18c16a50459c84432425a44aaeae9e6b63c8014e1e00f0aed66fc08905d`
 - API hostname: `api.test.guiltyparty.app`
 - Browser Host origin: `https://host.test.guiltyparty.app`
 - Hosted Stage fallback origin: `https://stage.test.guiltyparty.app`
 - Packaged Stage transport: opaque `null` Origin plus realtime connect ticket
-- Deployment operator and date: `TBD`
-- Rollback version: `TBD`
+- Deployment operator and date: project owner through authenticated Wrangler,
+  2026-08-07 HST
+- Proven rollback version: `dddc679c-3ea9-424a-a432-b7c2fea832d7`
 
 Do not record account identifiers, raw secrets, pairing proofs, bearer
 authority, connect tickets, player names, or private scenario content here.
 
 ## Service Evidence
 
-- [ ] Clean checkout passes `make test` and `make check-cloudflare`.
-- [ ] Custom Domain DNS and certificate are active.
-- [ ] `/health` reports `friends-mvp-development` and `test-gated`.
-- [ ] Host and join edge limits return safe `429` responses under rehearsal.
-- [ ] Invalid or unavailable rate-limit bindings fail admission closed.
+- [x] Clean checkout passes `make test` and `make check-cloudflare`.
+- [x] Custom Domain DNS and certificate are active.
+- [x] `/health` reports `friends-mvp-development` and `test-gated`.
+- [x] Host and join edge limits return safe `429` responses under rehearsal.
+- [x] Invalid or unavailable rate-limit bindings fail admission closed.
 - [ ] Invalid Host bootstrap and invalid, expired, rotated, and closed pairing
       proofs fail before unauthorized state is created.
-- [ ] A packaged Stage obtains bearer authority without a cookie, mints a
+- [x] A packaged Stage obtains bearer authority without a cookie, mints a
       30-second connect ticket, and connects without a URL credential.
 - [ ] A consumed, expired, tampered, revoked, or stale-generation connect
       ticket fails.
@@ -36,7 +39,7 @@ authority, connect tickets, player names, or private scenario content here.
       connection and journal-derived projection.
 - [ ] Disconnect and reconnect issue a new connect ticket and restore only the
       Stage projection.
-- [ ] Explicit session end revokes all authority and schedules deletion.
+- [x] Explicit session end revokes all authority and schedules deletion.
 - [ ] Alarm expiry and active-storage deletion are observed in the deployed
       environment within the approved lifecycle.
 - [ ] Emergency disable, restoration, rollback, and redeployment succeed.

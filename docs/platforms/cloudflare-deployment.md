@@ -2,9 +2,9 @@
 
 ## Status
 
-The original development skeleton is deployed. Promotion of the Remote Friends
-MVP code in the current implementation branch has not yet occurred. That next
-development deployment remains limited to the synthetic
+The Remote Friends MVP development service was promoted on 2026-08-07 HST from
+reviewed `dev` commit `2501ff021b5a033c1357d9c9cea4f414a233fd6a` after PR
+#19 merged. The deployment remains limited to the synthetic
 `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
 `workers.dev` endpoint, the owner-approved `api.test.guiltyparty.app` Custom
 Domain, exact browser origins, and the minimum test authority secrets described
@@ -160,15 +160,15 @@ DNS route, production resource, or CI credential was created. No production
 identity, private participant information, or licensed scenario content was
 sent to Cloudflare.
 
-## Remote Friends MVP Development Promotion (Not Yet Run)
+## Remote Friends MVP Development Promotion (Completed 2026-08-07 HST)
 
-The local runtime now passes Host creation, browser cookie pairing, native
+The reviewed runtime passes Host creation, browser cookie pairing, native
 bearer pairing, two-participant deterministic gameplay, private clue filtering,
 voting, outcome, identical idempotent retry, forbidden participant command,
-native/WebAssembly parity, and Worker bundle checks. This evidence does not
-authorize deployment or named-friend traffic by itself.
+native/WebAssembly parity, and Worker bundle checks. The completed development
+promotion does not authorize named-friend traffic by itself.
 
-Before the owner-operated development promotion:
+The owner-operated development promotion followed this procedure:
 
 1. Merge the implementation PR into `dev` after review and deploy the reviewed
    commit, not an uncommitted worktree.
@@ -208,6 +208,39 @@ Before the owner-operated development promotion:
 9. After the replacement is proven, remove the obsolete
    `DEVELOPMENT_ACCESS_TOKEN_SHA256` secret. Its old raw synthetic token is no
    longer an accepted authority path.
+
+Promotion evidence:
+
+- Reviewed source commit:
+  `2501ff021b5a033c1357d9c9cea4f414a233fd6a`.
+- Final Worker version after secret cleanup:
+  `53c5d110-d305-4322-82c5-170842116f1d`.
+- Dry-run Worker bundle SHA-256:
+  `8711d18c16a50459c84432425a44aaeae9e6b63c8014e1e00f0aed66fc08905d`.
+- `api.test.guiltyparty.app` is an active proxied Worker record with an active
+  managed edge certificate. Both advertised edge addresses negotiated TLS 1.3,
+  and the default HTTPS/HTTP2 health request succeeded after initial edge
+  propagation.
+- The only remaining Worker secrets are `AUTHORITY_SIGNING_KEY` and
+  `HOST_BOOTSTRAP_TOKEN_SHA256`. Their protected raw inputs were generated
+  independently, stored in macOS Keychain, verified byte-for-byte in memory,
+  and sent to Wrangler through standard input. No raw value was written to a
+  command, file, task output, or repository artifact.
+- The service rolled back to pre-promotion version
+  `dddc679c-3ea9-424a-a432-b7c2fea832d7`; `/health` reported the skeleton
+  profile and `/api/v1/join` returned its fail-closed `501`. The exact reviewed
+  commit was then redeployed and its secrets resynchronized from Keychain.
+- Live checks passed for health and protocol discovery, invalid bootstrap
+  `401`, untrusted-origin `403`, browser and packaged-Stage preflight, missing
+  WebSocket authority `401`, wrong-origin WebSocket `403`, packaged-Stage join,
+  first-use WebSocket `101`, ticket replay and tamper `401`, and explicit
+  session cleanup `200`.
+- Live Cloudflare admission checks returned creation `429` after ten synthetic
+  sessions, each explicitly ended, and join `429` after 61 synthetic misses
+  against one opaque nonexistent session identifier.
+- The obsolete `DEVELOPMENT_ACCESS_TOKEN_SHA256` Worker secret and its matching
+  legacy Keychain plaintext item were permanently deleted after replacement
+  proof. They are not recoverable and are no longer accepted by the service.
 
 Setting the Worker secret `EMERGENCY_DISABLED` to the exact string `true`
 keeps `/health` and `/api/protocol` available while every session creation,
