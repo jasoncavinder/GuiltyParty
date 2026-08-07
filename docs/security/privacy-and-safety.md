@@ -150,6 +150,130 @@ Recording requires:
 
 All participants should know when recording occurs.
 
+ADR 0012 requires affirmative consent from every affected participant before
+recording, transcription, external caption processing, or AI media access. A
+host may request or stop a feature but cannot consent for participants. Scope or
+participant changes pause the feature for renewed consent, and withdrawal stops
+the route. Recording, transcription, and AI media access remain off by default.
+
+---
+
+# Capture Permission and Indicators
+
+Operating-system microphone or camera permission is requested just in time
+after a user initiates the feature. Permission makes a capability available; it
+does not publish media or authorize recording, transcription, retention, or AI
+access.
+
+Active microphone and camera capture has a persistent, labeled in-product
+indicator in addition to platform indicators. Push-to-talk shows when it is
+actually live, an open microphone requires an explicit session-scoped choice,
+and camera publication includes a local preview. Mobile capture does not
+continue in the background initially. Restart, endpoint replacement,
+interruption, or unexpected route change returns capture to ready or paused
+until the user resumes it.
+
+Mobile microphone input and audio output are validated separately. Headphone
+removal, Bluetooth loss or switching, speaker or unknown output, microphone-
+route change, calls, audio-focus loss, backgrounding, locking, and media-
+service reset stop private playback and microphone publication. Private audio
+never falls back to a speaker, pending audio is not replayed, and capture does
+not resume automatically. Host and server surfaces receive only the minimum
+generic readiness needed for operation, not call details, Bluetooth history,
+hardware identifiers, or private device activity. See
+[ADR 0022](../adr/0022-mobile-audio-route-and-interruption-policy.md).
+
+A shared room microphone is disclosed during session entry and is never
+passive. A participant or shared-endpoint user explicitly activates it, and an
+indicator remains visible within the physical room. A host may request or stop
+public speech but cannot silently activate the shared endpoint or remotely
+unmute a personal Companion.
+
+Public-route state may appear on the Stage and affected endpoints. Private-route
+state appears only to authorized senders, recipients, and host roles; it must
+not reveal a whisper or accessibility choice publicly.
+
+Recording, transcription, external captions, and AI media routes name the
+actual operation with an unhideable active label and appropriate start, pause,
+resume, and stop notices. A generic microphone icon is not sufficient.
+
+# Companion Screen-Capture Protection
+
+Active Android Companion windows use secure-window protection. iOS and iPadOS
+cover protected content during reported recording or mirroring and warn
+truthfully after a still-screenshot notification, which arrives after capture.
+App-switcher snapshots use a neutral privacy shield on every platform.
+
+Capture state is not scenario truth, is not reported to hosts or other players
+by default, and is not retained for analytics, discipline, reputation, or
+account enforcement. A required interaction may use another authorized endpoint
+or a generic technical pause without identifying the participant.
+
+A phone or tablet may control a separate public Stage route such as AirPlay,
+but only the server-authorized Stage projection reaches the television. The
+private Companion projection and notifications are never mirrored. The product
+does not claim protection against physical cameras, external capture hardware,
+browsers, or compromised operating systems. See
+[ADR 0021](../adr/0021-mobile-screen-capture-and-stage-casting.md).
+
+# Mobile Notifications and Live Status
+
+Lock screens, watches, desktop relays, vehicle displays, and other ambient
+surfaces are not private Companion endpoints. Mobile notifications therefore
+use only fixed, generic project-owned text whose complete payload is safe to
+display. Preview settings do not authorize private data. Hosts, scenarios,
+creators, and AI cannot inject notification content, and notification behavior
+is not visible to hosts or retained as engagement analytics.
+
+An optional future Live Session Status may help a player tap back into an
+active session after using another application or reaching the lock screen. A
+one-time device preference can allow it to start automatically following the
+player's later intentional joins. Its content remains public-safe,
+non-authoritative, promptly stale, and removable by the player. It cannot name
+the session, people, characters, location, language, private content, or game
+phase. Push-to-start remains unapproved. See
+[ADR 0031](../adr/0031-mobile-notifications-and-live-session-status.md) and the
+[Mobile Notification and Live Status Checklist](mobile-notifications.md).
+
+---
+
+# Mobile Beta Privacy
+
+Local, internal, and initial invitation-only mobile testing uses local or
+staging services, synthetic or dedicated non-production accounts, and original
+test scenarios. Early cohorts do not enable payments, recording,
+transcription, behavioral analytics, retained private communications,
+production creator libraries, or unapproved AI media access.
+
+Feedback attachments require an explicit tester action and use synthetic
+content. Raw screenshots, logs, and similar artifacts are access-restricted and
+deleted promptly after triage; durable issues keep only a minimized technical
+summary. Beta membership is not consent for marketing. ADR 0030 permits
+platform crash evidence and a user-initiated, allowlisted diagnostic bundle; it
+does not authorize automatic collection or a third-party crash, analytics,
+session-replay, or diagnostic SDK. Any provider still requires approved fields,
+scrubbing, consent, retention, licensing, update, and removal behavior. See
+[ADR 0024](../adr/0024-mobile-beta-distribution.md) and
+[ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md).
+
+---
+
+# Accessibility Caption Consent
+
+A recipient may privately enable verified local, ephemeral accessibility
+captions for media that recipient may already hear. Caption text is not stored,
+exported, retransmitted, or sent to another processor, and other participants
+cannot veto the accommodation. Session entry discloses that this capability may
+be used without identifying who uses it.
+
+If local and ephemeral behavior cannot be verified, captions are treated as
+external processing and require affirmative consent from every affected
+participant. Caption access never authorizes transcript retention.
+
+These rules are a product minimum. Applicable regional, age-related, recording,
+and multi-party-consent requirements require legal review before distribution,
+and stricter requirements take precedence.
+
 ---
 
 # Whisper Privacy
@@ -161,6 +285,17 @@ Default behavior:
 - Not recorded.
 - Not transcribed.
 - Not available to AI systems.
+
+Private audio stops when its authorized audience, E2EE key epoch, endpoint
+authority, personal output, or media-provider enforcement becomes absent or
+uncertain. It is not queued, replayed, downgraded, or redirected to a speaker,
+Stage, another participant, recorder, transcription service, or AI process.
+
+Affected participants receive direct, honest notice if partial delivery or
+unintended playback cannot be ruled out. The host sees only the minimum
+authorized operational status, while the Stage and unrelated participants do
+not learn that a private route exists. A possible unintended output or
+subscriber is handled as a potential exposure, not merely a network error.
 
 Exceptions may exist for:
 
@@ -215,6 +350,10 @@ AI access should be:
 - Limited to necessary data.
 - Logged.
 
+If AI receives participant media, every affected participant must consent to
+the named route, purpose, processor, and retention policy. Public-route consent
+does not authorize whisper or private-conversation access.
+
 ---
 
 # User Safety Features
@@ -243,6 +382,18 @@ Support:
 - Reduced motion
 - Keyboard navigation
 - Controller navigation
+
+Capability preflight asks what functions are available or needed, not for a
+medical diagnosis. Hosts see only readiness and remediation choices. When a
+required private capability is missing, the product uses another authorized
+personal endpoint, an equivalent private modality, a scenario-approved
+accessible variant, or participant-consented minimum host assistance. If none
+is safe, it pauses.
+
+Accessibility does not justify exposing private content through a Stage, shared
+speaker, another participant's endpoint, lock-screen notification, unsecured
+channel, AI prompt, recording, or transcription. A pause must not identify the
+affected participant or reveal why assistance is needed.
 
 ---
 
@@ -306,4 +457,6 @@ Trust should be considered part of the product experience.
 - [Data lifecycle and decision register](data-lifecycle.md)
 - [Session journal boundaries](../architecture/session-journal.md)
 - [AI Stage Manager boundaries](../architecture/ai-stage-manager.md)
+- [Capture indicators and consent](../adr/0012-capture-indicators-and-consent.md)
+- [Private-audio route failure](../adr/0013-private-audio-route-failure.md)
 - [Repository security policy](../../SECURITY.md)

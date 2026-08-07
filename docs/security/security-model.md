@@ -55,7 +55,7 @@ create game truth or broaden access.
 
 The Stage is a public room surface. Companions and authorized host or creator
 tools may contain private information. Public endpoints must not receive private
-payloads and rely on UI hiding.
+payloads or rely on UI hiding.
 
 ### Scenario Engine to AI Stage Manager
 
@@ -68,6 +68,16 @@ canonical state directly.
 Identity, payment, media, infrastructure, and AI providers are separate trust
 domains. Each future integration requires data-flow, retention, access, and
 contract review.
+
+### Private Companion to Ambient Notification Surface
+
+Lock screens, watches, desktop relays, vehicle displays, and live-status
+surfaces are public or uncertain audiences. They receive only fixed,
+public-safe notification state and never a private Companion projection,
+scenario content, participant identity, credential, or executable authority.
+Opening a notification crosses back into the private application only after
+unlock, current authentication, and a fresh server-authorized fetch. See
+[ADR 0031](../adr/0031-mobile-notifications-and-live-session-status.md).
 
 ## Required Security Invariants
 
@@ -83,6 +93,8 @@ contract review.
   and approved duration before collection begins.
 - Revoked or expired session and pairing authority cannot continue to grant
   access.
+- Notification delivery, display, dismissal, or live-status timing cannot
+  create scenario truth or disclose private content.
 
 ## Threat Areas
 
@@ -117,6 +129,185 @@ Examples include guessed codes, reused invitations, unauthorized room changes,
 and abandoned authenticated devices.
 
 Required response: scope, expire, validate, and revoke pairing authority.
+
+### Native Companion Credential Storage
+
+Passkey private keys remain under the operating system's credential manager and
+are never exported into Guilty Party application storage. Short-lived access
+tokens exist only in process memory.
+
+An installed Companion may persist only opaque, device-bound credentials needed
+to refresh account authority or resume an authorized session. On iOS and
+iPadOS, those credentials are stored in the Keychain with device-only
+accessibility appropriate to their required availability. On Android, they are
+stored as ciphertext in application-private storage using an app-specific,
+non-exportable Android Keystore key. Session authority does not sync through
+cloud backup, migrate to another device, or serve as proof for a different
+endpoint. A player using another device reauthenticates and receives new
+endpoint authority.
+
+Non-secret identifiers may use ordinary application-private storage. Access,
+refresh, or session-resume credentials must never appear in `UserDefaults`,
+ordinary `SharedPreferences`, logs, analytics, source files, or general device
+backups. Sign-out, account removal, endpoint revocation, or detection that the
+credential can no longer represent valid authority deletes the corresponding
+local credential and invalidates it server-side where applicable.
+
+[ADR 0029](../adr/0029-companion-local-data-lifecycle.md) separately prohibits
+persistent private-gameplay caching and defines the allowed opaque local
+continuity categories and deletion triggers. Server-side verifier storage
+remains a distinct boundary.
+
+### Browser Companion Credential Storage
+
+Browser authentication uses WebAuthn for passkeys, leaving private-key
+operations with the authenticator rather than exposing keys to application
+JavaScript. Account and session authority is represented by an opaque,
+server-managed session identifier in a host-only cookie marked `Secure`,
+`HttpOnly`, and `SameSite=Strict`. The cookie uses the `__Host-` prefix, has no
+`Domain` attribute, and uses `Path=/`. A narrowly scoped, short-lived
+`SameSite=Lax` correlation cookie may be used only when an external identity
+provider's return flow requires it; it is not ongoing session authority.
+
+Access tokens, refresh tokens, session identifiers, and resume credentials must
+not be placed in `localStorage`, `sessionStorage`, IndexedDB, service-worker or
+HTTP caches, URLs, logs, or analytics. Any transient browser-held proof remains
+in memory. Ordinary browser storage may contain only non-secret preferences and
+identifiers that do not grant or resume authority.
+
+The server may issue a bounded persistent session cookie to support browser
+restart and temporary-disconnection recovery. Its lifetime, rotation policy,
+and any explicit "remember this browser" experience require separate approval.
+Sign-out, account removal, endpoint revocation, or invalid authority deletes the
+cookie where possible and invalidates the corresponding server-side session.
+
+This design requires an authenticated HTTPS/WSS origin. Plain HTTP on a LAN is
+not an acceptable production credential boundary; production LAN browser access
+therefore depends on the local certificate and trust design. ADR 0029 prohibits
+persistent browser caching of private gameplay content.
+
+### Companion Local Data Lifecycle
+
+Private gameplay projections, secrets, objectives, messages, votes, action
+payloads, captions, media, and AI context remain in process or page memory and
+are never written to an application-controlled persistent cache. Connection
+uncertainty and lifecycle or authority loss cover and logically purge the
+private view. A fresh server-authorized projection is required before it
+returns.
+
+Persistent Companion storage is limited to approved device-bound credentials,
+paired-server trust, minimum opaque resumption metadata, and non-secret device
+preferences. Credentials, trust, session metadata, diagnostics, and private
+content are excluded from cloud backup and device or cross-platform transfer.
+A restored or replacement device reauthenticates and re-pairs.
+
+Confirmed session end, leave, removal, revocation, primary transfer, logout,
+account deletion, credential expiry, or server-identity failure deletes the
+applicable local continuity data and invalidates authority server-side where
+possible. Without authoritative contact, opaque resumption metadata expires no
+later than 24 hours after the last-known session end or last authenticated
+contact when no end is known. Startup and every read path enforce expiration
+before use.
+
+Authenticated browser gameplay responses use `Cache-Control: no-store` and
+never enter script-readable persistent storage or service-worker caches. Only
+non-secret preferences without account, endpoint, session, scenario,
+participant, pairing, or authority identifiers may use ordinary browser
+storage or backup.
+
+[ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md) permits
+platform-provided crash evidence and a user-initiated, allowlisted diagnostic
+bundle. It prohibits automatic first-party upload, account or session
+correlation, private content, raw logs and dumps, session replay, and an
+unapproved third-party SDK. On-device construction and receiving validation
+fail closed; local bundles expire within 24 hours, raw received or exported
+reports within 30 days, and minimized issue records 180 days after their last
+occurrence. ADR 0029 still does not approve any other server-side retention
+category.
+
+### Server-Side Credential Storage
+
+Permanent account authority stores only the verifier and binding material
+needed for the approved authentication methods: WebAuthn credential records
+containing public—not private—key material; issuer-and-subject bindings for
+Apple and Google sign-in; the encrypted verified recovery email; and minimal
+security, acceptance, and revocation metadata. Identity-provider access or
+refresh tokens are not retained when a provider is used only to authenticate.
+
+Bearer credentials are random, opaque values. The client receives the raw
+value; the server stores a keyed digest and keeps the digest key outside the
+credential database. Account sessions, native refresh credentials, browser
+sessions, and gameplay-session resume credentials are distinct authority
+classes. Each record is scoped to its account, endpoint, intended audience,
+and, where applicable, game session, with issuance, expiry, rotation, use, and
+revocation metadata. Logs and analytics never contain raw credential values.
+
+Refresh and resume credentials rotate after successful use. Reuse of an
+invalidated value revokes its credential family and requires authentication.
+Endpoint removal revokes that endpoint's authority; account recovery revokes
+all existing account sessions; ending a game revokes its gameplay-resume
+authority without necessarily ending the account session. Revocation and
+expiration state must survive server restarts.
+
+Account and security records are logically separated from scenarios, content,
+and deterministic session journals. Gameplay systems reference opaque account,
+participant, and endpoint identifiers. They do not receive credential values,
+recovery addresses, provider bindings, or unrelated authentication history.
+
+An isolated-LAN game server does not receive permanent-account credential
+records, identity-provider tokens, or recovery addresses. It may verify a
+bounded, signed, audience-restricted offline-admission assertion and retain
+only the session-scoped authority needed for admission, reconnect, and local
+revocation. The assertion contains no unnecessary personal information.
+
+Security databases, backups, and connections between trusted components are
+encrypted, and administrative access is restricted and auditable. Concrete
+database, encryption-key, secret-management, retention, and infrastructure
+provider choices require separate approval.
+
+### Control-Plane Transport Security
+
+HTTP/WS is limited to loopback tests, synthetic local development, and the
+explicitly enabled account-free placeholder MVP development profile. The
+development profile is absent from beta and release builds, warns continuously
+that transport is unencrypted, binds only to selected private or link-local
+interfaces, and rejects real authentication, participant data, private or
+licensed content, payments, recording, transcription, and private
+communications.
+
+HTTPS/WSS is mandatory before permanent accounts or real authentication,
+non-synthetic participant data, non-placeholder private or licensed content,
+external testing or distribution, untrusted or routed networking, and any
+commercial or production deployment. Beta and release clients reject
+cleartext. TLS or server-identity failure never offers or triggers plaintext
+fallback. A plaintext listener may redirect a non-sensitive browser navigation
+but never accepts credentials, authority, private projections, commands, or a
+WebSocket upgrade.
+
+Media-plane encryption remains a separate decision and is required before user
+media is carried.
+
+### LAN Server Identity and Certificate Trust
+
+Each LAN server has an installation-specific private certificate authority and
+server identity key protected by the host platform. It issues renewable local
+leaf certificates; no universal private LAN key is shared across installations.
+Native clients learn the authority fingerprint through QR pairing or a
+human-compared authentication string and store that server-specific binding in
+protected storage. Discovery data and first network contact are not trust on
+first use.
+
+Leaf renewal under the paired authority is automatic. A planned authority
+rotation is authenticated by the existing authority and visibly announced. An
+unauthenticated change, loss, or replacement creates a new server identity,
+invalidates local endpoint and session authority, and requires explicit
+re-pairing. Names, addresses, discovery records, and database restores cannot
+silently transfer trust.
+
+Generic browsers use publicly trusted HTTPS. A fully isolated LAN browser is
+supported only when an operator-managed device was provisioned with the local
+authority. The consumer path never asks guests to install a root or bypass a
+certificate warning.
 
 ### Media Privacy Failure
 
@@ -158,7 +349,6 @@ Future implementations should include:
 
 Human approval is required for:
 
-- authentication and account recovery model
 - administrative and support-access policy
 - encryption and key-management design
 - provider selection and data residency

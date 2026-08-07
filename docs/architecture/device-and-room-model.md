@@ -24,8 +24,8 @@ A room is not merely a collection of network connections.
 ## User
 
 A user represents a real-world person. Companion players establish at least a
-minimal Guilty Party account; the production identity and recovery model
-remains open.
+minimal Guilty Party account under the accepted authentication and recovery
+model.
 
 A user may have:
 
@@ -126,7 +126,10 @@ The system understands that Alice and Bob are separate players even though they 
 
 # Endpoint
 
-An endpoint is a connected device.
+An endpoint is one registered client context, such as an app installation,
+browser profile, television application, or desktop application. A physical
+device may host an endpoint, but its hardware identity is not account or
+participant identity.
 
 Examples:
 
@@ -138,6 +141,82 @@ Examples:
 - Streaming device
 
 Endpoints advertise capabilities.
+
+---
+
+# Identity Recovery Boundaries
+
+The system recovers three identities independently:
+
+- A **user account** is durable and is recovered only through accepted account
+  authentication or recovery proof.
+- A **participant** is session-specific. After account authentication, the
+  server recovers the existing account-to-participant relationship. By default,
+  one account has at most one active participant identity in a session.
+- An **endpoint** is recovered only with valid endpoint-bound resume authority.
+  A different installation or browser profile receives a new endpoint identity
+  and is then attached to the recovered participant.
+
+Recovering an account does not clone an endpoint credential. Recovering a
+participant does not create a new character assignment. Character control and
+private state belong to the participant and are projected only to currently
+authorized endpoints.
+
+Display names, device identifiers, network addresses, physical proximity, and
+pairing invitations cannot establish or recover an account or participant by
+themselves. On an isolated LAN, a bounded offline-admission assertion may prove
+the account relationship. Without usable account proof, recovery requires an
+explicit host-assisted process rather than inference.
+
+## Primary Private Endpoint Authority
+
+A participant may have several registered and connected personal endpoints,
+but the server grants one endpoint the primary private-authority generation at
+a time. That endpoint receives complete participant-private projections and may
+submit ordinary participant actions. Standby endpoints receive only non-private
+connection state.
+
+An authenticated endpoint may request an atomic transfer by choosing "Use this
+device." The former primary endpoint does not need to approve the transfer; it
+immediately loses private and action authority, receives notification, and must
+clear its private view. Requests include the endpoint identity, an idempotency
+identifier, and the current authority generation. The server rejects requests
+from a stale generation.
+
+Public or shared Stages are never eligible for primary private authority.
+Future media or accessibility designs may grant a separate, narrowly scoped
+capability lease to another endpoint without granting a second general-purpose
+private endpoint. Endpoint revocation invalidates its credentials and ends its
+connection.
+
+## Host Endpoint Management
+
+The primary host and co-hosts explicitly granted participant-management
+authority may view a minimal operational endpoint roster, revoke a selected
+endpoint, transfer primary authority among endpoints already authenticated for
+the participant, remove a participant from the session, or approve narrowly
+scoped host-assisted recovery.
+
+Host-assisted recovery is available when a replacement endpoint cannot present
+usable account proof. The host selects the existing participant and explicitly
+confirms the requesting endpoint. The server revokes the participant's former
+endpoints by default and grants the replacement session-only authority. This
+does not authenticate or alter the permanent account, create an account binding,
+change recovery information, or grant authority outside the current session.
+The authenticated account owner may later reclaim the participant and revoke
+the replacement.
+
+Endpoint revocation immediately stops private projections, participant actions,
+and media authority, invalidates session credentials, and remains effective for
+an offline endpoint. Offline status by itself never revokes authority. Removing
+a participant revokes every session endpoint associated with that participant
+without deleting or suspending the account.
+
+These operations require explicit confirmation and produce minimal
+control-plane audit records without credential or private scenario content.
+Character reassignment and other changes to deterministic participation state
+are separate, explicit scenario-journal events. The AI Stage Manager and
+support personnel cannot perform or override host endpoint-management actions.
 
 ---
 
@@ -307,6 +386,30 @@ Audio routing decisions should consider:
 - Room membership
 - Endpoint capabilities
 
+## Room-Audible Capture Lease
+
+Each physical room has at most one active room-audible capture lease. The
+control plane binds it to the room, endpoint, route, audience, authority
+generation, and participant when the source is personal. Merely advertising a
+microphone capability or publishing a provider track does not create authority.
+
+A personal microphone is attributable to its participant and endpoint. A
+shared microphone belongs to the room and is labeled `Room microphone` unless a
+participant explicitly accepts current attribution. It is not a participant,
+account, character, or proof of speaker identity, and Guilty Party does not use
+voice recognition or AI to infer one.
+
+Requests do not open microphones. The current speaker must hold push-to-talk or
+confirm a bounded activation. Hosts may facilitate or stop the public-speaking
+queue but cannot remotely unmute a personal device or silently activate a
+shared microphone. Lease transfer is break-before-make and uses a new authority
+generation.
+
+The technical lease lasts at most 15 seconds and renews every five seconds while
+authority remains valid. Any latched room-audible activation lasts at most 120
+seconds before the speaker explicitly renews it. See
+[ADR 0014](../adr/0014-room-microphone-arbitration.md).
+
 ---
 
 # Design Principles
@@ -341,6 +444,15 @@ No Companion:
 
 - Use an individually authorized browser Companion fallback.
 - Never expose private participant content through a shared public Stage.
+
+Required private capability unavailable:
+
+- Try another authorized personal endpoint.
+- Use an equivalent private modality or scenario-defined accessible variant.
+- With participant consent, allow narrowly scoped host assistance.
+- Pause the affected interaction when no safe fallback exists.
+- Never reroute private content to a shared display, speaker, another
+  participant's endpoint, or an unsecured channel.
 
 ---
 

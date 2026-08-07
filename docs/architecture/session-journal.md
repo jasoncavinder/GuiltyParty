@@ -93,3 +93,58 @@ A future implementation must define:
 - deletion without misleading replay guarantees
 
 These implementation decisions are intentionally deferred.
+
+## Server-Restart Recovery
+
+After restart, the server restores canonical scenario state from the exact
+immutable scenario version and ordered journal. Durable control-plane records
+also restore:
+
+- session and participant identities
+- character assignments and room associations
+- endpoint registrations, permissions, and revocation state
+- completed admission and idempotency records needed to prevent duplication
+
+This control-plane recovery data does not become scenario truth merely because
+it is required for continuity.
+
+The server does not restore:
+
+- live transport connections or connected presence
+- expired or ephemeral invitation codes
+- pending, uncommitted commands
+- cached client projections
+- AI suggestions
+- active media routes
+
+Every endpoint initially appears disconnected and must reauthenticate or resume
+its authority. The server then constructs a fresh authorized projection. If
+joining remains open, it issues a fresh invitation.
+
+If the exact scenario version is unavailable, journal replay fails, or required
+durable state cannot be validated, the session fails closed for host
+intervention. The server must not guess, partially reconstruct, or silently
+start a different state.
+
+## Client Connection Resumption
+
+Transport presence remains separate from the journal and canonical scenario
+state. The server uses an application heartbeat every 15 seconds. After 30
+seconds without authenticated activity, a client covers private content and
+disables actions; after 45 seconds the endpoint is disconnected; after five
+minutes host tools may label it stale. None of those presence states revokes the
+endpoint or changes participant, character, or primary authority.
+
+On reconnect, an authenticated client presents its endpoint-bound resume
+authority, last applied server sequence, current primary-authority generation,
+and unresolved command identifiers. The server returns either an available
+recipient-authorized projection delta or a complete fresh projection. It never
+accepts the client's cached state as canonical and does not send raw journal
+events in place of a privacy-filtered projection.
+
+Clients apply resumption atomically before revealing private content or enabling
+actions. Sequence gaps, impossible regressions, and unexpected critical
+messages cause controlled resynchronization. State-changing commands carry an
+idempotency identifier and authority generation; a timed-out result remains
+unknown until queried or resolved during resumption rather than being submitted
+again under a new identifier.

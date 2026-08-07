@@ -59,6 +59,13 @@ validation and publishing process accepts it.
 AI assistance must respect creator access boundaries and must not ingest another
 creator's private work without authorization.
 
+AI may also propose translations of scenario content. A proposed translation
+remains draft creator content until a human with appropriate publication
+authority reviews and explicitly approves it. Translation must preserve
+canonical rules, secrecy boundaries, deterministic outcomes, accessibility
+requirements, and creator rights. It does not authorize external processing of
+unpublished content or participant communications.
+
 ## Rights Metadata
 
 Future tools must be able to associate content and assets with source,
@@ -70,9 +77,17 @@ when no governing agreement exists.
 
 ## Accessibility
 
-Authoring and validation should support accessibility metadata and alternatives
-for media where practical. Concrete requirements belong in future product and
-platform specifications.
+Authoring must classify required private capabilities and define an ordered,
+privacy-preserving fallback or an explicit session-pause outcome. Alternatives
+may change modality, input method, or timing, but must preserve canonical truth,
+audience restrictions, and participant agency.
+
+Publication validation rejects a required private interaction that has neither
+a safe alternative nor explicit pause behavior. Preview and simulation must let
+creators exercise each capability fallback without exposing participant-private
+content through public surfaces. AI may propose accessible alternatives, but a
+creator reviews them and deterministic scenario constraints remain
+authoritative.
 
 ## Open Decisions
 
@@ -83,3 +98,4 @@ platform specifications.
 - publication review and moderation
 - marketplace, revenue, and licensing workflows
 - asset processing and storage
+- localization representation, translation workflow, and approval evidence

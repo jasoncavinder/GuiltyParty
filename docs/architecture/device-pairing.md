@@ -26,6 +26,26 @@ The documented preferred flow is:
 
 The flow should avoid requiring substantial text entry with a television remote.
 
+## Invitation Authority
+
+A Stage-displayed QR code or short code authorizes only:
+
+- locating the intended Guilty Party server and session
+- requesting admission as a Companion endpoint
+- viewing the minimum non-private lobby information needed to confirm the
+  intended session
+- suggesting the physical room associated with the displaying Stage
+
+Possession of the invitation does not create a participant identity, grant
+session membership, assign a character or permissions, expose rosters or
+scenario information, or activate endpoint capabilities such as microphones or
+cameras. A suggested room is not an authoritative room assignment.
+
+After following the invitation, the player authenticates or establishes an
+authorized provisional account, confirms the session and suggested room, and
+requests membership. The server remains responsible for granting membership,
+room association, participant authority, and access to private information.
+
 ## Control-Plane Responsibility
 
 Pairing belongs to the control plane. The authoritative service must verify:
@@ -39,6 +59,32 @@ Pairing belongs to the control plane. The authoritative service must verify:
 Media services consume the resulting authorization but do not decide session or
 scenario membership.
 
+## LAN Service Discovery
+
+A local control-plane server advertises `_guiltyparty._tcp.local.` using DNS-SD
+over mDNS on explicitly eligible LAN interfaces. The default instance name is
+privacy-neutral, such as `Guilty Party A7K3`, and may be collision-renamed by
+the DNS-SD implementation. A custom name is visibly disclosed to the local
+link.
+
+The single TXT record contains only `txtvers=1`, `protovers=1`, and `tls=1`.
+Session, host, participant, room, scenario, joining, account, credential,
+address, certificate, and stable tracking data are excluded. Detailed
+compatibility comes from the non-private HTTPS compatibility endpoint.
+
+Discovery is an untrusted address and compatibility hint. It does not establish
+server identity or grant pairing, membership, authentication, or authorization.
+Clients establish trust through the approved TLS and pairing mechanism. When
+several services are discovered, an unpaired client displays a chooser rather
+than selecting by instance name. A paired client reconnects automatically only
+after verifying the remembered authenticated server identity.
+
+The advertisement remains active while the control-plane service is available,
+including when joining is closed, to support rediscovery and reconnect. It is
+link-local by default; cellular, VPN, WAN, wide-area DNS-SD, and cross-subnet
+relays require separate approval. QR or code pairing and manual addressing
+remain fallbacks when multicast discovery is unavailable.
+
 ## Security Requirements
 
 Pairing credentials must be:
@@ -49,8 +95,92 @@ Pairing credentials must be:
 - revocable when a device is removed or a session ends
 - free of embedded private participant or scenario information
 
-Exact lifetimes, code lengths, and authentication requirements remain human and
-implementation decisions.
+A pairing invitation is valid for 15 minutes from its server-issued time. It
+expires sooner if the session ends or the host revokes joining. Code length,
+admission approval policy, invitation reuse behavior, and behavior during
+server disconnection remain human and implementation decisions.
+
+While joining remains open, the Stage automatically obtains and displays a
+replacement invitation when the current invitation expires. Automatic renewal
+stops when joining closes, joining is revoked, or the session ends.
+
+The Stage displays only the replacement invitation, but the immediately
+previous invitation remains redeemable for a 120-second grace period to
+accommodate scanning, submission, and minor authentication delays. Closing or
+revoking joining, or ending the session, invalidates both invitations
+immediately without a grace period.
+
+The Stage never generates an invitation locally or extends an expired
+invitation. If it cannot reach the server when renewal is due, it removes or
+disables the expired code, explains that joining is temporarily unavailable,
+and retries automatically with bounded backoff. After reconnecting, it confirms
+that joining remains open before displaying a fresh server-issued invitation.
+This pairing failure does not by itself remove already joined participants or
+decide how cached Stage presentation behaves during disconnection.
+
+The server is the sole authority for invitation issuance and expiry. Stage and
+Companion wall clocks cannot extend validity. Clients derive informational
+countdowns from server-provided timing and use monotonic timers locally. A
+material timing disagreement triggers resynchronization; the server's
+redemption decision remains authoritative.
+
+One valid Stage invitation may initiate admission requests for multiple
+players. It is not consumed by the first request. Each player authenticates or
+establishes a provisional account independently, submits a separate admission
+request, and receives distinct participant and endpoint authority. Expiration,
+joining closure, or revocation prevents further use by every player.
+
+Each admission request has a unique client-generated attempt identifier. The
+server binds it to the invitation, authenticated or provisional identity,
+endpoint, and request contents. Repeating the identical request from the same
+authorized context returns the same pending, approved, or rejected result and
+does not create another participant, endpoint, host prompt, or journal event.
+Reusing the identifier with different contents is rejected. An intentional
+corrected request uses a new identifier.
+
+New admission attempts are rate-limited in layers:
+
+- primarily by endpoint and authenticated or provisional identity
+- by invitation at an aggregate level above the session's expected capacity
+- by network address only at a high emergency ceiling so a shared LAN does not
+  become the primary limit
+- server-wide at an emergency resource-protection ceiling
+
+An identical retry with the same idempotency identifier is not a new attempt
+and does not consume the new-attempt allowance.
+
+Initial per-endpoint and per-identity defaults allow five new attempts within
+one minute. Excess attempts trigger a 15-second cooldown, escalating after
+repeated excess within ten minutes to 60 seconds and then five minutes. Pairing
+throttles never create a permanent lockout. The player receives a generic
+message with an approximate retry time, without disclosure of the triggered
+limit or remaining allowance. The host receives a general pairing-throttle
+warning and may rotate the invitation without receiving unnecessary
+participant details. These defaults require review against observed security
+and usability outcomes.
+
+The primary host and a co-host explicitly granted joining-management authority
+may revoke an invitation. The server revokes automatically when joining closes,
+the session ends or is cancelled, the invitation is rotated, its Stage or room
+is removed, or its security context becomes invalid. Players, endpoints acting
+independently, the AI Stage Manager, and ordinary support personnel do not have
+revocation authority. A temporary Stage disconnection or ordinary throttling
+does not revoke an invitation by itself.
+
+Revocation immediately invalidates the current invitation and its grace-period
+predecessor and cancels pending, unapproved admission requests created through
+them. It does not remove admitted participants, whose authority is separate. A
+rotation displays its replacement; closing joining displays that joining is
+closed; other revocations display that joining is temporarily unavailable. An
+applicant receives a generic instruction to scan the current Stage code or ask
+the host, without disclosure of the actor or security reason.
+
+The host receives confirmation and the count of cancelled pending requests.
+The control plane records the invitation and session identifiers, time,
+authorized actor or automatic reason category, and cancellation count. This is
+an operational audit record, not a scenario-journal event, and contains no
+private scenario content. Revocation is not undone; recovery issues a new
+invitation.
 
 A public Stage may display a pairing invitation, but it must not display private
 character data, account details, or reusable credentials.
@@ -80,9 +210,7 @@ Recovery must not silently broaden access.
 
 ## Open Decisions
 
-- guest identity and account requirements
-- invitation lifetime and retry limits
+- provisional-account linking and recovery behavior
 - room creation and approval authority
-- device reauthentication and revocation UX
 - capability attestation and permission prompts
 - recovery ownership when the host is disconnected

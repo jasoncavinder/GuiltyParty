@@ -51,12 +51,19 @@ Example:
 Death at Blackwood Manor
 Saturday, August 8
 7:00 PM HST
+Language: English
 8 Players
 Hosted by Cassandra
 ```
 
 
 An event references a specific published scenario version.
+
+Every event advertises its gameplay language alongside its scheduled time and
+time zone, host, scenario, and participation information. Scenarios may be
+authored and offered in any human language. Approved translation and
+localization direction is recorded in
+[Language and Localization Product Direction](language-and-localization.md).
 
 ---
 
@@ -66,6 +73,7 @@ A Session is the live technical execution of an event.
 
 A session manages:
 
+- Gameplay language
 - Connected participants
 - Rooms
 - Devices
@@ -144,6 +152,14 @@ The host may:
 - Receive AI Stage Manager suggestions
 
 The host remains responsible for directing the experience.
+
+A future host-oriented desktop application uses Guilty Party's official remote
+services by default and may explicitly supervise a local server for isolated-LAN
+hosting. Host mode requires an authenticated, registered host established while
+online; a protected, signed authorization may permit later offline hosting.
+Packaging the UI and local server together does not move deterministic state or
+server authorization into the desktop interface. See
+[ADR 0018](../adr/0018-desktop-host-and-managed-local-server.md).
 
 ---
 

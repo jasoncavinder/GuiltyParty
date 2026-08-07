@@ -32,7 +32,7 @@ Use this process in this or any future conversation:
    that stable ID.
 4. Update the authoritative product document or ADR when appropriate.
 5. Mark the item accepted, deferred, blocked, or superseded.
-6. Promote exactly one unblocked item from the ordered queue to **Active**.
+6. If an unblocked **Open** item remains, promote exactly one to **Active**.
 
 If a conversation is lost, the next collaborator can resume by naming the
 active ID. New questions receive new IDs and are added to the queue; existing
@@ -40,29 +40,1728 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
+No item is active. All 53 questions in the initial Mobile Companion decision
+queue are accepted, with no open or deliberately deferred items. New questions
+receive stable IDs and enter the ordered queue under the resume protocol above.
+
+## Accepted Decision History
+
+### MC-DEL-004: Mobile Store Privacy and Review Preparation
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Every external beta promotion and supported mobile release uses a
+versioned evidence pack tied to the exact binary, services, store track, and
+territories. It reconciles data flows, observed network behavior, permissions,
+entitlements, privacy manifests, third-party code, SBOM and rights evidence,
+retention and deletion, store declarations, privacy policies, ratings, product
+claims, and review instructions. The human owner approves each release; store
+approval and agent review are evidence, not delegated accountability. A stable
+privacy policy and privacy-choices page are public and linked in-app. Both
+native apps provide self-service account deletion, and a public authenticated
+web path supports deletion without reinstalling. Fresh authentication and
+explicit confirmation immediately revoke access, with project-controlled
+deletion completed within 30 days by default or sooner when required. Account,
+recovery, authentication binding, provider token, endpoint, push, preference,
+and user-controlled history data is deleted or irreversibly disassociated;
+narrow retention exceptions require separate approved purpose, fields, access,
+duration, deletion, legal basis, and disclosure. Sign in with Apple and other
+provider access is revoked. Store claims describe capture protection honestly
+and distinguish the private Companion from public Stage casting. Reviewers
+receive maintained synthetic accounts, original test content, reachable review
+services, sample invitations, and complete instructions without production
+access. Initial distribution is not child-directed and does not enter Kids or
+Families programs; ratings and eligible scenarios match the actual catalog.
+Encryption, export, provider, AI, permission, content-rights, and territorial
+answers are reviewed from the exact release facts. Any disagreement or
+unresolved server-side lifecycle blocks external distribution.
+
+**Rationale:** Release-specific evidence and self-service controls provide a
+truthful, maintainable store posture for a privacy-first product and a solo
+business without pretending that a prior approval, generic questionnaire, or
+support-dependent process guarantees compliance.
+
+**Consequences:** Public mobile distribution requires ongoing owner review,
+maintained synthetic reviewer infrastructure, accurate rights and rating
+evidence, and completion of every server-side data lifecycle used by the build.
+The policy must be revisited when platform requirements, territories,
+providers, content categories, child-directed distribution, or material data
+practices change. Qualified legal advice remains necessary for legal or
+jurisdictional conclusions.
+
+**Recorded in:** [ADR 0032](../adr/0032-mobile-store-privacy-and-review-readiness.md)
+and [Mobile Store Release Evidence Checklist](mobile-store-release.md)
+
+### MC-PRIV-001: Lock-Screen Notification Content
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile notifications are optional and use only fixed, localized,
+project-owned, public-safe templates. Their complete payload is safe if fully
+displayed and never includes identities, session or scenario details, private
+gameplay, communications, media, authentication material, AI output, or creator
+content. Opening requires unlock, current authentication, and a fresh
+authorized fetch; notification settings and behavior are not exposed to hosts
+or collected as engagement analytics. A future Live Session Status may use iOS
+Live Activities and Android Live Updates. After a one-time contextual choice on
+a device, it may start automatically whenever that player intentionally joins
+an eligible session, with a global toggle and per-session stop. It shows only
+fixed generic status or countdown information, is optional and
+non-authoritative, becomes stale within five minutes without refresh, and is
+removed when purpose or authority ends. Dismissal prevents recreation during
+the same session. Initial creation is limited to a foreground authenticated
+join; push-to-start and scheduled tracking remain unapproved pending separate
+review.
+
+**Rationale:** Generic notification content and a reusable device preference
+give players a convenient path back into an active game without treating an
+ambient surface as private or forcing repetitive per-session confirmation.
+
+**Consequences:** Live status is not part of the MVP, and later implementation
+requires a native baseline, provider and token review, store reconciliation,
+platform fallbacks, and physical-device testing. Platform differences are
+acceptable when the return-to-session purpose and privacy guarantees remain
+equivalent. The policy may be revisited if evidence shows friction, poor
+usefulness, privacy exposure, stale behavior, or material platform change.
+
+**Recorded in:** [MC-PROD-016](../product/mobile-companion.md#mc-prod-016-private-safe-notifications-and-live-session-status),
+[ADR 0031](../adr/0031-mobile-notifications-and-live-session-status.md), and
+[Mobile Notification and Live Status Checklist](../security/mobile-notifications.md)
+
+### MC-PRIV-004: Mobile Crash Reporting and Diagnostics
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** The initial mobile diagnostic strategy uses Apple and Google
+platform-provided crash and health evidence with accurate notice, local tools
+on project-owned test devices, and a separate user-initiated **Share Diagnostic
+Report** action after recovery. It adds no third-party crash, analytics, remote-
+logging, screen-recording, or session-replay SDK and no automatic first-party
+upload. The player chooses **Send once** or **Not now**; a revocable **Always
+offer minimized diagnostics** preference never becomes automatic-send consent.
+The first-party bundle accepts only application build, OS version, device model
+without a persistent identifier, failure class, sanitized symbolic application
+stack frames, protocol and schema versions, fixed lifecycle, connection,
+media-route, capability, and feature enums, bucketed resource state, a random
+per-report identifier, minute-rounded time, and at most 50 fixed breadcrumb
+enums covering two minutes. It prohibits identity; account, session,
+participant, character, room, endpoint, scenario, installation, pairing, and
+host identifiers; credentials and secrets; private content, messages, actions,
+media, captions, AI content, screenshots, UI hierarchy, input, pasteboard,
+addresses, network identifiers, raw logs, traces, dumps, databases, dynamic
+messages, and replay. On-device allowlist construction precedes file or network
+activity, receiving validation rejects unknown fields, and unsafe construction
+produces no report. A local bundle is deleted after sharing or within 24 hours;
+directly received or exported raw reports within 30 days; and a minimized
+engineering record 180 days after its last occurrence. Platform-provider
+retention is disclosed rather than falsely controlled. During solo operation,
+only the human owner accesses portals or raw reports; agents may receive only
+an explicitly authorized minimized issue extract. Reports are not connected to
+accounts or sessions or used for gameplay, advertising, marketing, profiling,
+or model training. Any future SDK, provider, automatic collector, or expanded
+integration requires ADR 0025 intake, store reconciliation, consent
+enforcement, exact retention and deletion, and removal evidence. If safe
+scrubbing, disclosure, or provider behavior cannot be verified, collection or
+the affected distribution does not proceed.
+
+**Rationale:** Platform evidence and explicit voluntary sharing provide useful
+reliability data without adding a silent collector or allowing diagnostic
+convenience to expose player identity, private gameplay, or proprietary
+content.
+
+**Consequences:** Some rare failures may lack reproduction context. The project
+must maintain strict schemas, canary-secret tests, physical crash evidence,
+access reviews, truthful platform notices, and deletion verification. Apple and
+Google retain some evidence under provider-controlled behavior. A richer
+collector remains a separately reviewed future decision.
+
+**Recorded in:** [ADR 0030](../adr/0030-mobile-crash-reporting-and-diagnostics.md)
+and [Mobile Diagnostics Policy Checklist](../security/mobile-diagnostics.md)
+
+### MC-PRIV-002: Companion Data Cache and Deletion Lifecycle
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** The initial Companion does not persist private gameplay content.
+Private projections, secrets, objectives, evidence, messages, votes, action
+payloads, media, captions, transcripts, and AI context remain in process or
+page memory and are covered and logically purged when connection, lifecycle,
+audience, or endpoint authority becomes uncertain. A fresh server-authorized
+projection is required before private content returns. Persistent data is
+limited to approved device-bound credentials, paired-server trust, minimum
+opaque resumption metadata, and non-secret device preferences. Credentials,
+trust, session metadata, diagnostics, and private content are excluded from
+cloud backup, device-to-device transfer, and cross-platform transfer; only
+non-secret preferences without account, session, scenario, participant,
+endpoint, pairing, or authority identifiers may be backed up. Native authority
+uses the accepted Keychain or Android Keystore-protected boundaries. Browser
+private content remains in page memory, authenticated gameplay responses use
+`Cache-Control: no-store`, and credentials or private data never enter script-
+readable persistent storage or service-worker caches. Confirmed session end,
+leave, removal, revocation, endpoint transfer, logout, account deletion,
+credential expiry, or server-trust failure immediately deletes applicable
+local continuity data and invalidates server authority where possible. Without
+contact, opaque resumption metadata expires no later than 24 hours after the
+last-known session end or last authenticated contact when no end is known.
+Startup and every read path enforce expiry. Sign-out, endpoint removal, local
+reset, and connected account deletion are distinct user controls; an offline
+client may clear local data but cannot claim remote deletion. Uninstall is not
+proof of server revocation. Application diagnostics are authorized only within
+the later, narrow ADR 0030 boundary. This decision governs Companion-local
+storage only and does not approve server-side consent, safety, journal,
+diagnostic, AI, media, or account retention.
+
+**Rationale:** Memory-only private content minimizes exposure from lost,
+restored, transferred, or stale devices while narrowly scoped opaque metadata
+supports the accepted reconnection behavior. Explicit backup exclusions,
+expiry checks, and truthful deletion controls address operating-system
+lifecycle limits without treating a client cache as canonical truth.
+
+**Consequences:** Private content must be fetched again after uncertainty, and
+long disconnections may require sign-in or rejoining. Device replacement
+requires reauthentication and re-pairing. Implementations need backup,
+transfer, expiry, crash, forced-termination, and purge tests. Server-side data
+lifecycle decisions remain unresolved and separately gated.
+
+**Recorded in:** [ADR 0029](../adr/0029-companion-local-data-lifecycle.md) and
+[Data Lifecycle](../security/data-lifecycle.md#companion-local-data-matrix)
+
+### MC-DEL-005: Mobile Release Parity
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile parity means equivalent accepted product guarantees and
+safe participation in the same eligible sessions, not pixel-identical native
+interfaces or simultaneous release dates. Every material capability is
+classified as a core parity gate, platform adaptation, staged-parity feature,
+or justified platform-exclusive capability. Before a platform is represented
+as generally supported for an applicable scope, it must demonstrate the core
+authentication and recovery, pairing and endpoint authority, gameplay,
+server-enforced secrecy, contract and reconnection, privacy and media safety,
+phone and tablet, accessibility, language and locale, update and revocation,
+and applicable account-deletion guarantees. Native interaction, permissions,
+discovery, secure storage, accessibility integration, capture controls, media
+routing, casting, and store flows may differ while preserving those outcomes.
+One platform may enter beta, release, or receive an optional capability first
+when the gap is accurately disclosed, backward compatibility or an explicit
+update boundary is preserved, scenarios cannot silently depend on the missing
+capability, safe fallback and eligibility behavior exist, and no privacy,
+security, authorization, deterministic, account-continuity, or safety
+guarantee is weakened. Clients advertise versioned capabilities, while the
+server retains authority and does not infer support solely from platform name.
+Security and privacy fixes may ship immediately; unsafe clients or capabilities
+are disabled, revoked, constrained, or required to update rather than waiting
+for schedule parity. A living matrix records classification, platform status,
+evidence, gaps, disclosure, fallback, owner, and next review date. Only the
+human owner approves platform claims and releases. The browser fallback does
+not satisfy a native platform parity gate.
+
+**Rationale:** This preserves common product trust and cross-platform session
+compatibility while letting a solo operation sequence native implementation
+and follow each platform's conventions honestly.
+
+**Consequences:** Material mobile capabilities require classification and
+evidence. A functional client may remain beta or unsupported until its core
+gates pass. Staged gaps are reviewed during applicable planning and before
+release, and must eventually be resolved, withdrawn, or honestly reclassified
+rather than silently treated as parity.
+
+**Recorded in:** [ADR 0028](../adr/0028-mobile-release-parity.md) and the
+[Mobile Release Parity Matrix](mobile-release-parity.md)
+
+### MC-ARCH-002: Kotlin Multiplatform Reconsideration Threshold
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Separate native SwiftUI and Jetpack Compose clients remain the
+default. Kotlin Multiplatform is not authorized for the MVP or initial native
+baselines, and solo staffing alone does not justify it. Reconsideration first
+requires both native baselines, at least two meaningful beta or release cycles
+per client, use of generated contracts and shared evidence, and measurable
+effort, defect, code, build, and binary baselines. A proposal then requires at
+least one sustained trigger: 5,000 substantially equivalent hand-maintained
+non-UI lines across the clients; equivalent logic comprising at least 20
+percent of each client's hand-maintained non-UI logic; three eligible
+cross-platform divergence defects in a rolling quarter; or at least 30 percent
+additional second-platform effort across three consecutive shared slices.
+Generated DTOs, native UI and accessibility, platform adapters and policy,
+intentionally independent tests, and vendored code are excluded. Only pure,
+non-authoritative client logic may be evaluated; UI, authentication, secure
+storage, discovery, capture protection, media, lifecycle, notifications,
+stores, and server authority remain native or server-side. Compose
+Multiplatform and other shared UI are excluded. Any evaluation is a separate,
+UI-free branch limited to ten working days or two weeks and must compare a
+native baseline using identical fixtures. Adoption requires every benefit,
+build, binary, quality, privacy, security, determinism, licensing,
+reproducibility, debugging, and removal gate in ADR 0027 to pass. Even then, a
+new owner-approved ADR is required; a passing experiment never enters
+production automatically.
+
+**Rationale:** Real maintenance evidence is a sounder basis than anticipated
+duplication or framework preference. The bounded experiment preserves native
+platform quality and server authority while allowing a future shared-runtime
+proposal when it can demonstrate material benefit to the solo owner.
+
+**Consequences:** Some eligible logic may remain duplicated while evidence
+accumulates. The project must classify code and measure effort, divergence,
+builds, binaries, physical behavior, and removal cost before reconsideration.
+Experimental Swift interoperability cannot become a critical production
+dependency without separate reevaluation. Failure or boundary drift ends the
+experiment without lowering the thresholds.
+
+**Recorded in:** [ADR 0027](../adr/0027-kotlin-multiplatform-reconsideration-thresholds.md)
+and [Kotlin Multiplatform Reconsideration Evidence](kmp-reconsideration-evidence.md)
+
+### MC-ORG-001: Mobile Team Ownership
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Guilty Party is currently a solo operation with one accountable
+human project owner assisted by task-scoped AI agents. The owner retains final
+authority for product scope, architecture, platform differences, privacy,
+security, safety, licensing, legal escalation, third parties, credentials,
+merges, beta promotion, store submission, and release. Agents may research,
+propose, document, implement, test, simulate, review, and prepare handoffs
+within authorized tasks, but they hold no standing platform, product, legal,
+privacy, security, credential, merge, or release ownership; agent review does
+not replace required human acceptance. The owner presently holds shared mobile,
+iOS/iPadOS, Android, contract, evidence, parity, sequencing, and release
+accountability. Work may be sequential across platforms, and native strategy
+does not promise simultaneous implementation or release. When human mobile
+contributors are added, they first form one shared mobile product team with
+iOS/iPadOS and Android specialization. Shared behavior, contracts, privacy and
+security guarantees, fixtures, design semantics, evidence, and release
+coordination remain collective; platform maintainers own idiomatic native
+quality. Separate platform teams are considered only after sustained
+independent roadmaps, adequate accountable human staffing and review continuity
+on both platforms, measured coordination delay, and preservation of shared
+human product and contract authority.
+
+**Rationale:** This describes the current business honestly, keeps human
+judgment and accountability clear despite substantial AI assistance, permits
+capacity-aware sequential delivery, and provides a native-specialist growth
+path without prematurely creating platform silos.
+
+**Consequences:** The owner remains a capacity, review, release, and continuity
+bottleneck; agent parallelism does not create human support or approval
+capacity. Repository decisions, contracts, tests, physical evidence, small
+slices, and handoffs mitigate but do not eliminate that risk. Human hires join
+one shared team initially, and AI agents never fill a vacant accountable role.
+
+**Recorded in:** [ADR 0026](../adr/0026-solo-owner-ai-assisted-mobile-ownership.md)
+and [Mobile Ownership](mobile-ownership.md)
+
+### MC-DEL-006: Dependency and SDK Intake
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Every third-party library, SDK, binary, package, build plugin,
+generator, hosted service client or processor, font, asset, model, dataset,
+copied implementation, and material transitive component requires an intake
+record and explicit project-owner approval for its exact source, version,
+features, purpose, platform, and data behavior. Agents and automation may
+research and propose but cannot self-approve. Intake covers necessity,
+alternatives, source and provenance, direct and transitive code, licenses,
+copyright, patent and notice obligations, commercial and redistribution terms,
+permissions, entitlements, build and runtime authority, all data flows and
+processors, retention and consent, Apple privacy manifests and signatures,
+Android SDK Index and Data Safety effects, advisories, tests, pinning, update,
+rollback, and complete removal. Clearly licensed, source-available, no-data,
+no-permission components may use the standard review; authentication, payments,
+cryptography, media, AI, databases, native binaries, build execution, remote
+configuration, diagnostics, and private-content processors receive elevated
+review and often an ADR. Unclear or incompatible rights, mutable or
+unverifiable artifacts, silent or unavoidable collection, excessive
+permissions, advertising, tracking, data sale, session replay, or no viable
+removal path block adoption. Manifests and lockfiles are committed, versions
+and provenance are pinned and verified, notices remain distinct from the
+project license, and release candidates are reconciled with a human inventory,
+store declarations, and a machine-readable SBOM. Updates repeat the affected
+review and never merge automatically. Removal covers packages, generated and
+native artifacts, permissions, manifests, endpoints, credentials, provider
+data, formats, notices, tests, and SBOMs. Exceptions are owner-approved,
+scoped, visible, time-limited, and cannot override rights, privacy, or store
+requirements. Existing prototype components require retrospective approval
+before invitation-only external beta.
+
+**Rationale:** Third-party code and services can create ownership, privacy,
+store, security, and operational obligations beyond their top-level package
+metadata. Human approval with reproducible evidence protects the proprietary
+product while permitting justified components.
+
+**Consequences:** New components and updates require documented review, release
+artifact reconciliation, notices, and SBOM evidence. Ambiguous or high-risk
+components may require professional review or be rejected. The current Rust
+workspace and local AI endpoint are inventoried as retrospective-review
+pending without changing or newly approving them.
+
+**Recorded in:** [ADR 0025](../adr/0025-third-party-dependency-governance.md)
+and [Third-Party Components](../legal/third-party-components.md)
+
+### MC-DEL-003: Mobile Beta Distribution
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile distribution progresses through local development,
+internal TestFlight and Play testing, named invitation-only external groups,
+and only later an open beta after privacy, account-deletion, store, security,
+support, legal, and release gates are ready. Promotion is a human decision.
+The initial external cohort is normally about 10 to 25 trusted players and
+grows to fill documented device, language, accessibility, network, and room
+coverage gaps. Early cohorts use local or staging services, synthetic or
+dedicated non-production accounts, original test scenarios, non-production
+credentials, and clear beta labeling. They exclude payments, production
+creator libraries, recording, transcription, behavioral analytics, retained
+private communications, and production AI media access. External testers
+receive human-reviewed proprietary beta terms and plain-language limitations.
+Feedback uses one identified route, structured reproduction data, and only
+explicit attachments with synthetic content; raw attachments are deleted
+promptly after triage and durable issues retain minimized technical summaries.
+Beta membership is not a marketing list. Only platform-provided beta health and
+the user-initiated diagnostic bundle approved by ADR 0030 may be used initially;
+no third-party crash, analytics, session-replay, or diagnostic SDK is
+authorized. Internal builds expire when superseded or after
+14 days. Invitation-only builds are supported for 30 days and have an absolute
+60-day lifetime. Security, privacy, authorization, licensing, or deterministic-
+integrity defects trigger immediate revocation, and expired clients receive a
+clear update-required state.
+
+**Rationale:** Progressive named cohorts bound proprietary-content exposure,
+support load, stale-client risk, and unreviewed data collection while still
+providing useful device and play evidence. Project-controlled expiry aligns the
+platforms more closely than their native testing limits do.
+
+**Consequences:** External testing requires reviewed notices and terms, staging
+separation, cohort records, feedback triage and artifact deletion, supported-
+build enforcement, and emergency revocation. Open beta and any diagnostic
+collector beyond ADR 0030 remain blocked on their prerequisite privacy,
+dependency, store, security, and support decisions.
+
+**Recorded in:** [ADR 0024](../adr/0024-mobile-beta-distribution.md) and the
+[Mobile Beta Distribution checklist](mobile-beta-distribution.md)
+
+### MC-DEL-002: Physical-Device Test Matrix
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile qualification uses four tiers: automated virtual coverage
+on applicable pull requests, targeted physical validation for affected native
+hardware and platform behavior, regular core-lab smoke coverage while mobile
+work is active, and a complete beta or release matrix. The target core pool
+covers minimum and latest-stable iPhone and iPad roles, minimum and latest-
+stable Google-reference Android phones, a current Samsung midrange phone, and
+a representative Android tablet. Upcoming previews are additional coverage,
+not substitutes for supported stable cells. Real hardware is required for
+authentication hardware, protected storage, LAN discovery and permissions,
+capture protection, microphone and audio routes, Bluetooth, AirPlay, lifecycle,
+endpoint transfer, hands-on accessibility, performance, and physical-room
+claims. Release scenarios include official remote and isolated-LAN operation,
+network recovery, one-room and multi-room arrangements, split and shared
+microphones, Stage ducking, phone-to-tablet transfer, and browser fallback.
+Approved cloud and external coverage may supplement but not replace the local
+core matrix and must use synthetic data. Exact equipment is maintained in a
+living inventory and reviewed annually, before beta, and when OS floors or
+field evidence change.
+
+**Rationale:** Tiered coverage gives privacy-, media-, LAN-, and room-sensitive
+behavior real-hardware evidence without imposing the entire matrix on every
+low-risk change. Coverage roles remain stable while exact consumer models and
+available equipment can evolve with a small project's resources.
+
+**Consequences:** The project needs access to additional mobile hardware over
+time, must preserve minimum-version devices deliberately, and must maintain
+physical run evidence. The current environment provides a preview iPhone,
+Apple TV, LG webOS Stage, Apple-Silicon development host, browsers, and
+simulators, but physical iPad and Android coverage and supported stable/minimum
+mobile OS cells remain planned gaps rather than immediate purchase mandates.
+
+**Recorded in:** [ADR 0023](../adr/0023-physical-device-test-matrix.md) and the
+living [Mobile Test Matrix](mobile-test-matrix.md)
+
+### MC-MEDIA-003: Mobile Audio Routes and Interruptions
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Mobile endpoints track microphone input and audio output
+separately and treat operating-system routes as capabilities rather than
+identity or authority. Connecting a verified personal headphone output may
+continue already-authorized private playback only when input, audience, and
+acoustic relationships are unchanged. Headphone removal, Bluetooth loss or
+switching, speaker or unknown output, microphone-route change, and authority or
+privacy uncertainty immediately pause private playback, close microphone
+publication, release room-microphone and ducking authority, clear pending
+private media, and require route revalidation and participant confirmation.
+Calls, assistants, audio-focus loss, backgrounding, locking, process restart,
+and media-service reset stop microphone publication and private playback;
+control transport may reconnect automatically, but private media and capture
+never resume automatically. Push-to-talk remains ended. The initial product
+does not support background Companion capture or private playback. Public audio
+and an independently authorized Stage route may continue only when their public
+audience and acoustic route remain valid. Route diagnostics are privacy-
+minimized, non-canonical, and exclude hardware identifiers and private device
+activity.
+
+**Rationale:** Fail-closed private routing prevents a routine platform change
+from exposing private or creator-controlled content, while narrow automatic
+continuation for a verified personal output and independent public Stage routes
+avoids unnecessary disruption. Current native routing and focus APIs provide
+observable transitions without turning device state into scenario truth.
+
+**Consequences:** Native clients need separate input/output state, modern
+platform callbacks, break-before-make transitions, explicit resume UX, buffer
+and grant invalidation, privacy-minimized readiness, and real-device coverage
+for headphones, Bluetooth, calls, focus, lifecycle, reset, push-to-talk,
+ducking, and casting. Background private media is excluded initially.
+
+**Recorded in:** [ADR 0022](../adr/0022-mobile-audio-route-and-interruption-policy.md)
+
+### MC-PRIV-003: Screenshot and Screen-Recording Behavior
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Android applies `FLAG_SECURE` to every active-session Companion
+window and task-switcher representation, without a production bypass. iOS and
+iPadOS use a neutral app-switcher shield, show a truthful local warning after a
+reported still screenshot, and never claim it was blocked or deleted. During
+reported recording or mirroring, Apple clients shield protected content, stop
+private playback and endpoint media publication, disable private actions, then
+revalidate authority and request a fresh projection before restoring content.
+Capture signals are not scenario truth, are not reported to hosts or other
+players, and are not uploaded for analytics, discipline, reputation, or account
+enforcement by default. Browser and external-camera limitations are disclosed
+honestly. Internal capture bypasses are build-time restricted to synthetic or
+explicitly authorized QA content and absent from production. A private
+Companion projection is never cast or mirrored, but the same physical phone or
+tablet may initiate and control a separately authorized public Stage endpoint
+or media route, including AirPlay, if only the public Stage projection reaches
+the television. Targeted output is preferred; inseparable full-screen mirroring
+is declined or limited to a verifiably public-safe Stage presentation.
+
+**Rationale:** The policy uses reliable platform controls without overstating
+iOS or browser capabilities, protects private and creator-owned content, avoids
+surveillance, and preserves the first-class distinction among physical devices,
+private endpoints, and public Stage endpoints.
+
+**Consequences:** Still screenshots may escape on iOS, secure Android windows
+restrict capture and display workflows, and AirPlay Stage support requires a
+distinct public projection rather than Companion mirroring. Real-device,
+lifecycle, media, accessibility, and multi-window tests are required.
+
+**Recorded in:** [ADR 0021](../adr/0021-mobile-screen-capture-and-stage-casting.md)
+
+### MC-NET-004: Android NSD Discovery and Local-Network Permission UX
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** QR pairing remains preferred and carries invitation and server-
+authority trust, while Android controls local reachability separately.
+Discovery is explicit, foreground-only, scoped to `_guiltyparty._tcp`, stopped
+promptly, and neither retained nor uploaded. API 33 through 36 use
+`NsdManager`, with narrowly held multicast reception only where the device
+requires it and no location or unrelated nearby permission. When targeting API
+37 or later, the default is Android's system NSD service picker; selection
+permits contact but does not establish server identity or session authority.
+TLS must match the QR-paired installation authority. Broad
+`ACCESS_LOCAL_NETWORK` is optional and requested just in time only for a chosen
+feature such as automatic paired-server rediscovery or direct addressing. Its
+denial preserves remote play, system-picker local join, and a settings path.
+Manual addressing is not a permission bypass. Denial or failure never enables
+plaintext, certificate bypass, trust on first use, public display of private
+content, or repeated prompting. Reconnect reuses an OS-authorized route only
+while server and session authority validate; otherwise it presents an honest
+selection or permission action. Tests cover APIs 33, 36, and 37, spoofing,
+identity mismatch, multicast suppression, grant, denial, revocation, retry, and
+lifecycle cleanup.
+
+**Rationale:** Picker-first access provides a usable local path without routine
+broad network visibility, while QR-bound TLS preserves the distinction between
+reachability, identity, invitation, and authorization.
+
+**Consequences:** Android 17 may add a system step after QR scanning, automatic
+rediscovery may need optional broad access, and several platform behaviors need
+physical-device coverage. This does not implement Android in the current MVP.
+
+**Recorded in:** [ADR 0020](../adr/0020-android-lan-discovery-and-permission-ux.md)
+
+### MC-DEL-001: Minimum Supported Mobile Operating-System Versions
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** The first supported Companion product uses iOS 18.0, iPadOS 18.0,
+and Android 13/API 33 as its deployment minimums, with one minimum per platform
+for both phones and tablets. At this decision date, Apple release builds use
+Xcode 26 and an iOS/iPadOS 26 SDK while retaining deployment target 18; Android
+release builds compile against and target API 36 while retaining `minSdk` 33.
+Build and target SDKs track stable store requirements independently of
+deployment minimums. Preview testing covers relevant upcoming behavior,
+including Android 17/API 37 local-network protection. Minimums are reviewed at
+least annually and before public beta using security and SDK support, aggregate
+store reach, support evidence, defects, device cost, and fallback availability,
+without adding behavioral tracking. A time-bounded older-version extension is
+permitted only when all required security, privacy, accessibility, networking,
+media, and dependency behavior remains intact. Releases test the minimum,
+latest stable, and relevant next preview; MC-DEL-002 defines the fuller device
+matrix.
+
+**Rationale:** These floors retain broad capable-device coverage while bounding
+the permission, lifecycle, adaptive-layout, security, and testing surface for a
+small team. Separating deployment from build targets follows both stores'
+evolution models.
+
+**Consequences:** Older devices require a browser or another supported personal
+endpoint. The project accepts annual review, preview testing, and representative
+minimum-version hardware work. This does not add Android to the current MVP.
+
+**Recorded in:** [ADR 0019](../adr/0019-initial-mobile-os-support-baseline.md)
+
+### MC-ARCH-004: Desktop Host Application with Embedded LAN Server
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** A future host-oriented desktop application connects to Guilty
+Party's official remote services by default and offers local isolated-LAN
+hosting only as an explicit choice. Host mode requires a Guilty Party account
+that authenticated online and was recognized by the official service as a
+registered host. The official service may issue a signed, time-bounded,
+installation-bound authorization stored in protected credential storage so the
+registered host can later enter Host mode offline; exact validity, renewal,
+revocation, and active-session-expiry behavior remain a later decision. Without
+a valid assertion, Host mode is unavailable offline. For local hosting, the app
+supervises a separately bounded server process and optional local media
+component. The server retains authority over participants, projections,
+secrecy, deterministic truth, journals, persistence, control/media policy, and
+installation-specific LAN trust. Closing UI cannot unexpectedly terminate an
+active session. Updates and migrations do not run during a session, must
+preserve recovery, and ordinary app updates preserve server identity. Uninstall
+does not silently delete server data or trust identity. Player or Stage modes
+do not confer host or server-administration authority.
+
+**Rationale:** Remote-by-default operation is the normal managed experience,
+while a signed offline host entitlement and separately supervised local server
+preserve isolated-LAN hosting without allowing local settings to invent
+registered-host status or UI lifecycle to own canonical state.
+
+**Consequences:** Guilty Party must support remote infrastructure and a local
+server package, plus secure offline assertion, process supervision, update,
+storage, and recovery behavior. Desktop platforms and implementation technology
+remain undecided.
+
+**Recorded in:** [ADR 0018](../adr/0018-desktop-host-and-managed-local-server.md)
+
+### MC-ARCH-003: Android Prototype Timing
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Android remains outside the current MVP. The first Android
+prototype begins after the version 1 schemas and fixtures are stable; a pinned
+pipeline reproducibly generates usable Swift and Kotlin DTOs; the server and
+physical iOS/iPadOS Companion complete joining, authorized private projection,
+participant actions, voting, outcome, deterministic replay, and temporary
+disconnection recovery; the owner accepts at least one full playtest as a
+sufficiently stable baseline; and MC-DEL-001 establishes the minimum supported
+Android version. Once that checkpoint is met, Android begins before substantial
+new iOS-only product expansion. Its first slice is limited to generated Kotlin
+DTOs, an adaptive Compose phone/tablet shell, development-LAN connection and
+join, private projection display, one idempotent player action, reconnection,
+and checks on a representative physical phone and tablet-class device.
+Production accounts, media, payments, notifications, analytics, distribution,
+and unrelated parity are excluded from that slice.
+
+**Rationale:** The checkpoint avoids duplicating unstable prototype work while
+ensuring Android validates the cross-platform contract before Apple-specific
+assumptions or indefinite deferral become entrenched.
+
+**Consequences:** Android waits for the contract, iOS gameplay, resumption,
+playtest, and OS-support evidence. Some iOS expansion may pause while the
+Android baseline catches up, and representative Android hardware is required.
+
+**Recorded in:** [ADR 0017](../adr/0017-android-prototype-entry-checkpoint.md)
+
+### MC-NET-002: Generated Contract Models
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Generate data-only Swift and Kotlin transport DTOs from the
+committed canonical contracts. JSON Schema remains authoritative for payload,
+envelope, and shared error shapes; OpenAPI remains authoritative for HTTP
+operation metadata while referencing those schemas; WebSocket messages reuse
+the same schemas. Generated code is a derived artifact, clearly marked, not
+edited by hand, and isolated from handwritten networking adapters,
+application-domain models, UI, authorization, scenario truth, persistence, and
+logging policy. Generated outputs are committed so ordinary Xcode and Gradle
+builds work offline. Pinned tooling regenerates them in CI and fails on drift.
+Clients tolerate additive unknown fields, preserve null and absence semantics,
+and route unsupported discriminators or security-critical variants to a safe
+incompatibility or resynchronization path. Shared positive, negative,
+compatibility, Unicode, boundary, and privacy fixtures verify each language.
+The exact generator requires a focused Swift/Kotlin compatibility evaluation
+and dependency, license, security, and maintenance review before adoption.
+
+**Rationale:** Mechanical generation reduces Swift/Kotlin representation drift
+without making generated language types authoritative or moving sensitive
+policy into a tool-controlled layer.
+
+**Consequences:** The repository carries generated source and a pinned
+generation pipeline, contract changes produce larger diffs, and both apps need
+explicit mapping code. Generator selection and implementation remain future
+work and do not expand the MVP.
+
+**Recorded in:** [ADR 0016](../adr/0016-generated-mobile-contract-models.md)
+
+### MC-ARCH-001: Long-Term Mobile Implementation Strategy
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Guilty Party will build separate native player Companion
+applications: Swift and SwiftUI for one adaptive iPhone/iPad codebase, and
+Kotlin and Jetpack Compose for one adaptive Android phone/tablet codebase. The
+browser Companion remains an HTML/CSS/JavaScript fallback, while Rust remains
+the authoritative server and deterministic scenario-engine language. The
+native clients share versioned schemas, fixtures, behavioral acceptance tests,
+design semantics, and original assets where appropriate, but initially share no
+mobile runtime or UI framework. Flutter, React Native, Kotlin Multiplatform,
+Compose Multiplatform UI, and mobile WebAssembly are not adopted initially.
+Kotlin Multiplatform may be reconsidered only for proven platform-independent
+duplication under a later measurable threshold. Platform-specific adapters own
+authentication, protected storage, local discovery and trust, media and audio,
+privacy surfaces, and lifecycle integration. Separate clients must conform to
+the same behavioral and privacy contracts but need not be pixel-identical or
+released simultaneously.
+
+**Rationale:** The accepted authentication, networking, privacy, and media
+requirements depend heavily on native operating-system behavior. Sharing
+contracts and evidence reduces semantic drift without adding a cross-platform
+runtime to those sensitive boundaries before duplicated logic is demonstrated.
+
+**Consequences:** The project accepts two mobile toolchains and some duplicated
+presentation or orchestration code. Contract-model generation, Android timing,
+Kotlin Multiplatform reconsideration thresholds, team ownership, and release
+parity remain separate decisions. The account-free iOS MVP scope is unchanged.
+
+**Recorded in:** [ADR 0015](../adr/0015-native-mobile-client-strategy.md)
+
+### MC-MEDIA-005: Shared and Personal Microphone Arbitration
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Each physical room has at most one room-audible capture lease,
+owned by the control plane and enforced by the media adapter. Personal sources
+bind participant and endpoint; shared sources belong to the room and remain
+`Room microphone` unless the current speaker explicitly accepts attribution.
+No voice or AI inference identifies the speaker. Requests and host queue actions
+never open capture. The current speaker must hold push-to-talk or confirm a
+bounded activation; hosts may invite, reorder, cancel, close, or safety-stop but
+cannot remotely unmute or silently activate an endpoint. Ordinary requests do
+not preempt the active speaker, while safety, authorization, privacy, and route
+failure do. Transfer is break-before-make with generation checks and required
+Stage-ducking acknowledgment. The technical lease lasts at most 15 seconds and
+renews every five seconds. Hold-to-talk ends on release; queued tap or assistive
+requests require fresh confirmation when selected; any latched activation has
+an initial 120-second maximum before explicit renewal. Public queue and active
+state are visible without private or diagnostic details. AI may suggest an
+order but holds no lease authority, and arbitration remains ephemeral rather
+than scenario truth.
+
+**Rationale:** One short-lived, server-authoritative role prevents co-located
+overlap while preserving speaker consent, accessible activation, room/device
+separation, host facilitation, and bounded failure behavior.
+
+**Consequences:** The control protocol and media adapter need request,
+reservation, generation, renewal, expiry, provider revocation, Stage ducking,
+and break-before-make acknowledgments. Clients need public queue, active-source,
+timer, accessible activation, and safety-stop UX.
+
+**Recorded in:** [ADR 0014](../adr/0014-room-microphone-arbitration.md)
+
+### MC-MEDIA-004: Private-Audio Route Failure
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Private capture, publication, subscription, decoding, and playback
+stop when authorization, server-enforced audience, E2EE key epoch, endpoint
+authority, personal output, or provider enforcement is absent or uncertain.
+Output change, endpoint transfer, restart, and reconnect require revalidation,
+a new key epoch where applicable, and affirmative resume. Interrupted speech is
+not queued, retained, retransmitted, or replayed, and possible partial delivery
+is reported honestly. Recovery first revalidates the same route, then another
+authorized personal endpoint, a private text or ephemeral caption alternative,
+a scenario-defined adaptation or minimum-information host assistance, and
+finally pause or cancellation. No path broadens the audience, weakens
+encryption, or admits Stage, speaker, another participant, recording,
+transcription, or AI. Sender, recipients, authorized host tools, Stage, and
+unrelated participants receive audience-minimized statuses. Possible unintended
+output or subscription is a potential exposure with direct affected-party
+notice and minimized non-content security metadata, not an ordinary network
+error. Route failure is not scenario truth, though an approved gameplay pause
+or alternative may be journaled.
+
+**Rationale:** Stopping before recovery prevents a technical failure from
+silently becoming a privacy downgrade, while explicit resume and truthful
+partial-delivery status preserve participant agency and trust.
+
+**Consequences:** Clients and media infrastructure need route-state
+acknowledgment, buffer clearing, key-epoch rotation, active grant revocation,
+audience-specific notices, and potential-exposure handling. Platform-specific
+Bluetooth and interruption mechanics remain MC-MEDIA-003, and safety-event
+retention still requires an approved lifecycle.
+
+**Recorded in:** [ADR 0013](../adr/0013-private-audio-route-failure.md)
+
+### MC-PRIV-005: Capture Indicators and Consent UX
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** System microphone and camera permissions are requested just in
+time after a user action and never publish or authorize processing by
+themselves. Live microphone and camera capture requires endpoint-owner
+activation, persistent labeled in-product and platform indicators, immediate
+stop controls, and affirmative resume after restart, endpoint replacement, or
+unexpected interruption. Public route state is visible to affected public
+surfaces, while private-route state remains within its authorized audience.
+Verified recipient-local, ephemeral accessibility captions may be used without
+group veto or identifying the user; they cannot persist, leave the endpoint, or
+reach another processor. External captions, transcription, recording, and AI
+media access require affirmative consent from every affected participant,
+specific purpose, scope, audience, processor, and retention notice, named
+persistent indicators, and renewed consent after scope change. Hosts cannot
+consent for players or expose who declined. Withdrawal stops the route. Minimal
+consent evidence is control-plane audit data, not scenario truth or media
+content, and its production collection remains blocked until a separate
+server-side retention and deletion lifecycle is approved. ADR 0029 governs
+Companion-local caches only and does not satisfy that gate. Background mobile
+capture is not initially supported.
+
+**Rationale:** Separating permission, live transport, derived processing, and
+retained records gives people meaningful control while preserving private
+accessibility accommodations and avoiding public disclosure of private routes.
+
+**Consequences:** Clients and servers need acknowledged capture states,
+persistent cross-surface indicators, scoped consent and withdrawal, aggregate
+host readiness, and fail-closed restart behavior. Higher-risk media features
+remain blocked on the deferred data-lifecycle decision.
+
+**Recorded in:** [ADR 0012](../adr/0012-capture-indicators-and-consent.md)
+
+### MC-MEDIA-002: Room Audio Processing Ownership
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** The capturing endpoint owns acoustic echo cancellation, noise
+suppression, and automatic gain control through its platform or WebRTC
+voice-processing path. The rendering endpoint owns its local playback mix and
+Guilty Party audio ducking. The control plane owns physical-room membership,
+active-microphone authority, route policy, and audience authorization; the
+media adapter and SFU enforce track forwarding and logical mix-minus without
+normally decoding or mixing media. Full duplex may be used when all Guilty Party
+playback audible to the microphone shares its endpoint, or a private headphone
+route has no separate room speaker coupled to that microphone. When a Companion
+microphone and separate public Stage speaker form the acoustic path,
+push-to-talk, one room-audible microphone at a time, and acknowledged Stage
+ducking are required. A shared microphone becomes the selected room capture
+endpoint. Private routes may coexist only while remaining personal and fail
+closed on unexpected route or capability change. Server-side processing
+requires a separately approved feature and privacy boundary.
+
+**Rationale:** Only the capture endpoint normally has the hardware route and
+playback reference needed for reliable acoustic processing, while the SFU can
+prevent incorrect network return paths without gaining plaintext mixing duties.
+The split preserves privacy, room awareness, and predictable behavior across
+shared and personal endpoints.
+
+**Consequences:** Clients need platform voice-processing integration and route
+monitoring. Split-device rooms require coordinated push-to-talk and Stage
+ducking. The provider contract needs enforceable room-derived subscriptions,
+and physical-device tests must cover coupled, split, shared, and private audio
+routes.
+
+**Recorded in:** [ADR 0011](../adr/0011-room-audio-processing-ownership.md)
+
+### MC-MEDIA-001: Media-Plane Protocol and Boundary
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Realtime audio and video use WebRTC through an SFU. Guilty Party
+owns a narrow media-provider boundary, with a self-hostable LiveKit SFU as the
+initial reference adapter for local, regional, or approved managed deployment.
+The control plane remains authoritative for identity, membership, permissions,
+communication audiences, consent, and deterministic scenario truth. Clients
+receive short-lived, endpoint-bound, pseudonymous provider grants. Private
+routes require server-enforced audience denial and application E2EE where no
+authorized server processing is needed. Canonical gameplay never moves onto
+media data channels. Captions may use encrypted, recipient-scoped ephemeral
+media data but are not retained or canonical by default. Recording, egress,
+transcription, passive capture, and AI media access remain off by default. Exact
+dependencies require licensing and security review, and real private media is
+blocked on native LAN-trust, audience-enforcement, expiry, reconnection, and
+E2EE integration proofs.
+
+**Rationale:** A standards-based SFU supports low-latency selective routing and
+cross-platform clients, while self-hosting preserves isolated-LAN operation and
+the owned boundary prevents provider identity or policy from becoming product
+authority.
+
+**Consequences:** Guilty Party must operate or procure SFU and TURN capacity,
+implement one adapter, distribute E2EE keys, use short-lived grants for
+self-hosted revocation limits, and prove the ADR 0008 trust model through the
+native provider SDKs. Provider selection does not waive dependency intake or
+license review.
+
+**Recorded in:** [ADR 0010](../adr/0010-media-plane-protocol-and-provider.md)
+
+### MC-PRIV-006: Missing Private-Capability Fallback
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Scenarios declare required private capabilities and ordered safe
+alternatives. Preflight asks about functional readiness without diagnoses, and
+hosts see only readiness and remedies. Fallback order is another authorized
+personal endpoint; an equivalent private modality or timing alternative; a
+predefined scenario adaptation preserving truth and secrecy; explicit-consent,
+minimum-information host assistance with participant confirmation; then a pause.
+Timers pause without penalty, content remains hidden, and other participants
+receive a generic pause message. AI may suggest only authorized scenario-defined
+alternatives and receives no private accessibility information. Private content
+never falls back to a shared Stage or speaker, another participant's endpoint,
+lock-screen notification, unsecured channel, AI disclosure, or unauthorized
+recording or transcription. The product neither requires disability disclosure
+nor pressures a public workaround. Publication validation rejects a required
+private interaction without a safe fallback or explicit pause behavior.
+
+**Rationale:** Accessibility and reduced capability must preserve secrecy,
+participant agency, deterministic truth, and creator rights rather than turning
+a missing endpoint feature into public disclosure.
+
+**Consequences:** Scenario schemas, creator validation, preflight UX, timer
+control, alternative modalities, and consent-limited host assistance all require
+implementation and testing. Some sessions must pause when no safe path exists.
+
+**Recorded in:** [MC-PROD-013](../product/mobile-companion.md#mc-prod-013-safe-private-capability-degradation)
+
+### MC-NET-007: Connection and Resumption Policy
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Connection establishment allows ten seconds for transport and five
+seconds for authenticated negotiation. The server sends application heartbeats
+every 15 seconds. At 30 seconds without authenticated activity, clients enter a
+connection-uncertain state, cover private content, and disable actions; at 45
+seconds they disconnect; after five minutes host tools label the endpoint stale.
+One immediate retry follows an interface or foreground change, then full-jitter
+backoff progresses around 1, 2, 4, 8, 15, and 30 seconds, capped at 30 seconds
+and reset after 60 stable seconds. Certificate, identity, protocol, revocation,
+removal, and session-end failures stop automatic retry. Background connectivity
+is not promised. Resume requests provide endpoint authority, last server
+sequence, authority generation, and unresolved command IDs. The server returns
+an authorized delta or fresh projection and never accepts client state as
+canonical. Clients apply it atomically. Gaps or impossible state trigger resync.
+State-changing commands use idempotency IDs and authority generations; unknown
+outcomes are resolved rather than resubmitted under new IDs. Disconnected or
+stale presence never revokes an endpoint or changes participant, character, or
+primary authority.
+
+**Rationale:** Shared health and resumption rules preserve privacy and
+determinism through ordinary network loss, app suspension, and server restart
+without duplicate actions or false canonical state.
+
+**Consequences:** Projection deltas and idempotency outcomes need bounded
+retention. Poor connections may cover private content, and every client needs a
+tested resynchronization state machine.
+
+**Recorded in:** [ADR 0009](../adr/0009-connection-resumption-policy.md)
+
+### MC-NET-006: Local Certificate and Trust Model
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Every LAN server creates an installation-specific private
+certificate authority and server identity key in protected host storage; no
+universal private key is shared among installations. It issues and locally
+renews short-lived leaf certificates for current LAN names and addresses. QR
+pairing binds the invitation to the authority fingerprint, while short-code or
+manual flows require a human-comparable authentication string. Native clients
+perform application-controlled validation anchored to the paired authority and
+never treat discovery or first contact as trust on first use. Leaf renewal does
+not require re-pairing. Planned authority rotation is authenticated by the old
+authority and visibly announced. Loss, corruption, unauthenticated change, or
+server replacement creates a new identity, invalidates local endpoint and
+session authority, and requires explicit re-pairing; names, addresses, and
+database restores cannot transfer trust. Public services use publicly trusted
+certificates. Generic browser fallback uses a publicly trusted HTTPS origin;
+fully isolated LAN browsers require operator-managed trust provisioning, and
+ordinary guests are not asked to install roots or bypass warnings. A zero-install
+consumer browser fallback on a completely isolated LAN is not initially
+guaranteed. The same model applies if a future desktop host app embeds the LAN
+server, but that packaging decision remains open.
+
+**Rationale:** Pairing-authenticated, per-installation trust enables native
+isolated-LAN operation without a shared impersonation key or unsafe browser
+warning behavior.
+
+**Consequences:** Losing the server authority requires re-pairing absent a later
+approved encrypted migration design. Generic isolated-LAN browser support is
+limited, and native trust evaluation requires focused security testing. A
+future combined desktop host/server remains MC-ARCH-004.
+
+**Recorded in:** [ADR 0008](../adr/0008-lan-server-certificate-trust.md)
+
+### MC-NET-005: HTTPS/WSS Enforcement Milestone
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** HTTP/WS is permitted only for loopback tests, synthetic local
+development, and the account-free placeholder MVP under an explicitly enabled
+development LAN profile. That profile is absent from beta and release builds,
+binds only to selected private or link-local interfaces, displays a persistent
+unencrypted warning, rejects real authentication and private or licensed data,
+and never activates after TLS failure. HTTPS/WSS becomes mandatory before real
+authentication, non-synthetic participant information, non-placeholder private
+or licensed content, external testing or distribution, untrusted or routed
+networking, and commercial or production deployment. Beta and release mobile
+configurations reject cleartext. Clients never continue insecurely after TLS
+or server-identity failure. A plaintext listener may redirect a non-sensitive
+browser navigation but does not accept credentials, authority, private
+projections, commands, or WebSocket upgrades. Media-plane authenticated
+encryption remains separately required before carrying user media.
+
+**Rationale:** The narrow exception preserves current prototype work while
+placing transport security before every capability that creates real privacy,
+identity, content-rights, or distribution risk.
+
+**Consequences:** External tests and account work are blocked until the local
+certificate and trust model is implemented. Development and release network
+policies must be separate and covered by negative cleartext tests.
+
+**Recorded in:** [ADR 0007](../adr/0007-control-plane-transport-security.md)
+
+### MC-NET-003: LAN Service Discovery Metadata
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Local servers advertise `_guiltyparty._tcp.local.` through DNS-SD
+over mDNS on explicitly eligible LAN interfaces, with IANA registration of the
+service name required before production distribution. A privacy-neutral default
+instance name uses a short random display suffix and is never treated as server
+identity. The single TXT record contains only `txtvers=1`, `protovers=1`, and
+`tls=1`; detailed compatibility comes from the non-private HTTPS compatibility
+endpoint. Session, host, participant, room, scenario, joining, account,
+credential, address, certificate, and stable tracking data are not advertised.
+Discovery is an untrusted address and protocol hint, while server identity and
+authority come only from TLS and pairing. Several unpaired candidates produce a
+chooser; remembered servers reconnect only after authenticated identity
+verification. Advertisement remains active while the local control plane is
+available, including while joining is closed. Scope is link-local by default,
+excluding cellular, VPN, WAN, wide-area DNS-SD, and cross-subnet relays. QR or
+code pairing and manual addressing remain fallbacks.
+
+**Rationale:** The service is discoverable across intended LAN clients without
+putting private session details or a spoofable trust signal into multicast
+metadata.
+
+**Consequences:** Multicast-blocked networks require a fallback. Production
+requires service-name registration, and TLS trust, Android permission UX, and
+cross-subnet discovery remain separate decisions.
+
+**Recorded in:** [ADR 0006](../adr/0006-link-local-service-discovery.md)
+
+### MC-NET-001: Versioned Control-Plane Contract
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Control-plane protocol version `1.0` begins with major-versioned
+HTTP routes under `/api/v1/...` and a negotiated, major-versioned WebSocket
+subprotocol such as `guiltyparty.control.v1`. An unversioned, non-private
+compatibility endpoint advertises supported majors and upgrade information.
+JSON Schema Draft 2020-12 is canonical for payloads; OpenAPI 3.1-compatible
+documents describe HTTP, and WebSocket documentation reuses the same schemas
+with optional AsyncAPI metadata. WebSocket messages share a typed envelope with
+message and correlation identifiers, applicable session and endpoint context,
+server sequence, command idempotency, and a validated payload. Additive fields
+and negotiated features remain within a major; incompatible input, meaning,
+authorization, secrecy, or ordering changes require a new major. Servers do not
+send unnegotiated features. HTTP errors use RFC 9457 Problem Details, while
+WebSocket errors use matching safe codes in the envelope. Schemas, fixtures,
+compatibility tests, privacy tests, and deterministic transport tests precede
+generated or manually maintained client models. Supported native clients retain
+a compatible server protocol through a documented migration window.
+
+**Rationale:** Explicit, language-neutral negotiation and evolution rules keep
+independently released clients interoperable without allowing contract changes
+to weaken privacy, authorization, or deterministic scenario behavior.
+
+**Consequences:** Contract artifacts and compatibility support add maintenance.
+The exact model-generation strategy, discovery metadata, retry policy, and
+major-version retirement window remain separate decisions.
+
+**Recorded in:** [ADR 0005](../adr/0005-versioned-control-plane-contract.md)
+
+### MC-ID-006: Host Controls for Lost Endpoints
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The primary host and co-hosts explicitly authorized to manage
+participants may inspect a minimal operational endpoint roster, revoke an
+endpoint, transfer primary authority among endpoints already authenticated for
+the participant, remove a participant from the session, or approve session-only
+recovery when a replacement endpoint lacks usable account proof. Host-assisted
+recovery requires selecting the existing participant and confirming the
+requesting endpoint; it revokes the participant's former endpoints by default
+and grants authority that ends with the session. It cannot authenticate or
+modify the permanent account, create authentication bindings, change recovery
+information, or grant access outside the session. Normal account authentication
+may reclaim the participant. Revocation immediately stops private projections,
+actions, and media authority, invalidates session credentials, and remains
+effective while the endpoint is offline. Removing a participant revokes all
+their session endpoints without affecting the account. Offline status alone
+does not revoke authority. Operations require explicit confirmation and a
+minimal control-plane audit record. Character reassignment and deterministic
+participation changes are explicit scenario-journal events. The AI Stage
+Manager and support personnel cannot perform or override these operations.
+
+**Rationale:** Hosts can resolve live-session device failures without acquiring
+permanent account-recovery power, viewing credentials, or silently changing
+canonical story state.
+
+**Consequences:** The UI must distinguish endpoint revocation, session-only
+recovery, participant removal, and character reassignment. Concrete audit
+retention and user-facing labels remain later decisions.
+
+**Recorded in:** [Host Endpoint Management](../architecture/device-and-room-model.md#host-endpoint-management) and [MC-PROD-004](../product/mobile-companion.md#mc-prod-004-move-between-personal-devices)
+
+### MC-ID-008: Simultaneous Personal Endpoints
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** One participant may keep several personal endpoints registered
+and connected, but exactly one is the primary private endpoint at a time. Only
+the primary receives complete private projections and submits ordinary
+participant actions; standby endpoints receive non-private connection status
+and may request a transfer. After authentication, choosing "Use this device"
+atomically transfers primary authority without requiring the former endpoint's
+approval. The former primary immediately loses private-view and action
+authority, is notified, and clears its private view. Commands identify the
+endpoint, use an idempotency identifier, and carry the current server-issued
+authority generation so stale commands are rejected. Shared Stages cannot hold
+primary private authority. Future capability-specific leases may authorize a
+narrow function on another endpoint without creating a second general-purpose
+primary endpoint. Endpoint revocation invalidates its credentials and
+disconnects it.
+
+**Rationale:** A server-controlled primary-authority generation supports quick
+device replacement while preventing concurrent secret exposure and conflicting
+participant actions.
+
+**Consequences:** Host controls for lost endpoints and host-assisted session
+recovery remain MC-ID-006. Exact transfer notifications, timeouts, and
+capability-specific media authority remain later decisions.
+
+**Recorded in:** [Primary Private Endpoint Authority](../architecture/device-and-room-model.md#primary-private-endpoint-authority) and [MC-PROD-004](../product/mobile-companion.md#mc-prod-004-move-between-personal-devices)
+
+### MC-ID-007: Independent Identity Recovery
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** A durable account is recovered only through accepted account
+authentication or recovery proof. After authentication, the server recovers
+the existing account-to-session participant relationship instead of creating a
+duplicate; by default, one account has at most one active participant identity
+in a session. A valid endpoint-bound resume credential recovers that endpoint,
+while another app installation or browser profile receives a new endpoint
+identity and is separately attached to the recovered participant. It never
+inherits the former endpoint's credentials. Character assignment and private
+state follow the participant rather than the endpoint. Display names, device
+identifiers, network addresses, proximity, and pairing invitations cannot prove
+or recover an account or participant. A LAN server may accept a valid
+offline-admission assertion; without usable account proof, it requires an
+explicit host-assisted recovery path rather than inferring identity.
+
+**Rationale:** Independent identity layers let a player change devices without
+duplicating participation or treating a device as a person, while preserving
+server-side authorization and private-state boundaries.
+
+**Consequences:** Whether old and replacement endpoints may remain active
+together, and which endpoint may receive private content or submit participant
+actions, remains MC-ID-008. The host-assisted recovery mechanism remains
+MC-ID-006.
+
+**Recorded in:** [Identity Recovery Boundaries](../architecture/device-and-room-model.md#identity-recovery-boundaries) and [MC-PROD-004](../product/mobile-companion.md#mc-prod-004-move-between-personal-devices)
+
+### MC-ID-024: Server-Side Credential Storage
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Permanent account authority retains only WebAuthn public-key
+credential records, Apple and Google issuer-and-subject bindings, the encrypted
+verified recovery email, and minimal security, acceptance, and revocation
+metadata. Provider access and refresh tokens are not retained when a provider
+is used only for authentication. Bearer credentials are random and opaque; the
+server stores keyed digests with the digest key outside the credential database.
+Account sessions, native refresh credentials, browser sessions, and
+gameplay-session resume credentials are separate authority classes scoped to
+the relevant account, endpoint, audience, and game session. Refresh and resume
+credentials rotate after successful use; reuse revokes their credential family.
+Revocations are durable and act at the appropriate account, endpoint, or game
+scope. Account and security storage is logically separated from scenario
+content and journals. An isolated-LAN server receives no permanent credential
+record, provider token, or recovery address; it may verify only a bounded,
+signed, audience-restricted offline-admission assertion and retain the minimum
+session authority needed for admission, reconnect, and local revocation.
+Security stores, backups, and trusted-component connections are encrypted, and
+administrative access is restricted and auditable. Raw credential material is
+excluded from logs and analytics.
+
+**Rationale:** This limits the value of database, log, LAN-host, and gameplay
+system compromise while supporting revocation, account recovery, isolated-LAN
+admission, and deterministic session restoration.
+
+**Consequences:** Concrete token lifetimes, database products, encryption and
+digest keys, secrets management, retention, and infrastructure providers remain
+separate decisions. The local server needs a trust mechanism for verifying
+offline-admission assertions without acquiring permanent account authority.
+
+**Recorded in:** [Server-Side Credential Storage](../security/security-model.md#server-side-credential-storage)
+
+### MC-ID-023: Browser Companion Credential Storage
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Browser passkeys use WebAuthn so private keys remain with the
+authenticator. Account and session authority uses an opaque, server-managed
+identifier in a host-only `__Host-` cookie marked `Secure`, `HttpOnly`, and
+`SameSite=Strict`, with `Path=/` and no `Domain` attribute. A narrowly scoped,
+short-lived `SameSite=Lax` correlation cookie is permitted only when an
+external identity-provider return flow requires it. Access tokens, refresh
+tokens, session identifiers, and resume credentials never enter
+`localStorage`, `sessionStorage`, IndexedDB, service-worker or HTTP caches,
+URLs, logs, or analytics; transient proof remains in memory. Non-secret
+preferences and identifiers may use ordinary browser storage. A bounded
+persistent cookie may provide browser-restart continuity. Sign-out, account
+removal, endpoint revocation, or invalid authority deletes the cookie where
+possible and invalidates the server session.
+
+**Rationale:** Server-managed, script-inaccessible cookies reduce exposure to
+credential theft while preserving reconnect and browser-restart continuity for
+the Companion fallback.
+
+**Consequences:** Exact session lifetime, rotation, and "remember this browser"
+UX remain separate decisions. Authenticated browser operation requires
+HTTPS/WSS, so production LAN browser access is blocked on the local certificate
+and trust design. ADR 0029 prohibits persistent browser caching of private
+gameplay content.
+
+**Recorded in:** [Browser Companion Credential Storage](../security/security-model.md#browser-companion-credential-storage)
+
+### MC-ID-005: Native Companion Credential Storage
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Passkey private keys remain in the operating system credential
+manager, and short-lived access tokens remain in memory. The native Companion
+may persist only an opaque, device-bound refresh credential and the minimum
+opaque session-resume credential. iOS and iPadOS use Keychain storage with
+device-only accessibility. Android uses application-private ciphertext
+protected by an app-specific, non-exportable Android Keystore key. Session
+authority does not sync, transfer, or migrate to another device; another device
+reauthenticates and receives new endpoint authority. Non-secret identifiers may
+use ordinary application-private storage, but credentials never enter
+`UserDefaults`, ordinary `SharedPreferences`, logs, analytics, source files, or
+general backups. Sign-out, account removal, endpoint revocation, or
+unrecoverable authority deletes the applicable local credential and invalidates
+it server-side where applicable.
+
+**Rationale:** Platform-protected, device-bound storage permits low-friction
+resumption without turning portable client storage, backups, or diagnostic
+systems into bearer-credential channels.
+
+**Consequences:** Browser credential storage and server-side verifier storage
+remain separate decisions. ADR 0029 prohibits persistent Companion caching of
+private gameplay content and defines the permitted opaque continuity metadata.
+
+**Recorded in:** [Native Companion Credential Storage](../security/security-model.md#native-companion-credential-storage)
+
+### MC-ID-022: Participant Recovery After Server Restart
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The server reconstructs canonical scenario state from the exact
+immutable scenario version and ordered journal. It restores durable session and
+participant identities, character and room associations, endpoint
+registrations, permissions and revocations, and completed admission and
+idempotency records needed to prevent duplication. It does not restore live
+connections or presence, ephemeral invitations, pending uncommitted commands,
+cached projections, AI suggestions, or media routes. Endpoints begin
+disconnected, reauthenticate or resume authority, and receive fresh authorized
+projections. A fresh invitation is issued if joining remains open.
+
+**Rationale:** Deterministic state and identity continuity survive restart while
+ephemeral transport, AI, projection, and media state is rebuilt rather than
+mistaken for canonical truth.
+
+**Consequences:** Missing scenario versions, replay failure, or invalid durable
+state fail the session closed for host intervention. Credential persistence,
+retry timing, and concrete storage remain separate decisions.
+
+**Recorded in:** [Session Journal Boundaries](../architecture/session-journal.md#server-restart-recovery)
+
+### MC-ID-004: Companion Reconnect After App Restart
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** After temporary disconnection or app restart, the Companion
+automatically reconnects to the most recent server and session. Valid stored
+authority resumes the same participant, character, and endpoint without
+duplicates. The app shows reconnecting and rejoined states and withholds cached
+private content until server reauthorization and a fresh projection. Expired or
+revoked authority, participant removal or reassignment, session end, or a server
+identity mismatch clears stale private content and requires explicit sign-in or
+rejoining. A manual rejoin path remains available.
+
+**Rationale:** Recovery is low-friction during ordinary interruption while
+private information and participant identity continue to fail closed.
+
+**Consequences:** Credential storage, retry timing, and server-restart recovery
+remain separate decisions.
+
+**Recorded in:** [MC-PROD-004](../product/mobile-companion.md#mc-prod-004-move-between-personal-devices)
+
+### MC-ID-021: Pairing Invitation Revocation Effects and UX
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Revocation immediately invalidates the current invitation and its
+grace-period predecessor and cancels pending, unapproved admission requests. It
+does not remove admitted participants. A rotation displays its replacement;
+closing joining says joining is closed; other revocations say joining is
+temporarily unavailable. Applicants receive a generic instruction to scan the
+current code or ask the host, without the actor or security reason. The host
+receives confirmation and a cancellation count. Revocation cannot be undone;
+recovery requires a new invitation.
+
+**Rationale:** Revocation reliably closes the affected admission path without
+confusing invitation authority with existing participant authority or exposing
+security details.
+
+**Consequences:** The control plane stores a minimal operational audit record
+containing invitation and session identifiers, time, actor or automatic reason
+category, and cancellation count. It is not a scenario-journal event and
+contains no private scenario content. Retention remains subject to the project
+data-lifecycle policy.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-013: Pairing Invitation Revocation Authority
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The primary host and a co-host explicitly granted authority to
+manage joining may revoke an invitation. The server revokes automatically
+when joining closes, the session ends or is cancelled, the invitation is
+rotated, its Stage or room is removed, or its security context becomes invalid.
+Players, endpoints acting independently, the AI Stage Manager, and ordinary
+support personnel cannot revoke invitations. Temporary Stage disconnection and
+ordinary throttling do not revoke invitations by themselves.
+
+**Rationale:** Revocation belongs to explicit human session authority and
+server-enforced lifecycle or security conditions, without granting policy
+control to public endpoints, players, AI, or broad support access.
+
+**Consequences:** Revocation effects, pending-request handling, messaging,
+audit records, and recovery UX remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-020: Pairing Admission Throttle and Retry UX
+
+**Status:** Accepted with review triggers
+
+**Decision date:** 2026-08-05
+
+**Decision:** Initial per-endpoint and per-identity defaults permit five new
+attempts in one minute. Excess attempts cause a 15-second cooldown, escalating
+after repeated excess within ten minutes to 60 seconds and then five minutes.
+Pairing throttles never permanently lock out a player. Players receive a
+generic message with an approximate retry time but no identification of the
+limiting bucket or count of remaining attempts. Identical idempotent retries
+remain available. The host sees a general throttle warning and may rotate the
+invitation without receiving unnecessary participant details.
+
+**Rationale:** Short, escalating cooldowns constrain automated attempts without
+turning pairing controls into a practical denial-of-service mechanism for a
+legitimate player or shared room.
+
+**Consequences:** Invitation rotation and revocation authority remain separate
+decisions. Emergency aggregate limits may have different thresholds but must
+preserve generic messaging and the shared-LAN safeguard.
+
+**Review triggers:** Observed false throttles, automated abuse, host confusion,
+join abandonment, or material changes in expected session size.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-019: Pairing Admission Rate-Limit Scope
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** New pairing admission attempts are limited primarily per endpoint
+and authenticated or provisional identity, with an aggregate per-invitation
+limit above expected session capacity, a high per-network-address emergency
+ceiling, and a server-wide emergency ceiling. Identical retries under the same
+idempotency identifier do not count as new attempts. A shared LAN address is
+not the primary limit.
+
+**Rationale:** Layered limits constrain abusive clients and resource exhaustion
+without allowing one device or a shared network address to block the rest of a
+legitimate group.
+
+**Consequences:** Exact thresholds, cooldown escalation, retry timing, host
+controls, and user-facing messages remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-018: Pairing Redemption Idempotency
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** Every pairing admission request has a unique client-generated
+attempt ID bound to the invitation, authenticated or provisional identity,
+endpoint, and request contents. An identical retry from the same authorized
+context returns the same result without duplicating participants, endpoints,
+host prompts, or journal events. The same ID with different contents is
+rejected; a corrected request uses a new ID.
+
+**Rationale:** Network retries become safe and deterministic without allowing
+one player's transaction to be replayed as another player's request.
+
+**Consequences:** Retention of idempotency results, new-attempt rate limits, and
+user-facing retry timing remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-012: Invitation Reuse Across Players
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** One valid Stage invitation may initiate admission requests for
+multiple players and is not consumed by the first request. Each player
+authenticates or establishes a provisional account independently, submits a
+separate admission request, and receives distinct participant and endpoint
+authority. Expiration, joining closure, or revocation stops further use.
+
+**Rationale:** The Stage invitation is a group entry point for a small party,
+not a personal credential or participant identity.
+
+**Consequences:** Redemption transactions still require duplicate suppression,
+replay protection, and rate limits, which remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-017: Invitation Expiry Clock Authority
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The Guilty Party server is the sole authority for invitation
+issuance, expiration, and redemption. Stage and Companion clocks cannot extend
+validity. Clients derive informational countdowns from server timing, use
+monotonic timers locally, and resynchronize when timing materially disagrees.
+
+**Rationale:** A single authority prevents clock skew or endpoint manipulation
+from unpredictably changing the invitation's validity.
+
+**Consequences:** Client countdowns are advisory, server redemption decisions
+are final, and exact resynchronization thresholds remain implementation details.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-016: Invitation Renewal During Disconnection
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The Stage never creates an invitation locally or extends an
+expired invitation. If renewal fails, it removes or disables the expired code,
+states that joining is temporarily unavailable, and retries automatically with
+bounded backoff. After reconnecting, it confirms that joining remains open and
+obtains a fresh server-issued invitation. Pairing failure does not itself remove
+joined participants or determine cached Stage behavior.
+
+**Rationale:** This fails closed without presenting a stale code as usable and
+recovers without unnecessary host intervention.
+
+**Consequences:** Exact retry timing, invitation clock authority, joined-client
+reconnection, and cached Stage behavior remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-015: Invitation Rotation Grace Period
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** After the Stage displays a replacement, the immediately previous
+pairing invitation remains redeemable for 120 seconds. The Stage displays only
+the replacement. Closing or revoking joining, or ending the session,
+invalidates both invitations immediately without a grace period.
+
+**Rationale:** Two minutes accommodates scanning, submission, and minor
+authentication or sign-in delays at the rotation boundary without materially
+extending the low-authority invitation's exposure.
+
+**Consequences:** Server-disconnection behavior, server-clock authority, reuse,
+retry, replay protection, and revocation UX remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-014: Automatic Pairing-Invitation Renewal
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** While joining remains open, the Stage automatically obtains and
+displays a replacement when the current pairing invitation expires. Automatic
+renewal stops when joining closes, joining is revoked, or the session ends.
+
+**Rationale:** Renewal lets guests continue arriving without repeatedly
+interrupting the host, while the host and session lifecycle retain control over
+whether joining remains available.
+
+**Consequences:** Rotation overlap, grace period, server-clock behavior,
+disconnection behavior, consumption, reuse, and replay protection remain
+separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-011: Pairing Invitation Lifetime
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** One pairing invitation is valid for 15 minutes from its
+server-issued time and expires sooner if the session ends or the host revokes
+joining.
+
+**Rationale:** Fifteen minutes gives a small group time to scan or enter the
+invitation and authenticate without rushing, while limiting exposure from an
+old photograph or abandoned display. The invitation itself grants only
+discovery and an admission request.
+
+**Consequences:** Automatic renewal, rotation overlap, clock handling, reuse,
+retry, replay protection, and revocation UX remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#security-requirements)
+
+### MC-ID-003: Pairing Invitation Scope
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** A Stage-displayed QR code or short code authorizes only discovery
+of the intended server and session, a Companion admission request, minimum
+non-private lobby information, and a suggested physical room. It does not
+create participant identity or membership, assign permissions or characters,
+expose private or scenario information, or activate endpoint capabilities. The
+player must authenticate or establish an authorized provisional account,
+confirm the session and room, and receive server-authorized membership.
+
+**Rationale:** A copied or photographed invitation permits an admission request
+but does not itself grant gameplay or private-data authority.
+
+**Consequences:** Invitation lifetime, renewal, consumption, retry, replay
+protection, revocation, and admission approval remain separate decisions.
+
+**Recorded in:** [Device Pairing Boundaries](../architecture/device-pairing.md#invitation-authority)
+
+### MC-ID-010: Permanent-Account Recovery
+
+**Status:** Accepted with review triggers
+
+**Decision date:** 2026-08-05
+
+**Decision:** A permanent account requires one verified recovery email, which
+may be a privacy-preserving relay and is used only for security and recovery. A
+trusted signed-in endpoint may approve recovery immediately. Recovery from an
+unfamiliar endpoint requires email verification and a 24-hour wait, with
+notifications and cancellation available through linked providers and trusted
+endpoints. Successful recovery revokes existing sessions, requires a new
+authentication binding, and temporarily restricts sensitive changes. Support
+may facilitate the defined process but cannot override proof requirements with
+security questions or personal judgment.
+
+**Rationale:** This is more compatible with ordinary consumer behavior than a
+saved recovery key while retaining delay, notification, cancellation, and
+post-recovery controls against account takeover.
+
+**Consequences:** The minimum account data now includes a recovery email.
+Recovery cannot be guaranteed after loss of every authentication binding,
+trusted endpoint, and recovery-email account. Exact notification and temporary
+restriction details remain implementation decisions.
+
+**Review triggers:** Observed signup or recovery friction, failed recoveries,
+account-takeover attempts, support workload, changes in provider capabilities,
+or operating-capacity constraints for the business.
+
+**Recorded in:** [MC-PROD-012](../product/mobile-companion.md#mc-prod-012-consumer-friendly-account-recovery)
+
+### MC-ID-009: Permanent-Account Sign-In Methods
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** The complete initial authentication set is passkeys, Sign in with
+Apple, and Sign in with Google. Passwords, SMS login, and email magic links are
+not included initially.
+
+**Rationale:** The selected set provides passwordless authentication and broad
+coverage across the intended iOS, Android, and browser surfaces without making
+email addresses or phone numbers mandatory account data.
+
+**Consequences:** Safe binding and unlinking rules, provider configuration,
+account recovery, offline credential behavior, and implementation details
+remain separate decisions.
+
+**Recorded in:** [MC-PROD-003](../product/mobile-companion.md#mc-prod-003-minimal-account-required)
+
+### MC-ID-002: Minimum Permanent-Account Data
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-05
+
+**Decision:** A permanent account requires only an opaque internal user ID, at
+least one verified authentication binding, security metadata, and records of
+applicable terms and privacy acceptance. Passkeys must launch alongside any
+other supported authentication bindings. Real names, persistent display names,
+email addresses, phone numbers, birth dates, avatars, and locations are not
+mandatory. Session display names are session-specific, and recovery contact
+information remains optional unless a later approved requirement justifies it.
+
+**Amendment:** MC-ID-010 later makes one verified, recovery-only email address
+mandatory while preserving the other data-minimization requirements.
+
+**Rationale:** This provides continuity and secure authentication while
+preserving data minimization and avoiding unnecessary persistent identity data.
+
+**Consequences:** The other launch authentication methods, provider
+requirements, recovery methods, and credential implementation remain separate
+decisions.
+
+**Recorded in:** [MC-PROD-003](../product/mobile-companion.md#mc-prod-003-minimal-account-required)
+
 ### MC-ID-001: Account Entry on an Isolated LAN
 
-**Status:** Active
+**Status:** Accepted
 
-**Why first:** The answer constrains sign-in, convention demos, pairing,
-recovery, credential storage, and transport security.
+**Decision date:** 2026-08-05
 
-**Decision question:** What should happen when a player reaches a Guilty Party
-session on an isolated LAN but has no usable signed-in account session and
-cannot reach Apple, Google, or a Guilty Party identity service?
+**Decision:** A functional LAN session does not require internet access merely
+to join. A previously authenticated player may use a securely cached,
+offline-verifiable account session. A new player without internet access may
+receive a host-approved provisional account scoped to that session. When
+connectivity returns, the product offers to link it to a permanent account.
 
-No answer or recommendation is recorded yet. The next discussion should address
-only this question.
+**Rationale:** This preserves minimal participant identity, convention
+walk-ins, and isolated-LAN operation without making a remote identity provider
+a runtime dependency.
+
+**Consequences:** Credential design, provisional-account expiry and recovery,
+linking mechanics, and permanent account requirements remain separate
+decisions.
+
+**Recorded in:** [MC-PROD-003](../product/mobile-companion.md#mc-prod-003-minimal-account-required)
 
 ## Deliberately Deferred Decisions
 
-These items were explicitly tabled by the project owner. They stay visible
-until the owner chooses to reopen them.
-
-| ID | Decision | Revisit trigger |
-|---|---|---|
-| MC-PRIV-001 | Content permitted in lock-screen notifications | Before implementing notifications or preparing store privacy disclosures |
-| MC-PRIV-002 | Data cached on a Companion and its deletion schedule | Before implementing persistent client storage or production accounts |
+No items are currently deferred.
 
 ## Ordered Open Decision Queue
 
@@ -71,71 +1770,31 @@ discarded merely because it moves.
 
 ### Identity, Pairing, and Recovery
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-ID-002 | Open | Minimal account fields, approved identity methods, and account recovery model | MC-ID-001 |
-| MC-ID-003 | Open | Pairing invitation scope, expiry, consumption, retry, and revocation rules | MC-ID-001, MC-ID-002 |
-| MC-ID-004 | Open | Automatic reconnect and explicit rejoin behavior after app or server restart | MC-ID-002, MC-NET-007 |
-| MC-ID-005 | Open | Credential and session-authority storage in memory, Keychain, Keystore, and account-backed systems | MC-ID-002, MC-NET-006 |
-| MC-ID-006 | Open | Host controls for removing a lost endpoint and safely reassigning participation | MC-ID-003, MC-ID-008 |
-| MC-ID-007 | Open | Independent recovery of account identity, session participant identity, and endpoint identity | MC-ID-002, MC-ID-003 |
-| MC-ID-008 | Open | Whether several personal endpoints may be connected and which one may actively receive private content or submit actions | MC-ID-007 |
+No open items. Accepted decisions remain in the history above.
 
 ### Control-Plane Networking
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-NET-001 | Open | Versioning, compatibility, error, and evolution rules for HTTP and WebSocket contracts | None |
-| MC-NET-002 | Open | Whether Swift and Kotlin contract models are generated from schemas or maintained manually | MC-NET-001, MC-ARCH-001 |
-| MC-NET-003 | Open | Bonjour/DNS-SD service type, TXT metadata, discovery scope, and collision behavior | MC-NET-001 |
-| MC-NET-004 | Open | Android NSD discovery behavior and nearby-network permission experience | MC-NET-003, MC-DEL-001 |
-| MC-NET-005 | Open | The milestone at which HTTP/WS is no longer permitted and HTTPS/WSS becomes mandatory | MC-ID-002 |
-| MC-NET-006 | Open | Local certificate issuance, trust establishment, rotation, and failure recovery | MC-NET-005, MC-ID-003 |
-| MC-NET-007 | Open | Connection timeout, heartbeat, retry, backoff, session-resume, and stale-endpoint policies | MC-NET-001 |
+No open items. Accepted decisions remain in the history above.
 
 ### Privacy and Safety
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-PRIV-003 | Open | Platform-specific behavior and honest user messaging for screenshot and screen-recording detection or restriction | MC-DEL-001 |
-| MC-PRIV-004 | Open | Crash-report fields, scrubbing, consent, retention, access, and provider constraints | MC-PRIV-002, MC-DEL-006 |
-| MC-PRIV-005 | Open | Persistent indicators and consent UX for microphone, camera, captions, transcription, and recording | MC-MEDIA-001 |
-| MC-PRIV-006 | Open | Accessibility and privacy-safe behavior when the installed app and browser fallback both lack a required private capability | MC-PROD-011 (accepted) |
+No open items. Accepted decisions remain in the history above.
 
 ### Media and Device Interruptions
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-MEDIA-001 | Open | Media protocol, provider, deployment topology, and abstraction boundary | None |
-| MC-MEDIA-002 | Open | Ownership of echo cancellation, room mixing, and mix-minus across clients and media infrastructure | MC-MEDIA-001 |
-| MC-MEDIA-003 | Open | Bluetooth changes, calls, headphones, route changes, backgrounding, and interruption recovery | MC-MEDIA-001, MC-DEL-001 |
-| MC-MEDIA-004 | Open | Fail-closed behavior and user recovery when a private-audio route is unavailable | MC-MEDIA-001, MC-PRIV-005 |
-| MC-MEDIA-005 | Open | Arbitration and consent when a shared room microphone competes with participant microphones | MC-MEDIA-001, MC-MEDIA-002 |
+No open items. Accepted decisions remain in the history above.
 
 ### Mobile Architecture and Platform Scope
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-ARCH-001 | Open | Long-term implementation strategy: separate native apps, shared Kotlin Multiplatform logic, a cross-platform UI, or another evidence-backed approach | MC-NET-001, MC-MEDIA-001 |
-| MC-ARCH-002 | Open | Measurable duplication, staffing, test, or delivery threshold that would justify adopting Kotlin Multiplatform | MC-ARCH-001, MC-ORG-001 |
-| MC-ARCH-003 | Open | Android prototype timing and the feature slice required before Android work begins | MC-ARCH-001 |
+No open items. Accepted decisions remain in the history above.
 
 ### Delivery, Compliance, and Maintenance
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-DEL-001 | Open | Minimum supported iOS, iPadOS, and Android versions based on capabilities and audience coverage | MC-ARCH-001, MC-MEDIA-001 |
-| MC-DEL-002 | Open | Physical-device test matrix covering representative phones, tablets, OS versions, network conditions, audio routes, and room arrangements | MC-DEL-001, MC-MEDIA-003 |
-| MC-DEL-003 | Open | TestFlight and Android beta channels, cohorts, feedback handling, and build expiry | MC-DEL-001 |
-| MC-DEL-004 | Open | App Store and Play privacy disclosures, account-deletion obligations, capture claims, and review preparation | MC-ID-002, MC-PRIV-002, MC-PRIV-004 |
-| MC-DEL-005 | Open | Required feature parity, permitted platform differences, and release synchronization | MC-ARCH-001, MC-ORG-001 |
-| MC-DEL-006 | Open | Dependency and SDK intake, licensing, privacy-manifest, update, and removal process | None |
+No open items. Accepted decisions remain in the history above.
 
 ### Team Ownership
 
-| ID | Status | Decision needed | Depends on |
-|---|---|---|---|
-| MC-ORG-001 | Open | Whether one team owns both apps, platform owners specialize within one team, or separate teams own each platform | MC-ARCH-001 |
+No open items. Accepted decisions remain in the history above.
 
 ## Decision Record Template
 

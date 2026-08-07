@@ -37,6 +37,7 @@ changed only by valid scenario commands and journaled events.
 A future concrete schema must be able to represent:
 
 - scenario identity, metadata, and version
+- original language and available approved localization metadata
 - characters and relationships
 - public and private character information
 - acts, scenes, and timeline constraints
@@ -90,7 +91,12 @@ Before publication, validation must be able to identify:
 - contradictory state transitions
 - missing resolution conditions
 - unsupported capability requirements
+- required private capabilities without an ordered safe fallback or explicit
+  pause behavior
+- fallback variants that change canonical truth or broaden the authorized
+  audience
 - referenced assets without sufficient source and rights information
+- playable language metadata that does not identify an approved localization
 
 The exact validation language and severity levels remain open.
 
@@ -111,5 +117,9 @@ Human approval is still required for:
 - asset manifest structure
 - validation severity and publication gates
 - localization representation
+
+The product requirements for session-language advertising, language-independent
+scenario authoring, and human approval of AI-proposed translations are recorded
+in [Language and Localization Product Direction](../product/language-and-localization.md).
 
 Those choices may warrant an ADR when implementation evidence is available.
