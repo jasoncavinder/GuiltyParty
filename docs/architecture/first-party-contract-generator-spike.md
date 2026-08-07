@@ -4,10 +4,10 @@
 
 Compatibility spike completed, 2026-08-06. The first-party generator satisfied
 the bounded evaluation gates and was subsequently adopted by
-[ADR 0034](../adr/0034-first-party-mobile-contract-generator.md). Generated
-Swift and Kotlin product sources, native build integration, and CI drift
-enforcement remain follow-up implementation work and are not added by this
-spike.
+[ADR 0034](../adr/0034-first-party-mobile-contract-generator.md). The subsequent
+integration slice committed the Swift and Kotlin outputs and added offline
+generation, native verification, and CI drift enforcement. Those production
+integration artifacts remain distinct from this disposable spike evidence.
 
 ## Purpose and Scope
 
@@ -156,13 +156,15 @@ Results:
 
 Final deterministic output hashes:
 
-- Swift: `b4891f5be3f96b07498514d8522e2c3701d476b71db7c7bf340acd21a6cde238`
-- Kotlin: `a9796b8e0ef599af5b98dfa91f075b36b2b9a76b3951f8d55add3366e06cbbcc`
+- Swift: `53e4735218b2a7f08534e7e43a87997a241a7bc3ac22554c43b8cf90a67ed08a`
+- Kotlin: `a7dfd4f65d25870b6fc1a139be2af9d8e92429f65b98077d24c22b951f3411a0`
 
-The temporary Swift output was 2,957 lines and 121,907 bytes. The temporary
-Kotlin output was 2,491 lines and 112,767 bytes. Neither output is committed.
+The temporary Swift output was 2,958 lines and 122,040 bytes. The temporary
+Kotlin output was 2,492 lines and 112,900 bytes. The same bytes are now
+committed by the subsequent integration slice.
 
-The first-party implementation and runner total approximately 3,056 lines.
+The first-party implementation and generation wrappers total approximately
+3,210 lines.
 That is a real maintenance cost, but it is bounded to the current vocabulary,
 covered by fail-closed parser tests, and smaller than maintaining more than
 5,000 generated transport lines independently across two languages.
@@ -194,6 +196,7 @@ maintenance. ADR 0034 records the owner's decisions on:
   profile.
 
 The crate is now the accepted generator. The spike runner remains evaluation
-evidence; the committed outputs, regeneration command, native build references,
-and CI drift enforcement belong to the separately reviewable integration slice
-authorized by ADR 0034.
+evidence. The committed outputs, regeneration command, native compiler checks,
+and CI drift enforcement are implemented by the separately reviewable
+integration slice authorized by ADR 0034. Native application build references
+remain deferred until the corresponding native projects exist.

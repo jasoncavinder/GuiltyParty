@@ -56,6 +56,11 @@ make setup
 make test
 ```
 
+When Swift and Kotlin compilers are available, verify the committed native
+control-plane models with `make check-mobile-contracts`. Regenerate them only
+through `make generate-mobile-contracts`; generated sources are never edited by
+hand.
+
 The server requires a process-local host credential and does not load `.env` files automatically:
 
 ```sh
