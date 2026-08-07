@@ -156,11 +156,11 @@ Results:
 
 Final deterministic output hashes:
 
-- Swift: `53e4735218b2a7f08534e7e43a87997a241a7bc3ac22554c43b8cf90a67ed08a`
-- Kotlin: `a7dfd4f65d25870b6fc1a139be2af9d8e92429f65b98077d24c22b951f3411a0`
+- Swift: `246ed3fe84d5a6e77fc9170c91e0bce29c4576863a9592e15d4015fc24f17a13`
+- Kotlin: `851d45ea7245ccfede1a277778389413f0d42b883bfe49e39d0eb4f5d884626a`
 
-The temporary Swift output was 2,958 lines and 122,040 bytes. The temporary
-Kotlin output was 2,492 lines and 112,900 bytes. The same bytes are now
+The temporary Swift output was 3,506 lines and 147,390 bytes. The temporary
+Kotlin output was 2,996 lines and 137,260 bytes. The same bytes are now
 committed by the subsequent integration slice.
 
 The first-party implementation and generation wrappers total approximately
