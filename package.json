@@ -1,0 +1,13 @@
+{
+  "name": "guilty-party-tooling",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "check:contracts:standard": "node tooling/check_contract_schema.mjs"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0"
+  }
+}
