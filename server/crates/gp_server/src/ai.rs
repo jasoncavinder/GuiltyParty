@@ -4,7 +4,7 @@ use reqwest::{Client, Url};
 use serde::{Deserialize, Serialize};
 
 const MAX_RESPONSE_BYTES: usize = 64 * 1024;
-const MAX_SUGGESTION_BYTES: usize = 2_000;
+const MAX_SUGGESTION_CHARACTERS: usize = 2_000;
 
 #[derive(Debug, Serialize)]
 struct OpenAiRequest<'a> {
@@ -163,8 +163,8 @@ fn validate_suggestion(suggestion: String) -> Result<String, String> {
     if suggestion.is_empty() {
         return Err("AI returned an empty suggestion".into());
     }
-    if suggestion.len() > MAX_SUGGESTION_BYTES {
-        return Err("AI suggestion exceeded the 2,000-byte limit".into());
+    if suggestion.chars().count() > MAX_SUGGESTION_CHARACTERS {
+        return Err("AI suggestion exceeded the 2,000-character limit".into());
     }
     if suggestion
         .chars()
@@ -202,7 +202,8 @@ mod tests {
     #[test]
     fn validates_ai_output_bounds() {
         assert!(validate_suggestion("  Keep the pace steady.  ".into()).is_ok());
+        assert!(validate_suggestion("🎭".repeat(MAX_SUGGESTION_CHARACTERS)).is_ok());
         assert!(validate_suggestion("".into()).is_err());
-        assert!(validate_suggestion("x".repeat(MAX_SUGGESTION_BYTES + 1)).is_err());
+        assert!(validate_suggestion("x".repeat(MAX_SUGGESTION_CHARACTERS + 1)).is_err());
     }
 }

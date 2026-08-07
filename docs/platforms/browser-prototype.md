@@ -27,6 +27,12 @@ This runbook does not claim native iOS support, LG webOS packaging, device pairi
 
 The AI remains disabled unless the operator separately sets both `GP_AI_ENDPOINT` and `GP_AI_MODEL` to an approved local endpoint and model identifier.
 
+Both browser surfaces verify `GET /api/protocol`, use `POST /api/v1/join`
+where joining is required, and negotiate `guiltyparty.control.v1` on
+`/ws/v1`. Every realtime message uses the canonical v1 envelope. Commands carry
+an idempotency identifier and primary-authority generation; projections and
+command results carry the journal-derived server sequence.
+
 ## LAN Browser Check
 
 Replace `192.168.1.20` with the Mac's current LAN address and start the server with exact browser origins:
@@ -53,8 +59,18 @@ rm server/data/mvp-session.jsonl
 
 Authority tokens are process-local. Restarting the server invalidates browser tokens even though canonical scenario state is replayed.
 
+The server retains at most 256 command-idempotency results in process memory,
+scoped by endpoint. This prevents duplicate journal events for ordinary
+in-process retries. The records are not yet reconstructed after restart, so the
+prototype does not claim full resumption support.
+
 ## Current Demonstration Boundary
 
 The Host Console may create synthetic participant identities so assignment and public projection changes can be observed. Those buttons do not emulate private Companion connections and intentionally discard the returned participant authority without logging it.
 
 Private Companion projections, participant voting, native iOS behavior, physical LG webOS packaging, and full acceptance replay remain follow-up work.
+
+Browser WebSocket APIs cannot attach the prototype authority as an
+`Authorization` header, so the process-local token is passed in the WebSocket
+URL query. The clients never retain it in browser storage. This is a documented
+development-only limitation, not the production authentication design.

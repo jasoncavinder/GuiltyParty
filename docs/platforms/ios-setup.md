@@ -36,25 +36,35 @@ When Bonjour is actually implemented, also add the exact advertised service type
 The Companion must first join over HTTP:
 
 ```http
-POST http://MAC_LAN_ADDRESS:3000/api/join
+POST http://MAC_LAN_ADDRESS:3000/api/v1/join
 Content-Type: application/json
 
-{"kind":"participant","display_name":"Synthetic Player"}
+{"protocol_version":"1.0","kind":"participant","display_name":"Synthetic Player","endpoint":{"platform":"ios_companion","capabilities":["private_display","touch_input"]}}
 ```
 
-The response contains a synthetic `participant_id` and an unpredictable, process-local `token`. Keep the token in memory only for this prototype. Connect the retained WebSocket task to:
+Use `/api/v1/join`, not the removed unversioned route shown in older prototype
+notes. The response contains distinct `session_id`, `endpoint_id`, `room_id`, a
+synthetic `participant_id`, and an unpredictable process-local `token`. Keep
+the token in memory only for this prototype. Connect the retained WebSocket
+task to:
 
 ```text
-ws://MAC_LAN_ADDRESS:3000/ws?token=URL_ENCODED_TOKEN
+ws://MAC_LAN_ADDRESS:3000/ws/v1?token=URL_ENCODED_TOKEN
 ```
 
-The server sends an authorized projection immediately. The client may request a refresh with:
+The WebSocket request must offer the `guiltyparty.control.v1` subprotocol. The
+server sends an authorized projection envelope immediately. The client may
+request a refresh with the issued context:
 
 ```json
-{"type":"get_projection"}
+{"protocol_version":"1.0","type":"get_projection","message_id":"UNIQUE_MESSAGE_ID","session_id":"ISSUED_SESSION_ID","endpoint_id":"ISSUED_ENDPOINT_ID","payload":{}}
 ```
 
 The WebSocket task must be owned by a long-lived observable model rather than a local function variable, and it must continuously call `receive` after connecting. Do not log tokens, projection payloads, private objectives, or private clues.
+
+State-changing commands also require a unique `idempotency_id` and the current
+`primary_authority_generation`. The prototype issues generation `0`; the
+server, not the client, remains authoritative for that value.
 
 ## 4. Run a Device Check
 

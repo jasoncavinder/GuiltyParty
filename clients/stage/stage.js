@@ -1,9 +1,15 @@
+const PROTOCOL_VERSION = "1.0";
+const CONTROL_SUBPROTOCOL = "guiltyparty.control.v1";
+
 const statusEl = document.getElementById("status");
 const dataEl = document.getElementById("data");
 const connectionForm = document.getElementById("connection-form");
 const serverUrlInput = document.getElementById("server-url");
 
 let socket;
+let sessionId;
+let endpointId;
+let serverSequence = -1;
 
 serverUrlInput.value = configuredServerOrigin();
 connectionForm.addEventListener("submit", (event) => {
@@ -29,8 +35,10 @@ function normalizeServerOrigin(value) {
 }
 
 function websocketUrl(origin, token) {
-    const url = new URL("/ws", origin);
+    const url = new URL("/ws/v1", origin);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    // Browser WebSocket APIs cannot attach an Authorization header. This
+    // process-local prototype authority is never retained in browser storage.
     url.searchParams.set("token", token);
     return url;
 }
@@ -47,22 +55,52 @@ async function joinAndConnect() {
     if (socket) {
         socket.close();
     }
-    setStatus("Joining…", false);
+    sessionId = undefined;
+    endpointId = undefined;
+    serverSequence = -1;
+    setStatus("Checking protocol compatibility…", false);
     try {
-        const response = await fetch(new URL("/api/join", serverOrigin), {
+        const compatibilityResponse = await fetch(new URL("/api/protocol", serverOrigin));
+        if (!compatibilityResponse.ok) {
+            throw new Error(`Compatibility check failed with HTTP ${compatibilityResponse.status}.`);
+        }
+        const compatibility = await compatibilityResponse.json();
+        if (
+            compatibility.preferred_protocol_version !== PROTOCOL_VERSION ||
+            !compatibility.supported_protocol_majors.includes(1) ||
+            compatibility.required_upgrade
+        ) {
+            throw new Error("The server does not support this Stage protocol.");
+        }
+
+        setStatus("Joining…", false);
+        const response = await fetch(new URL("/api/v1/join", serverOrigin), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ kind: "stage" })
+            body: JSON.stringify({
+                protocol_version: PROTOCOL_VERSION,
+                kind: "stage",
+                endpoint: {
+                    platform: "browser_stage",
+                    capabilities: ["public_display"],
+                },
+            }),
         });
         if (!response.ok) {
-            throw new Error(`Join failed with HTTP ${response.status}.`);
+            throw new Error(await problemMessage(response, "Join failed"));
         }
         const join = await response.json();
-        const nextSocket = new WebSocket(websocketUrl(serverOrigin, join.token));
+        sessionId = join.session_id;
+        endpointId = join.endpoint_id;
+
+        const nextSocket = new WebSocket(
+            websocketUrl(serverOrigin, join.token),
+            CONTROL_SUBPROTOCOL,
+        );
         socket = nextSocket;
         nextSocket.addEventListener("open", () => {
-            if (socket === nextSocket) {
-                setStatus("Connected as Stage.", false);
+            if (socket === nextSocket && nextSocket.protocol === CONTROL_SUBPROTOCOL) {
+                setStatus("Connected as Stage; waiting for public state…", false);
             }
         });
         nextSocket.addEventListener("message", handleServerMessage);
@@ -73,6 +111,8 @@ async function joinAndConnect() {
         });
         nextSocket.addEventListener("close", () => {
             if (socket === nextSocket) {
+                sessionId = undefined;
+                endpointId = undefined;
                 setStatus("Disconnected. Reconnect manually when ready.", true);
             }
         });
@@ -89,10 +129,55 @@ function handleServerMessage(event) {
         setStatus("The server sent an invalid message.", true);
         return;
     }
+
+    if (!acceptServerEnvelope(message)) {
+        return;
+    }
     if (message.type === "projection") {
-        renderProjection(message.projection);
+        renderProjection(message.payload.projection);
+        setStatus(`Connected as Stage · sequence ${message.server_sequence}.`, false);
     } else if (message.type === "error") {
-        setStatus(message.message, true);
+        setStatus(`${message.payload.title} (${message.payload.code}).`, true);
+    } else {
+        setStatus("The Stage received an unsupported critical message.", true);
+        socket.close(1002, "Unsupported message type");
+    }
+}
+
+function acceptServerEnvelope(message) {
+    if (
+        message.protocol_version !== PROTOCOL_VERSION ||
+        typeof message.message_id !== "string" ||
+        typeof message.type !== "string" ||
+        typeof message.payload !== "object" ||
+        message.payload === null
+    ) {
+        setStatus("The server sent an incompatible control-plane envelope.", true);
+        socket.close(1002, "Invalid envelope");
+        return false;
+    }
+    if (message.session_id !== sessionId || message.endpoint_id !== endpointId) {
+        setStatus("The server sent state for a different session or endpoint.", true);
+        socket.close(1008, "Context mismatch");
+        return false;
+    }
+    if (message.server_sequence !== undefined) {
+        if (!Number.isInteger(message.server_sequence) || message.server_sequence < serverSequence) {
+            setStatus("The server sequence regressed; reconnect to resynchronize.", true);
+            socket.close(1008, "Sequence regression");
+            return false;
+        }
+        serverSequence = message.server_sequence;
+    }
+    return true;
+}
+
+async function problemMessage(response, fallback) {
+    try {
+        const problem = await response.json();
+        return `${problem.title} (${problem.code}; HTTP ${response.status}).`;
+    } catch {
+        return `${fallback} with HTTP ${response.status}.`;
     }
 }
 
@@ -103,7 +188,7 @@ function renderProjection(projection) {
     if (projection.active_scene) {
         fragment.append(
             heading(2, projection.active_scene.name),
-            paragraph(projection.active_scene.public_narrative)
+            paragraph(projection.active_scene.public_narrative),
         );
     } else {
         fragment.append(heading(2, "Waiting for the story to begin…"));
@@ -128,7 +213,7 @@ function renderProjection(projection) {
     }
     fragment.append(
         participants,
-        paragraph(`Voting: ${projection.voting_open ? "open" : "closed"}; votes cast: ${projection.votes_cast}`)
+        paragraph(`Voting: ${projection.voting_open ? "open" : "closed"}; votes cast: ${projection.votes_cast}`),
     );
     if (projection.outcome) {
         fragment.append(heading(3, "Outcome"), paragraph(projection.outcome.public_resolution));

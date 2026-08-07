@@ -1,3 +1,6 @@
+const PROTOCOL_VERSION = "1.0";
+const CONTROL_SUBPROTOCOL = "guiltyparty.control.v1";
+
 const statusEl = document.getElementById("status");
 const dataEl = document.getElementById("data");
 const aiEl = document.getElementById("ai");
@@ -7,6 +10,10 @@ const hostTokenInput = document.getElementById("host-token");
 
 let socket;
 let serverOrigin;
+let sessionId;
+let endpointId;
+let serverSequence = -1;
+const primaryAuthorityGeneration = 0;
 
 serverUrlInput.value = defaultServerOrigin();
 
@@ -55,13 +62,15 @@ function normalizeServerOrigin(value) {
 }
 
 function websocketUrl(origin, token) {
-    const url = new URL("/ws", origin);
+    const url = new URL("/ws/v1", origin);
     url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+    // Browser WebSocket APIs cannot attach an Authorization header. This
+    // process-local prototype authority is never retained in browser storage.
     url.searchParams.set("token", token);
     return url;
 }
 
-function connect() {
+async function connect() {
     const token = hostTokenInput.value;
     try {
         serverOrigin = normalizeServerOrigin(serverUrlInput.value);
@@ -73,13 +82,39 @@ function connect() {
     if (socket) {
         socket.close();
     }
+    sessionId = undefined;
+    endpointId = undefined;
+    serverSequence = -1;
+    setStatus("Checking protocol compatibility…", false);
+
+    try {
+        const response = await fetch(new URL("/api/protocol", serverOrigin));
+        if (!response.ok) {
+            throw new Error(`Compatibility check failed with HTTP ${response.status}.`);
+        }
+        const compatibility = await response.json();
+        if (
+            compatibility.preferred_protocol_version !== PROTOCOL_VERSION ||
+            !compatibility.supported_protocol_majors.includes(1) ||
+            compatibility.required_upgrade
+        ) {
+            throw new Error("The server does not support this Host Console protocol.");
+        }
+    } catch (error) {
+        setStatus(error.message, true);
+        return;
+    }
+
     setStatus("Connecting…", false);
-    const nextSocket = new WebSocket(websocketUrl(serverOrigin, token));
+    const nextSocket = new WebSocket(
+        websocketUrl(serverOrigin, token),
+        CONTROL_SUBPROTOCOL,
+    );
     socket = nextSocket;
 
     nextSocket.addEventListener("open", () => {
-        if (socket === nextSocket) {
-            setStatus("Connected as Host.", false);
+        if (socket === nextSocket && nextSocket.protocol === CONTROL_SUBPROTOCOL) {
+            setStatus("Connected as Host; waiting for authorized state…", false);
         }
     });
     nextSocket.addEventListener("message", handleServerMessage);
@@ -90,6 +125,8 @@ function connect() {
     });
     nextSocket.addEventListener("close", () => {
         if (socket === nextSocket) {
+            sessionId = undefined;
+            endpointId = undefined;
             setStatus("Disconnected. Reconnect manually when ready.", true);
         }
     });
@@ -104,30 +141,101 @@ function handleServerMessage(event) {
         return;
     }
 
-    if (message.type === "projection") {
-        renderProjection(message.projection);
-    } else if (message.type === "ai_suggestion") {
-        aiEl.textContent = message.suggestion;
-    } else if (message.type === "error") {
-        setStatus(message.message, true);
+    if (!acceptServerEnvelope(message)) {
+        return;
     }
+
+    if (message.type === "projection") {
+        renderProjection(message.payload.projection);
+        setStatus(`Connected as Host · sequence ${message.server_sequence}.`, false);
+    } else if (message.type === "ai_suggestion") {
+        aiEl.textContent = message.payload.suggestion;
+    } else if (message.type === "command_result") {
+        if (message.payload.status === "rejected") {
+            setStatus(`${message.payload.title} (${message.payload.code}).`, true);
+        }
+    } else if (message.type === "error") {
+        setStatus(`${message.payload.title} (${message.payload.code}).`, true);
+    } else {
+        setStatus("The server sent an unsupported critical message.", true);
+        socket.close(1002, "Unsupported message type");
+    }
+}
+
+function acceptServerEnvelope(message) {
+    if (
+        message.protocol_version !== PROTOCOL_VERSION ||
+        typeof message.message_id !== "string" ||
+        typeof message.type !== "string" ||
+        typeof message.payload !== "object" ||
+        message.payload === null
+    ) {
+        setStatus("The server sent an incompatible control-plane envelope.", true);
+        socket.close(1002, "Invalid envelope");
+        return false;
+    }
+
+    if (sessionId === undefined) {
+        sessionId = message.session_id;
+        endpointId = message.endpoint_id;
+    }
+    if (message.session_id !== sessionId || message.endpoint_id !== endpointId) {
+        setStatus("The server sent state for a different session or endpoint.", true);
+        socket.close(1008, "Context mismatch");
+        return false;
+    }
+    if (message.server_sequence !== undefined) {
+        if (!Number.isInteger(message.server_sequence) || message.server_sequence < serverSequence) {
+            setStatus("The server sequence regressed; reconnect to resynchronize.", true);
+            socket.close(1008, "Sequence regression");
+            return false;
+        }
+        serverSequence = message.server_sequence;
+    }
+    return true;
 }
 
 function sendCommand(command) {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
-        setStatus("Connect before sending a command.", true);
-        return;
-    }
-    socket.send(JSON.stringify({ type: "submit_command", command }));
+    sendEnvelope(
+        "submit_command",
+        { command },
+        {
+            idempotency_id: newIdentifier("command"),
+            primary_authority_generation: primaryAuthorityGeneration,
+        },
+    );
 }
 
 function requestAi() {
-    if (!socket || socket.readyState !== WebSocket.OPEN) {
+    if (!canSend()) {
         setStatus("Connect before requesting a suggestion.", true);
         return;
     }
     aiEl.textContent = "Requesting…";
-    socket.send(JSON.stringify({ type: "request_ai_suggestion" }));
+    sendEnvelope("request_ai_suggestion", {});
+}
+
+function sendEnvelope(type, payload, extra = {}) {
+    if (!canSend()) {
+        setStatus("Wait for the authorized session state before sending a command.", true);
+        return;
+    }
+    socket.send(JSON.stringify({
+        protocol_version: PROTOCOL_VERSION,
+        type,
+        message_id: newIdentifier("message"),
+        session_id: sessionId,
+        endpoint_id: endpointId,
+        ...extra,
+        payload,
+    }));
+}
+
+function canSend() {
+    return socket &&
+        socket.readyState === WebSocket.OPEN &&
+        sessionId !== undefined &&
+        endpointId !== undefined;
 }
 
 async function simulateParticipant(name) {
@@ -136,19 +244,42 @@ async function simulateParticipant(name) {
         return;
     }
     try {
-        const response = await fetch(new URL("/api/join", serverOrigin), {
+        const response = await fetch(new URL("/api/v1/join", serverOrigin), {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ kind: "participant", display_name: name })
+            body: JSON.stringify({
+                protocol_version: PROTOCOL_VERSION,
+                kind: "participant",
+                display_name: name,
+                endpoint: {
+                    platform: "browser_companion_simulator",
+                    capabilities: ["private_display", "touch_input"],
+                },
+            }),
         });
         if (!response.ok) {
-            throw new Error(`Join failed with HTTP ${response.status}.`);
+            throw new Error(await problemMessage(response, "Join failed"));
         }
         const join = await response.json();
-        setStatus(`Created ${name} (${join.participant_id}). Companion token kept out of logs.`, false);
+        setStatus(`Created ${name} (${join.participant_id}). Companion authority discarded.`, false);
     } catch (error) {
         setStatus(error.message, true);
     }
+}
+
+async function problemMessage(response, fallback) {
+    try {
+        const problem = await response.json();
+        return `${problem.title} (${problem.code}; HTTP ${response.status}).`;
+    } catch {
+        return `${fallback} with HTTP ${response.status}.`;
+    }
+}
+
+function newIdentifier(prefix) {
+    const random = new Uint32Array(4);
+    crypto.getRandomValues(random);
+    return `${prefix}_${Array.from(random, (value) => value.toString(16).padStart(8, "0")).join("")}`;
 }
 
 function renderProjection(projection) {
@@ -160,7 +291,7 @@ function renderProjection(projection) {
         renderClues(projection.revealed_clues),
         heading(3, "Participants"),
         renderParticipants(projection.participants),
-        paragraph(`Voting: ${projection.voting_open ? "open" : "closed"}; votes cast: ${projection.votes_cast}`)
+        paragraph(`Voting: ${projection.voting_open ? "open" : "closed"}; votes cast: ${projection.votes_cast}`),
     );
     if (projection.outcome) {
         fragment.append(heading(3, "Outcome"), paragraph(projection.outcome.public_resolution));
@@ -201,14 +332,14 @@ function renderParticipants(participants) {
             sendCommand({
                 type: "assign_character",
                 participant_id: participant.participant_id,
-                character_id: "char_1"
+                character_id: "char_1",
             });
         });
         const bobButton = button("Assign Bob", () => {
             sendCommand({
                 type: "assign_character",
                 participant_id: participant.participant_id,
-                character_id: "char_2"
+                character_id: "char_2",
             });
         });
         item.append(aliceButton, bobButton);

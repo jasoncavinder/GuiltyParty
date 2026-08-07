@@ -38,7 +38,11 @@ Public visibility of this repository does not make Guilty Party open source.
 
 ## Prototype Development Status
 
-The repository currently contains an early local-only server, deterministic scenario engine, versioned synthetic scenario fixture, and browser proof-of-concept Host and Stage surfaces. It is not yet the complete playable MVP, a production service, or commercially deployable software.
+The repository currently contains an early local-only server, deterministic
+scenario engine, versioned synthetic scenario fixture, canonical control-plane
+v1 contracts, and v1 browser proof-of-concept Host and Stage surfaces. It is
+not yet the complete playable MVP, a production service, or commercially
+deployable software.
 
 Run the current checks with:
 
