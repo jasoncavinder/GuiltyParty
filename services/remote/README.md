@@ -88,6 +88,20 @@ The rehearsal creates synthetic state and proves first-use `101`, replay
 `401`, and tamper `401` without printing the bootstrap proof, pairing proof,
 primary bearer, or connect ticket.
 
+After the proposed development lifecycle surface in ADR 0038 is reviewed and
+deployed, exercise its fixed short-lived synthetic sessions with:
+
+```sh
+GP_REMOTE_BASE_URL='https://api.test.guiltyparty.app' \
+GP_HOST_BOOTSTRAP_PROOF='<read from the protected operator store>' \
+make rehearse-remote-lifecycle
+```
+
+This longer rehearsal verifies invitation and ticket negative paths, an idle
+hibernatable connection and projection after reactivation, fresh-ticket
+reconnect, explicit end, alarm expiry, and active-session data deletion. It never accepts
+caller-selected lifetimes and does not change ordinary session defaults.
+
 ## Configuration Safety
 
 `wrangler.jsonc` declares the approved synthetic development Worker
@@ -112,6 +126,12 @@ The Remote Friends MVP boundary expects:
   fail closed and neither uses or stores a network address
 - optional secret `EMERGENCY_DISABLED=true`, which keeps health and protocol
   discovery available while returning `503` from every stateful entry point
+
+The operator-authenticated `/api/v1/rehearsals/lifecycle/sessions` route is a
+development verification surface, not a gameplay-client operation. It creates
+only fixed 15-second invitation, 45-second active, and 30-second retention
+windows. The ordinary creation route remains 15 minutes, four hours, and seven
+days respectively.
 
 The approved allowlist is committed as
 `https://host.test.guiltyparty.app,https://play.test.guiltyparty.app`. The

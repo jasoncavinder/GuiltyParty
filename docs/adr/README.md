@@ -45,6 +45,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0035](0035-packaged-stage-realtime-authority.md) | Accepted | Give the packaged webOS Stage memory-only bearer authority and short-lived, single-use WebSocket connect tickets without cookie or URL credentials. |
 | [0036](0036-packaged-webos-stage-pairing.md) | Accepted | Verify the packaged webOS transport and pair the Stage through a Host-approved 120-second device-code flow. |
 | [0037](0037-remote-mvp-client-readiness.md) | Accepted | Separate remote client delivery surfaces and standardize session language, coarse build admission, non-URL invitations, and bounded beta preparation. |
+| [0038](0038-development-lifecycle-rehearsal.md) | Accepted | Add a fixed, operator-authenticated development route for deployed hibernation, expiry, and deletion rehearsals without changing ordinary session lifetimes. |
 
 ## Adding an ADR
 

@@ -10,7 +10,6 @@ import {
   MAX_WEBSOCKET_MESSAGE_BYTES,
   MESSAGE_RATE_WINDOW_MS,
   PROTOCOL_VERSION,
-  SESSION_RETENTION_MS,
 } from "./constants.js";
 import { offeredSubprotocols } from "./friends-auth.js";
 import { scenarioEngine } from "./scenario-engine.js";
@@ -254,7 +253,7 @@ export class GameSession extends DurableObject {
         }
       }
     } else if (value.action === "end_session") {
-      result = this.store.endSession(authority, now, SESSION_RETENTION_MS);
+      result = this.store.endSession(authority, now);
       if (result.ok) {
         await this.ctx.storage.setAlarm(result.deleteAtUnixMs);
         for (const socket of this.ctx.getWebSockets()) {

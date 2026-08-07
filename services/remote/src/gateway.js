@@ -3,6 +3,9 @@ import {
   CONTROL_SUBPROTOCOL,
   FRIENDS_MVP_PROFILE,
   INVITATION_DURATION_MS,
+  LIFECYCLE_REHEARSAL_ACTIVE_DURATION_MS,
+  LIFECYCLE_REHEARSAL_INVITATION_DURATION_MS,
+  LIFECYCLE_REHEARSAL_RETENTION_MS,
   MAX_REQUEST_BODY_BYTES,
   PROTOCOL_VERSION,
   SESSION_ACTIVE_DURATION_MS,
@@ -71,6 +74,17 @@ export default {
       return withCors(await createSession(request, env), request, env);
     }
 
+    if (url.pathname === "/api/v1/rehearsals/lifecycle/sessions") {
+      if (request.method !== "POST") {
+        return withCors(methodNotAllowed("POST"), request, env);
+      }
+      return withCors(
+        await createSession(request, env, { lifecycleRehearsal: true }),
+        request,
+        env,
+      );
+    }
+
     if (url.pathname === "/api/v1/join") {
       if (request.method !== "POST") {
         return withCors(methodNotAllowed("POST"), request, env);
@@ -122,7 +136,7 @@ export default {
   },
 };
 
-async function createSession(request, env) {
+async function createSession(request, env, { lifecycleRehearsal = false } = {}) {
   const unavailable = friendsServiceUnavailable(env);
   if (unavailable) {
     return unavailable;
@@ -170,9 +184,18 @@ async function createSession(request, env) {
   const endpointId = randomIdentifier("end");
   const roomId = randomIdentifier("room");
   const pairingCode = randomSecret(12);
-  const invitationExpiresAt = now + INVITATION_DURATION_MS;
-  const sessionExpiresAt = now + SESSION_ACTIVE_DURATION_MS;
-  const deleteAt = sessionExpiresAt + SESSION_RETENTION_MS;
+  const invitationDuration = lifecycleRehearsal
+    ? LIFECYCLE_REHEARSAL_INVITATION_DURATION_MS
+    : INVITATION_DURATION_MS;
+  const activeDuration = lifecycleRehearsal
+    ? LIFECYCLE_REHEARSAL_ACTIVE_DURATION_MS
+    : SESSION_ACTIVE_DURATION_MS;
+  const retentionDuration = lifecycleRehearsal
+    ? LIFECYCLE_REHEARSAL_RETENTION_MS
+    : SESSION_RETENTION_MS;
+  const invitationExpiresAt = now + invitationDuration;
+  const sessionExpiresAt = now + activeDuration;
+  const deleteAt = sessionExpiresAt + retentionDuration;
 
   const stub = sessionStub(env, sessionId);
   const internalResponse = await stub.fetch("https://session.internal/internal/session/create", {
@@ -657,6 +680,7 @@ function internalAuthorityHeaders(authority, initial = {}) {
 function isCredentialedApiPath(pathname) {
   return (
     pathname === "/api/v1/sessions" ||
+    pathname === "/api/v1/rehearsals/lifecycle/sessions" ||
     pathname === "/api/v1/join" ||
     pathname === "/api/v1/websocket-tickets" ||
     pathname === "/api/v1/session/invitation" ||
