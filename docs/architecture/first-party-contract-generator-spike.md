@@ -33,9 +33,10 @@ anything outside its explicit profile.
 Supported structural vocabulary:
 
 - root `$schema`, `$id`, `title`, `description`, and `$defs`
-- direct local `#/$defs/Name` references only
+- direct, local, nonrecursive `#/$defs/Name` references only
 - `type` for object, array, string, integer, boolean, and null
-- two-member nullable type arrays
+- two-member nullable type arrays containing exactly one `null` and one
+  supported non-null type
 - `properties`, `required`, and `items`
 - discriminated `oneOf` objects and nullable `oneOf`
 - the narrow `allOf` refinements used by the v1 envelope definitions
@@ -43,13 +44,20 @@ Supported structural vocabulary:
 Supported validation vocabulary:
 
 - string `const`, `minLength`, `maxLength`, and `pattern`
-- integer `minimum` and `maximum`
+- mandatory signed 64-bit integer `minimum` and `maximum` bounds
 - array `minItems` and `uniqueItems`
 
 `description`, `title`, `format`, and `writeOnly` remain annotations. The tool
 does not silently approximate unsupported keywords, external or nested
 references, ambiguous unions, or overlapping `allOf` constraints. An input
 using one fails generation before either language is emitted.
+
+Recursive reference graphs fail before named-type expansion, and malformed
+nullable arrays return controlled generation errors rather than panicking.
+Requiring both integer bounds prevents the schema from accepting values that
+the generated Swift `Int64` and Kotlin `Long` models cannot represent. The
+canonical cross-platform counters are additionally capped at JSON's portable
+exact-integer ceiling (`2^53 - 1`) for browser parity.
 
 The current `allOf` support recognizes only two proven refinements:
 
@@ -82,6 +90,8 @@ Kotlin output:
   `guiltyparty.contracts.v1` package;
 - provides validated public constructors and bidirectional conversion through
   a small generated `GPJsonValue` boundary;
+- escapes Kotlin interpolation markers in every schema-derived source literal
+  and redacts values from generated DTO and `GPJsonValue` `toString()` output;
 - preserves missing versus explicit-null input before model construction; and
 - applies the same additive-field and critical-variant behavior as Swift.
 
@@ -113,8 +123,11 @@ The runner:
 6. decodes, validates, and re-encodes all 18 committed fixtures;
 7. rejects derived cases for a missing required-nullable member and an
    incomplete cast-vote command;
-8. constructs outbound DTOs and proves constructor validation; and
-9. verifies that required-nullable output is encoded as JSON null.
+8. accepts the portable maximum counter and rejects the next integer;
+9. constructs outbound DTOs and proves constructor validation;
+10. verifies that required-nullable output is encoded as JSON null; and
+11. verifies that Kotlin DTO and raw-value stringification cannot expose a
+    synthetic private value.
 
 ## Measured Results
 
@@ -135,21 +148,21 @@ Results:
 | Preserve exhaustive discriminated variants | Pass |
 | Tolerate additive fields and reject unknown critical variants | Pass |
 | Compile at both native language baselines with warnings as errors | Pass |
-| Pass 18 committed and 2 derived fixture cases in both languages | Pass |
-| Validate outbound construction and required-nullable encoding | Pass |
+| Pass 18 committed and 4 derived fixture cases in both languages | Pass |
+| Validate outbound construction, required-nullable encoding, integer limits, and redacted Kotlin stringification | Pass |
 | Regenerate byte-for-byte across five fresh outputs | Pass |
 | Add no networking, logging, or new third-party dependency | Pass |
 | Remove disposable generated and compiled artifacts | Pass |
 
 Final deterministic output hashes:
 
-- Swift: `82538dc910e5fa1e2cb389a2389fac79bd6aa677f029345bcaa8a1f5a4952938`
-- Kotlin: `49f62d26d9671f7edca8c12511143a833bf3251ce690d2c28d9ccf2a6a19c026`
+- Swift: `b4891f5be3f96b07498514d8522e2c3701d476b71db7c7bf340acd21a6cde238`
+- Kotlin: `a9796b8e0ef599af5b98dfa91f075b36b2b9a76b3951f8d55add3366e06cbbcc`
 
-The temporary Swift output was 2,957 lines and 121,335 bytes. The temporary
-Kotlin output was 2,315 lines and 102,105 bytes. Neither output is committed.
+The temporary Swift output was 2,957 lines and 121,907 bytes. The temporary
+Kotlin output was 2,491 lines and 112,767 bytes. Neither output is committed.
 
-The first-party implementation and runner total approximately 2,845 lines.
+The first-party implementation and runner total approximately 3,056 lines.
 That is a real maintenance cost, but it is bounded to the current vocabulary,
 covered by fail-closed parser tests, and smaller than maintaining more than
 5,000 generated transport lines independently across two languages.

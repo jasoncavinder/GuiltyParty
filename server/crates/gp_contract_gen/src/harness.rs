@@ -81,6 +81,31 @@ fn add_derived_cases(cases: &mut Vec<FixtureCase>) -> Result<(), String> {
         expected_valid: false,
         value: incomplete_vote,
     });
+
+    let stage_projection = fixture_value(cases, "privacy/stage-projection.json")?.clone();
+    let mut maximum_sequence = stage_projection.clone();
+    *maximum_sequence
+        .pointer_mut("/server_sequence")
+        .ok_or_else(|| "stage projection fixture must contain server_sequence".to_string())? =
+        Value::from(9_007_199_254_740_991_i64);
+    cases.push(FixtureCase {
+        file: "derived/server-sequence-portable-maximum.json".to_string(),
+        definition: "ServerEnvelope".to_string(),
+        expected_valid: true,
+        value: maximum_sequence,
+    });
+
+    let mut excessive_sequence = stage_projection.clone();
+    *excessive_sequence
+        .pointer_mut("/server_sequence")
+        .ok_or_else(|| "stage projection fixture must contain server_sequence".to_string())? =
+        Value::from(9_007_199_254_740_992_i64);
+    cases.push(FixtureCase {
+        file: "derived/server-sequence-above-portable-maximum.json".to_string(),
+        definition: "ServerEnvelope".to_string(),
+        expected_valid: false,
+        value: excessive_sequence,
+    });
     Ok(())
 }
 
@@ -286,6 +311,18 @@ private val cases = listOf(
     val member = (response.toJson() as GPJsonValue.ObjectValue).members["participant_id"]
     if (member != GPJsonValue.NullValue) {
         throw IllegalStateException("required nullable member was omitted on encode")
+    }
+
+    val privateValue = "SYNTHETIC_PRIVATE_VALUE"
+    val token = GPV1Token(privateValue)
+    if (token.toString().contains(privateValue)) {
+        throw IllegalStateException("generated DTO stringification exposed a private value")
+    }
+    val rawValue = GPJsonValue.ObjectValue(
+        mapOf("token" to GPJsonValue.StringValue(privateValue)),
+    )
+    if (rawValue.toString().contains(privateValue)) {
+        throw IllegalStateException("generated JSON boundary stringification exposed a private value")
     }
 }
 

@@ -89,6 +89,7 @@ impl Contract {
             definitions: parsed,
         };
         contract.check_references()?;
+        contract.check_reference_cycles()?;
         contract.check_unions()?;
         Ok(contract)
     }
@@ -125,6 +126,73 @@ impl Contract {
         let names: BTreeSet<&str> = self.definitions.keys().map(String::as_str).collect();
         for schema in self.definitions.values() {
             walk(schema, &names)?;
+        }
+        Ok(())
+    }
+
+    fn check_reference_cycles(&self) -> Result<(), String> {
+        fn collect_references(schema: &Schema, references: &mut BTreeSet<String>) {
+            match schema {
+                Schema::Reference(name) => {
+                    references.insert(name.clone());
+                }
+                Schema::Array(rules) => collect_references(&rules.items, references),
+                Schema::Nullable(inner) => collect_references(inner, references),
+                Schema::OneOf(children) | Schema::AllOf(children) => {
+                    for child in children {
+                        collect_references(child, references);
+                    }
+                }
+                Schema::Object(object) => {
+                    for property in object.properties.values() {
+                        collect_references(property, references);
+                    }
+                }
+                Schema::String(_)
+                | Schema::Integer(_)
+                | Schema::Boolean
+                | Schema::Null
+                | Schema::StringConstant(_) => {}
+            }
+        }
+
+        fn visit(
+            contract: &Contract,
+            name: &str,
+            active: &mut BTreeSet<String>,
+            completed: &mut BTreeSet<String>,
+            path: &mut Vec<String>,
+        ) -> Result<(), String> {
+            if completed.contains(name) {
+                return Ok(());
+            }
+            if !active.insert(name.to_string()) {
+                let cycle_start = path.iter().position(|item| item == name).unwrap_or(0);
+                let mut cycle = path[cycle_start..].to_vec();
+                cycle.push(name.to_string());
+                return Err(format!(
+                    "recursive schema references are unsupported: {}",
+                    cycle.join(" -> ")
+                ));
+            }
+
+            path.push(name.to_string());
+            let mut references = BTreeSet::new();
+            collect_references(contract.definition(name)?, &mut references);
+            for reference in references {
+                visit(contract, &reference, active, completed, path)?;
+            }
+            path.pop();
+            active.remove(name);
+            completed.insert(name.to_string());
+            Ok(())
+        }
+
+        let mut active = BTreeSet::new();
+        let mut completed = BTreeSet::new();
+        let mut path = Vec::new();
+        for name in self.definitions.keys() {
+            visit(self, name, &mut active, &mut completed, &mut path)?;
         }
         Ok(())
     }
@@ -478,17 +546,17 @@ fn parse_schema(value: &Value, path: &str) -> Result<Schema, String> {
                         .ok_or_else(|| format!("{path}: type array values must be strings"))
                 })
                 .collect::<Result<_, _>>()?;
-            if names.len() == 2 && names.contains(&"null") {
+            if names.len() == 2 && names.iter().filter(|name| **name == "null").count() == 1 {
                 let non_null = names
                     .iter()
                     .find(|name| **name != "null")
-                    .expect("array contains null and one other type");
+                    .ok_or_else(|| format!("{path}: nullable type array has no non-null type"))?;
                 return Ok(Schema::Nullable(Box::new(parse_typed_schema(
                     non_null, object, path,
                 )?)));
             }
             Err(format!(
-                "{path}: only a two-item nullable type array is supported"
+                "{path}: only a two-item nullable type array with one null and one non-null type is supported"
             ))
         }
         _ => Err(format!(
@@ -530,9 +598,20 @@ fn parse_typed_schema(
                 &["type", "description", "title", "minimum", "maximum"],
                 path,
             )?;
+            let minimum = optional_i64(object, "minimum", path)?.ok_or_else(|| {
+                format!("{path}: integer schemas must declare a signed 64-bit minimum")
+            })?;
+            let maximum = optional_i64(object, "maximum", path)?.ok_or_else(|| {
+                format!("{path}: integer schemas must declare a signed 64-bit maximum")
+            })?;
+            if minimum > maximum {
+                return Err(format!(
+                    "{path}: integer minimum {minimum} exceeds maximum {maximum}"
+                ));
+            }
             Ok(Schema::Integer(IntegerRules {
-                minimum: optional_i64(object, "minimum", path)?,
-                maximum: optional_i64(object, "maximum", path)?,
+                minimum: Some(minimum),
+                maximum: Some(maximum),
             }))
         }
         "boolean" => {
@@ -827,14 +906,61 @@ mod tests {
     }
 
     #[test]
+    fn rejects_recursive_schema_references_before_expansion() {
+        let source = r##"{
+          "$schema":"https://json-schema.org/draft/2020-12/schema",
+          "$defs":{
+            "Node":{
+              "type":"object",
+              "properties":{"child":{"$ref":"#/$defs/Node"}}
+            }
+          }
+        }"##;
+        let error = Contract::parse(source).unwrap_err();
+        assert!(error.contains("recursive schema references are unsupported"));
+        assert!(error.contains("Node -> Node"));
+    }
+
+    #[test]
+    fn rejects_malformed_nullable_type_arrays_without_panicking() {
+        for kinds in [r#"["null","null"]"#, r#"["string","string"]"#] {
+            let source = format!(
+                r#"{{
+                  "$schema":"https://json-schema.org/draft/2020-12/schema",
+                  "$defs":{{"Thing":{{"type":{kinds}}}}}
+                }}"#
+            );
+            let error = Contract::parse(&source).unwrap_err();
+            assert!(error.contains("one null and one non-null type"));
+        }
+    }
+
+    #[test]
+    fn rejects_unbounded_or_reversed_integer_domains() {
+        for integer in [
+            r#"{"type":"integer","minimum":0}"#,
+            r#"{"type":"integer","maximum":10}"#,
+            r#"{"type":"integer","minimum":10,"maximum":0}"#,
+        ] {
+            let source = format!(
+                r#"{{
+                  "$schema":"https://json-schema.org/draft/2020-12/schema",
+                  "$defs":{{"Thing":{integer}}}
+                }}"#
+            );
+            assert!(Contract::parse(&source).is_err());
+        }
+    }
+
+    #[test]
     fn rejects_ambiguous_all_of_property_overrides() {
         let source = r#"{
           "$schema":"https://json-schema.org/draft/2020-12/schema",
           "$defs":{
             "Thing":{
               "allOf":[
-                {"type":"object","properties":{"value":{"type":"integer","minimum":0}}},
-                {"type":"object","properties":{"value":{"type":"integer","maximum":10}}}
+                {"type":"object","properties":{"value":{"type":"integer","minimum":0,"maximum":20}}},
+                {"type":"object","properties":{"value":{"type":"integer","minimum":0,"maximum":10}}}
               ]
             }
           }

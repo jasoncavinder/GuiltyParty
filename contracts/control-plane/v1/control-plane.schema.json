@@ -62,7 +62,8 @@
           "uniqueItems": true,
           "items": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "maximum": 255
           }
         },
         "preferred_protocol_version": {
@@ -357,11 +358,13 @@
         },
         "primary_authority_generation": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
         "server_sequence": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
         "payload": {
           "type": "object"
@@ -568,7 +571,8 @@
         },
         "votes_cast": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
         "outcome": {
           "oneOf": [
@@ -652,7 +656,8 @@
             },
             "primary_authority_generation": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 9007199254740991
             }
           }
         },
@@ -674,7 +679,8 @@
             },
             "primary_authority_generation": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 9007199254740991
             },
             "code": {
               "type": "string",

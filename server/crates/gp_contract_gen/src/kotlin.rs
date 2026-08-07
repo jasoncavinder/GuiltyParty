@@ -64,6 +64,11 @@ fn render_string_wrapper(name: &str, rules: &StringRules, output: &mut String) {
     output.push_str("        }\n");
     output.push_str("    }\n\n");
     output.push_str("    fun toJson(): GPJsonValue = GPJsonValue.StringValue(value)\n");
+    writeln!(
+        output,
+        "    override fun toString(): String = \"{PREFIX}{name}(<redacted>)\""
+    )
+    .unwrap();
     output.push_str("}\n\n");
 }
 
@@ -73,7 +78,7 @@ fn render_constant_wrapper(name: &str, value: &str, output: &mut String) {
     writeln!(
         output,
         "        gpRequire(value == {}, \"expected constant {name}\")",
-        quoted(value)
+        quoted_kotlin(value)
     )
     .unwrap();
     output.push_str("    }\n\n");
@@ -87,6 +92,11 @@ fn render_constant_wrapper(name: &str, value: &str, output: &mut String) {
     output.push_str("        }\n");
     output.push_str("    }\n\n");
     output.push_str("    fun toJson(): GPJsonValue = GPJsonValue.StringValue(value)\n");
+    writeln!(
+        output,
+        "    override fun toString(): String = \"{PREFIX}{name}(<redacted>)\""
+    )
+    .unwrap();
     output.push_str("}\n\n");
 }
 
@@ -105,6 +115,11 @@ fn render_integer_wrapper(name: &str, rules: &IntegerRules, output: &mut String)
     output.push_str("        }\n");
     output.push_str("    }\n\n");
     output.push_str("    fun toJson(): GPJsonValue = GPJsonValue.IntegerValue(value)\n");
+    writeln!(
+        output,
+        "    override fun toString(): String = \"{PREFIX}{name}(<redacted>)\""
+    )
+    .unwrap();
     output.push_str("}\n\n");
 }
 
@@ -186,6 +201,11 @@ fn render_object(
     }
     output.push_str("        return GPJsonValue.ObjectValue(members)\n");
     output.push_str("    }\n");
+    writeln!(
+        output,
+        "\n    override fun toString(): String = \"{PREFIX}{name}(<redacted>)\""
+    )
+    .unwrap();
     output.push_str("}\n\n");
     Ok(())
 }
@@ -209,7 +229,7 @@ fn render_decode_property(
         Schema::Nullable(inner) => {
             let parse = kotlin_parse_expression(inner, &hint, "raw")?;
             if required {
-                writeln!(output, "            val {variable}: {property_type} = when (val raw = gpRequired(members, {})) {{", quoted(property_name)).unwrap();
+                writeln!(output, "            val {variable}: {property_type} = when (val raw = gpRequired(members, {})) {{", quoted_kotlin(property_name)).unwrap();
                 output.push_str("                GPJsonValue.NullValue -> null\n");
                 writeln!(output, "                else -> {parse}").unwrap();
                 output.push_str("            }\n");
@@ -217,7 +237,7 @@ fn render_decode_property(
                 writeln!(
                     output,
                     "            val {variable}: {property_type} = members[{}]?.let {{ raw ->",
-                    quoted(property_name)
+                    quoted_kotlin(property_name)
                 )
                 .unwrap();
                 output.push_str("                if (raw == GPJsonValue.NullValue) null else ");
@@ -231,21 +251,21 @@ fn render_decode_property(
                 writeln!(
                     output,
                     "            val {variable}: GPNull = gpNull(gpRequired(members, {}))",
-                    quoted(property_name)
+                    quoted_kotlin(property_name)
                 )
                 .unwrap();
             } else {
                 writeln!(
                     output,
                     "            val {variable}: GPNull? = members[{}]?.let(::gpNull)",
-                    quoted(property_name)
+                    quoted_kotlin(property_name)
                 )
                 .unwrap();
             }
         }
         _ => {
             let source = if required {
-                format!("gpRequired(members, {})", quoted(property_name))
+                format!("gpRequired(members, {})", quoted_kotlin(property_name))
             } else {
                 "raw".to_string()
             };
@@ -258,7 +278,7 @@ fn render_decode_property(
                 .unwrap();
                 render_validation(contract, schema, &variable, "            ", output)?;
             } else {
-                writeln!(output, "            val {variable}: {property_type} = members[{}]?.let {{ raw -> {parse} }}", quoted(property_name)).unwrap();
+                writeln!(output, "            val {variable}: {property_type} = members[{}]?.let {{ raw -> {parse} }}", quoted_kotlin(property_name)).unwrap();
                 render_optional_validation(contract, schema, &variable, "            ", output)?;
             }
         }
@@ -279,13 +299,13 @@ fn render_encode_property(
     match schema {
         Schema::Nullable(inner) if required => {
             let expression = kotlin_to_json_expression(inner, &hint, "value")?;
-            writeln!(output, "        members[{}] = {variable}?.let {{ value -> {expression} }} ?: GPJsonValue.NullValue", quoted(property_name)).unwrap();
+            writeln!(output, "        members[{}] = {variable}?.let {{ value -> {expression} }} ?: GPJsonValue.NullValue", quoted_kotlin(property_name)).unwrap();
         }
         Schema::Null if required => {
             writeln!(
                 output,
                 "        members[{}] = GPJsonValue.NullValue",
-                quoted(property_name)
+                quoted_kotlin(property_name)
             )
             .unwrap();
         }
@@ -293,7 +313,7 @@ fn render_encode_property(
             writeln!(
                 output,
                 "        if ({variable} != null) members[{}] = GPJsonValue.NullValue",
-                quoted(property_name)
+                quoted_kotlin(property_name)
             )
             .unwrap();
         }
@@ -302,7 +322,7 @@ fn render_encode_property(
             writeln!(
                 output,
                 "        members[{}] = {expression}",
-                quoted(property_name)
+                quoted_kotlin(property_name)
             )
             .unwrap();
         }
@@ -311,7 +331,7 @@ fn render_encode_property(
             writeln!(
                 output,
                 "        {variable}?.let {{ value -> members[{}] = {expression} }}",
-                quoted(property_name)
+                quoted_kotlin(property_name)
             )
             .unwrap();
         }
@@ -337,6 +357,11 @@ fn render_union(
         )
         .unwrap();
         output.push_str("        override fun toJson(): GPJsonValue = value.toJson()\n");
+        writeln!(
+            output,
+            "        override fun toString(): String = \"{PREFIX}{name}.{case_name}(<redacted>)\""
+        )
+        .unwrap();
         output.push_str("    }\n\n");
     }
     output.push_str("    companion object {\n");
@@ -349,14 +374,14 @@ fn render_union(
     writeln!(
         output,
         "            return when (gpString(gpRequired(members, {}))) {{",
-        quoted(&discriminator)
+        quoted_kotlin(&discriminator)
     )
     .unwrap();
     for variant in &variants {
         writeln!(
             output,
             "                {} -> {}({PREFIX}{}.from(json))",
-            quoted(&variant.literal),
+            quoted_kotlin(&variant.literal),
             pascal_case(&variant.literal),
             variant.type_name
         )
@@ -471,7 +496,7 @@ fn render_validation(
         Schema::StringConstant(value) => writeln!(
             output,
             "{indent}gpRequire({expression} == {}, \"unexpected constant for {expression}\")",
-            quoted(value)
+            quoted_kotlin(value)
         )
         .unwrap(),
         Schema::Integer(rules) => render_integer_validation(expression, rules, indent, output),
@@ -502,7 +527,7 @@ fn render_string_validation(
         writeln!(output, "{indent}gpRequire({expression}.codePointCount(0, {expression}.length).toULong() <= {maximum}uL, \"string is longer than maxLength\")").unwrap();
     }
     if let Some(pattern) = &rules.pattern {
-        writeln!(output, "{indent}gpRequire(Regex({}).containsMatchIn({expression}), \"string does not match pattern\")", quoted(pattern)).unwrap();
+        writeln!(output, "{indent}gpRequire(Regex({}).containsMatchIn({expression}), \"string does not match pattern\")", quoted_kotlin(pattern)).unwrap();
     }
 }
 
@@ -578,8 +603,10 @@ fn needs_inline_validation(schema: &Schema) -> bool {
     }
 }
 
-fn quoted(value: &str) -> String {
-    serde_json::to_string(value).expect("serializing a string cannot fail")
+fn quoted_kotlin(value: &str) -> String {
+    serde_json::to_string(value)
+        .expect("serializing a string cannot fail")
+        .replace('$', "\\$")
 }
 
 const KOTLIN_PRELUDE: &str = r#"
@@ -587,11 +614,21 @@ package guiltyparty.contracts.v1
 
 sealed interface GPJsonValue {
     data object NullValue : GPJsonValue
-    data class BooleanValue(val value: Boolean) : GPJsonValue
-    data class IntegerValue(val value: Long) : GPJsonValue
-    data class StringValue(val value: String) : GPJsonValue
-    data class ArrayValue(val values: List<GPJsonValue>) : GPJsonValue
-    data class ObjectValue(val members: Map<String, GPJsonValue>) : GPJsonValue
+    data class BooleanValue(val value: Boolean) : GPJsonValue {
+        override fun toString(): String = "GPJsonValue.BooleanValue(<redacted>)"
+    }
+    data class IntegerValue(val value: Long) : GPJsonValue {
+        override fun toString(): String = "GPJsonValue.IntegerValue(<redacted>)"
+    }
+    data class StringValue(val value: String) : GPJsonValue {
+        override fun toString(): String = "GPJsonValue.StringValue(<redacted>)"
+    }
+    data class ArrayValue(val values: List<GPJsonValue>) : GPJsonValue {
+        override fun toString(): String = "GPJsonValue.ArrayValue(<redacted>)"
+    }
+    data class ObjectValue(val members: Map<String, GPJsonValue>) : GPJsonValue {
+        override fun toString(): String = "GPJsonValue.ObjectValue(<redacted>)"
+    }
 }
 
 data object GPNull
@@ -631,3 +668,14 @@ internal fun gpNull(value: GPJsonValue): GPNull {
 }
 
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn kotlin_literals_escape_interpolation_markers() {
+        assert_eq!(quoted_kotlin("${42}"), "\"\\${42}\"");
+        assert_eq!(quoted_kotlin("$value"), "\"\\$value\"");
+    }
+}

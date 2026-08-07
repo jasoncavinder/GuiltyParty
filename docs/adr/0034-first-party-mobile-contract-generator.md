@@ -25,8 +25,8 @@ needed an additional unapproved runtime to provide useful Kotlin serialization.
 The subsequent bounded spike implemented `gp_contract_gen`, a first-party Rust
 contract compiler for the closed control-plane v1 schema profile. It generated
 Swift and Kotlin five times byte-for-byte, compiled with Swift 6.3.3 and
-Kotlin/JVM 2.3.10, and passed all 18 committed fixtures plus two derived
-negative cases in both languages. The output introduced no networking,
+Kotlin/JVM 2.3.10, and passed all 18 committed fixtures plus four derived
+compatibility cases in both languages. The output introduced no networking,
 logging, native runtime dependency, or application behavior.
 
 The project now needs to select that implementation, define ownership and
@@ -50,8 +50,9 @@ truth.
 The generator remains a deliberately incomplete contract compiler rather than
 a general JSON Schema implementation. It accepts only its documented,
 fail-closed profile. Unsupported keywords, unresolved or nonlocal references,
-ambiguous unions, and overlapping constraints stop generation instead of being
-ignored or approximated.
+recursive reference graphs, unbounded integer domains, malformed nullable
+arrays, ambiguous unions, and overlapping constraints stop generation instead
+of being ignored, approximated, panicked over, or expanded indefinitely.
 
 Generated code remains limited to:
 
@@ -62,6 +63,15 @@ Generated code remains limited to:
 It must not generate networking, retry or reconnection behavior, credential
 handling, authorization, secrecy policy, scenario logic, persistence,
 analytics, diagnostics, payload logging, UI, or application-domain state.
+Generated Kotlin DTO and `GPJsonValue` string representations redact contained
+values so incidental object logging cannot expose tokens or private projection
+content. Schema-derived Kotlin literals must escape interpolation markers.
+
+Every generated integer domain must declare finite `minimum` and `maximum`
+bounds representable by Swift `Int64` and Kotlin `Long`. Cross-platform
+control-plane counters use the canonical portable JSON ceiling `2^53 - 1` so
+browser JavaScript also preserves their values exactly. A producer with a wider
+native unsigned type remains responsible for enforcing the schema maximum.
 
 ## Generated Output Ownership and Locations
 
