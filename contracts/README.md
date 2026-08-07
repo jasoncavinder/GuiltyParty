@@ -24,6 +24,12 @@ Identifiers for sessions, endpoints, rooms, and participants are deliberately
 separate. Endpoint platform and capability fields are coarse claims for server
 validation, never hardware identifiers or grants of authority.
 
+Every control-plane integer declares an explicit signed 64-bit minimum and
+maximum. Cross-platform counters use the portable JSON integer ceiling
+`9007199254740991` (`2^53 - 1`) so Rust, browser JavaScript, Swift, and Kotlin
+can preserve the same exact value. Producers must enforce the canonical schema
+bound even when their language offers a wider unsigned integer type.
+
 The approved standards validator and its constrained development-only scope are
 recorded in the
 [third-party component inventory](../docs/legal/third-party-components.md#ajv).
