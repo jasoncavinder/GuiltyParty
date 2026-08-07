@@ -2,7 +2,8 @@
 
 ## Status
 
-Pre-adoption evaluation, 2026-08-06. No generator, build plugin, runtime, or
+Dependency intake prepared, 2026-08-06. Owner approval and the executable
+compatibility spike remain pending. No generator, build plugin, runtime, or
 transitive dependency is approved or added by this document.
 
 ## Required Fit
@@ -41,22 +42,70 @@ Result: do not adopt from the paper evaluation. A later version may be
 reconsidered, or a model-by-model spike may prove a safe constrained use, but
 the current published capability gaps prevent approval now.
 
-### quicktype 26.0.0
+### quicktype CLI 26.0.0
 
-quicktype accepts JSON Schema and produces Swift and Kotlin models. The npm
-package currently identifies Apache-2.0 licensing. It is closer to the desired
-data-only scope than a complete API client generator. Its public documentation
-does not establish the exact Draft 2020-12, discriminator, absent/null, and
-unknown-variant behavior this contract requires, and its package has a
-meaningful Node transitive toolchain that requires review.
+quicktype accepts JSON Schema and produces Swift and Kotlin models. The current
+npm package and source repository identify Apache-2.0 licensing, and the
+project FAQ states that generated code has no intellectual-property
+restrictions. It is closer to the desired data-only scope than a complete API
+client generator.
+
+The published CLI is nevertheless broader than this use. A lock-only,
+scripts-disabled resolution on 2026-08-06 produced 107 non-root packages. It
+includes GraphQL and TypeScript input adapters, TypeScript, `ts-node`,
+`typescript-json-schema`, and `vm2`, none of which is needed to turn the
+committed Guilty Party JSON Schema into Swift and Kotlin. The lock declared no
+install scripts, native-platform selectors, missing integrity values, or known
+npm-audit vulnerability, but the avoidable breadth remains a supply-chain and
+maintenance cost.
 
 Sources:
 
 - [canonical repository](https://github.com/glideapps/quicktype)
-- [published package](https://www.npmjs.com/package/quicktype)
+- [26.0.0 release](https://github.com/glideapps/quicktype/releases/tag/v26.0.0)
+- [published CLI package](https://www.npmjs.com/package/quicktype/v/26.0.0)
+- [generated-code licensing FAQ](https://github.com/glideapps/quicktype/blob/v26.0.0/FAQ.md#am-i-allowed-to-use-the-generated-code-in-my-software)
 
-Result: best candidate for an isolated executable compatibility spike, but not
-approved for repository or build use.
+Result: do not use the full CLI for the spike while a narrower official package
+provides the required engine.
+
+### quicktype-core 26.0.0
+
+`quicktype-core` is the official quicktype engine as a library and exposes the
+same Swift and Kotlin renderers without the CLI's GraphQL and TypeScript input
+packages. A lock-only, scripts-disabled resolution produced 29 non-root
+packages: 2 Apache-2.0, 25 MIT, 1 BSD-3-Clause, and 1 ISC. Every resolved entry
+had an integrity value and license identifier; none declared an install script,
+native-platform selector, or deprecation, and the isolated npm audit reported
+zero known vulnerabilities. npm supplies a registry signature and SLSA
+provenance for the exact release, and its source commit is GitHub-verified.
+
+This narrower graph does not establish contract compatibility. quicktype 26
+added selected 2020-12 features, but its documentation does not claim complete
+Draft 2020-12 support. An open issue reports incorrect handling of `oneOf`
+inside array items, and another reports Swift 6 strict-`Sendable` failures when
+generated open-value helpers are present. Kotlin generation defaults to Jackson;
+the plain-types mode avoids an unapproved runtime but also omits serialization
+metadata. Those behaviors overlap Guilty Party's discriminator, additive-field,
+and native-build requirements and must be measured rather than inferred.
+
+The engine includes an optional fetching schema store capable of reading URLs.
+The proposed first-party spike wrapper must not instantiate it. It will supply
+the committed schema as an in-memory string, reject non-fragment references,
+use only synthetic fixtures, and make no runtime network request.
+
+Sources:
+
+- [published core package](https://www.npmjs.com/package/quicktype-core/v/26.0.0)
+- [core API example](https://github.com/glideapps/quicktype/blob/v26.0.0/README.md#calling-quicktype-from-javascript)
+- [Kotlin renderer options](https://github.com/glideapps/quicktype/blob/v26.0.0/packages/quicktype-core/src/language/Kotlin/language.ts)
+- [Swift renderer options](https://github.com/glideapps/quicktype/blob/v26.0.0/packages/quicktype-core/src/language/Swift/language.ts)
+- [`oneOf` array issue](https://github.com/glideapps/quicktype/issues/2310)
+- [Swift 6 `Sendable` issue](https://github.com/glideapps/quicktype/issues/2858)
+
+Result: preferred candidate for an isolated executable compatibility spike,
+subject to the proposed ADR 0025 intake and explicit owner approval. It is not
+approved for repository, CI, Xcode, Gradle, or product use.
 
 ### Swift OpenAPI Generator
 
@@ -72,11 +121,19 @@ a different, explicitly approved Swift HTTP boundary.
 
 ## Recommendation
 
-Authorize a disposable, non-production quicktype 26.0.0 spike only after its
-standard ADR 0025 intake record is complete. The spike should run outside
-ordinary Xcode and Gradle builds, use only committed synthetic schemas and
-fixtures, pin the exact package and transitive lock, and commit no generated
-output until review.
+Authorize a disposable, non-production `quicktype-core@26.0.0` spike under the
+exact scope in the proposed ADR 0025 intake. Do not authorize the full
+`quicktype` CLI. The spike runs outside ordinary Xcode and Gradle builds, uses
+only committed synthetic schemas and fixtures, pins the exact package and
+transitive lock, disables lifecycle scripts, and commits no generated output
+until review.
+
+The spike should use a small first-party Node wrapper with no schema-fetching
+store and an explicit preflight rejection of non-fragment `$ref` values. It
+should exercise Swift's platform-only `Codable` output and compare Kotlin's
+plain-types and serializer-bearing output so any proposed mobile runtime
+dependency is visible rather than silently adopted. A Kotlin serialization
+framework is outside this approval scope.
 
 Approval requires evidence that both generated languages:
 
@@ -89,6 +146,8 @@ Approval requires evidence that both generated languages:
 7. regenerate byte-for-byte identically; and
 8. introduce no runtime networking or logging dependency.
 
-If quicktype fails, compare a narrowly scoped first-party generator against
-manual DTO maintenance. Either fallback is a separate owner decision; this
-evaluation does not silently choose one.
+Passing the spike would permit a separate adoption proposal; it would not make
+the generator approved automatically. If quicktype-core fails, compare a
+narrowly scoped first-party generator against manual DTO maintenance. Either
+fallback is a separate owner decision; this evaluation does not silently choose
+one.
