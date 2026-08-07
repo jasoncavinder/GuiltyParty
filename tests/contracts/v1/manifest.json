@@ -27,6 +27,21 @@
       "expected_valid": true
     },
     {
+      "file": "positive/stage-pairing-create-request.json",
+      "definition": "StagePairingCreateRequest",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/stage-pairing-create-response.json",
+      "definition": "StagePairingCreateResponse",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/stage-pairing-pending-response.json",
+      "definition": "StagePairingPendingResponse",
+      "expected_valid": true
+    },
+    {
       "file": "positive/get-projection-additive-field.json",
       "definition": "ClientEnvelope",
       "expected_valid": true
@@ -84,6 +99,11 @@
     {
       "file": "negative/stage-with-display-name.json",
       "definition": "JoinRequest",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/stage-pairing-ambiguous-code.json",
+      "definition": "StagePairingCreateResponse",
       "expected_valid": false
     },
     {

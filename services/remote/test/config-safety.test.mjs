@@ -28,9 +28,20 @@ test("development Wrangler configuration is narrowly scoped and contains no acco
       namespace_id: "1002",
       simple: { limit: 60, period: 60 },
     },
+    {
+      name: "STAGE_PAIRING_RATE_LIMITER",
+      namespace_id: "1003",
+      simple: { limit: 120, period: 60 },
+    },
   ]);
   assert.equal(configuration.exports.GameSession.type, "durable-object");
   assert.equal(configuration.exports.GameSession.storage, "sqlite");
+  assert.equal(configuration.exports.StagePairing.type, "durable-object");
+  assert.equal(configuration.exports.StagePairing.storage, "sqlite");
+  assert.deepEqual(configuration.durable_objects.bindings, [
+    { name: "GAME_SESSIONS", class_name: "GameSession" },
+    { name: "STAGE_PAIRINGS", class_name: "StagePairing" },
+  ]);
   assert.equal(configuration.account_id, undefined);
   assert.equal(configuration.route, undefined);
   assert.deepEqual(configuration.routes, [

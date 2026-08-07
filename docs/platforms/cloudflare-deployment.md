@@ -193,13 +193,16 @@ The owner-operated development promotion followed this procedure:
 6. Use pinned local Wrangler and interactive standard input to set the two
    secret values. Never place a raw value on a command line, in shell history,
    an issue, task, screenshot, or committed file. Confirm the declarative
-   `SESSION_CREATE_RATE_LIMITER` and `SESSION_JOIN_RATE_LIMITER` bindings are
-   present in the artifact before deploying.
+   `SESSION_CREATE_RATE_LIMITER`, `SESSION_JOIN_RATE_LIMITER`, and
+   `STAGE_PAIRING_RATE_LIMITER` bindings are present in the artifact before
+   deploying.
 7. Deploy manually and verify `/health` reports
    `friends-mvp-development` with status `test-gated`.
-8. Rehearse Host creation, invalid bootstrap, invalid/expired pairing, one
-   packaged Stage, two native participants, exact-origin rejection, opaque
-   packaged-Origin rejection, one-time Stage ticket replay rejection, the full
+8. Rehearse Host creation, invalid bootstrap, invalid/expired participant
+   invitation, one Host-approved packaged Stage pairing, two native
+   participants, exact-origin rejection, opaque packaged-Origin rejection,
+   display-code-without-secret rejection, pairing expiry, one-time Stage ticket
+   replay rejection, the full
    game loop, private projections, idempotent retry, forbidden command,
    reconnect, admission throttling, and rollback using synthetic aliases only.
    Run `make rehearse-packaged-stage` with `GP_REMOTE_BASE_URL` and

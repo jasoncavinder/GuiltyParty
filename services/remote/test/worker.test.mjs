@@ -46,15 +46,17 @@ function rateLimiter(success = true, consumedKeys = null) {
   };
 }
 
-async function friendsEnvironment(handler) {
+async function friendsEnvironment(handler, pairingHandler = handler) {
   return {
     ENVIRONMENT_PROFILE: "friends-mvp-development",
     AUTHORITY_SIGNING_KEY: signingKey,
     HOST_BOOTSTRAP_TOKEN_SHA256: await sha256Hex(bootstrapProof),
     ALLOWED_ORIGINS: allowedOrigin,
     GAME_SESSIONS: binding(handler),
+    STAGE_PAIRINGS: binding(pairingHandler),
     SESSION_CREATE_RATE_LIMITER: rateLimiter(),
     SESSION_JOIN_RATE_LIMITER: rateLimiter(),
+    STAGE_PAIRING_RATE_LIMITER: rateLimiter(),
   };
 }
 
@@ -94,6 +96,9 @@ test("OpenAPI declares the session admission failures returned at runtime", () =
   assert.equal(joinResponses["500"], undefined);
   assert.ok(openapi.paths["/api/v1/websocket-tickets"].post.responses["200"]);
   assert.ok(openapi.paths["/api/v1/rehearsals/lifecycle/sessions"].post.responses["201"]);
+  assert.ok(openapi.paths["/api/v1/stage-pairings"].post.responses["201"]);
+  assert.ok(openapi.paths["/api/v1/stage-pairings/{pairing_code}/approve"].post.responses["200"]);
+  assert.ok(openapi.paths["/api/v1/stage-pairings/{pairing_code}/redeem"].post.responses["202"]);
 });
 
 test("Host creates a bounded session and receives HttpOnly cookie authority", async () => {
@@ -279,13 +284,33 @@ test("browser Stage join keeps authority out of the response body", async () => 
   assert.equal(validate(body), true, JSON.stringify(validate.errors));
 });
 
-test("packaged webOS Stage uses bearer authority and a registered WebSocket ticket", async () => {
+test("Host-approved packaged Stage pairing issues bearer authority and a WebSocket ticket", async () => {
   const expiresAt = Date.now() + 60_000;
   let ticketRegistration;
   let websocketForward;
+  let stagePairingAdmission;
+  let stagePairingAuthorization;
+  let stagePairingAuthorizationAllowed = false;
+  let pairing;
   const env = await friendsEnvironment(async (_name, request) => {
     const path = new URL(request.url).pathname;
-    if (path === "/internal/session/join") {
+    if (path === "/internal/session/authorize-stage-pairing") {
+      stagePairingAuthorization = {
+        endpointId: request.headers.get("X-GP-Endpoint-ID"),
+        audience: request.headers.get("X-GP-Projection-Audience"),
+        authorityGeneration: request.headers.get("X-GP-Authority-Generation"),
+      };
+      if (!stagePairingAuthorizationAllowed) {
+        return Response.json({
+          status: 401,
+          code: "endpoint_revoked",
+          title: "Invalid authority",
+        }, { status: 401 });
+      }
+      return Response.json({ authorized: true });
+    }
+    if (path === "/internal/session/stage-pair") {
+      stagePairingAdmission = await request.json();
       return Response.json({
         audience: "stage",
         endpoint_id: "end_0123456789abcdef",
@@ -312,9 +337,48 @@ test("packaged webOS Stage uses bearer authority and a registered WebSocket tick
       return Response.json({ forwarded: true });
     }
     return Response.json({}, { status: 404 });
+  }, async (_name, request) => {
+    const path = new URL(request.url).pathname;
+    const value = await request.json();
+    if (path === "/internal/stage-pairing/create") {
+      pairing = { ...value, approved: false };
+      return Response.json({ created: true }, { status: 201 });
+    }
+    if (path === "/internal/stage-pairing/approve") {
+      pairing.approved = true;
+      pairing.session_id = value.session_id;
+      return Response.json({
+        approved: true,
+        duplicate: false,
+        expires_at_unix_ms: pairing.expires_at_unix_ms,
+      });
+    }
+    if (path === "/internal/stage-pairing/redeem") {
+      if (value.polling_digest !== pairing.polling_digest) {
+        return Response.json({
+          status: 401,
+          code: "invalid_stage_pairing_secret",
+          title: "Invalid Stage pairing secret",
+        }, { status: 401 });
+      }
+      if (!pairing.approved) {
+        return Response.json({
+          pending: true,
+          expires_at_unix_ms: pairing.expires_at_unix_ms,
+        }, { status: 202 });
+      }
+      return Response.json({
+        pending: false,
+        transaction_id: pairing.transaction_id,
+        session_id: pairing.session_id,
+        endpoint: pairing.endpoint,
+        expires_at_unix_ms: pairing.expires_at_unix_ms,
+      });
+    }
+    return Response.json({}, { status: 404 });
   });
 
-  const join = await worker.fetch(
+  const directJoin = await worker.fetch(
     new Request("https://example.test/api/v1/join", {
       method: "POST",
       headers: {
@@ -331,18 +395,140 @@ test("packaged webOS Stage uses bearer authority and a registered WebSocket tick
     }),
     env,
   );
-  assert.equal(join.status, 200);
-  assert.equal(join.headers.get("Access-Control-Allow-Origin"), "null");
-  assert.equal(join.headers.get("Access-Control-Allow-Credentials"), null);
-  assert.equal(join.headers.get("Set-Cookie"), null);
-  const admission = await join.json();
+  assert.equal(directJoin.status, 409);
+  assert.equal((await directJoin.json()).code, "stage_pairing_required");
+
+  const create = await worker.fetch(
+    new Request("https://example.test/api/v1/stage-pairings", {
+      method: "POST",
+      headers: { Origin: "null", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        endpoint: { platform: "webos", capabilities: ["public_display"] },
+      }),
+    }),
+    env,
+  );
+  assert.equal(create.status, 201);
+  assert.equal(create.headers.get("Access-Control-Allow-Origin"), "null");
+  assert.equal(create.headers.get("Access-Control-Allow-Credentials"), null);
+  const created = await create.json();
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  ajv.addSchema(schema);
+  const validateCreate = ajv.getSchema(`${schema.$id}#/$defs/StagePairingCreateResponse`);
+  assert.equal(validateCreate(created), true, JSON.stringify(validateCreate.errors));
+  assert.match(created.pairing_code, /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/u);
+  assert.ok(created.polling_secret.length >= 32);
+  assert.equal("session_id" in created, false);
+  assert.equal(JSON.stringify(pairing).includes(created.polling_secret), false);
+  assert.equal(pairing.polling_digest, await sha256Hex(created.polling_secret));
+
+  const codeAlone = await worker.fetch(
+    new Request(`https://example.test${created.redeem_path}`, {
+      method: "POST",
+      headers: { Origin: "null" },
+    }),
+    env,
+  );
+  assert.equal(codeAlone.status, 401);
+  assert.equal((await codeAlone.json()).code, "invalid_stage_pairing_secret");
+
+  const wrongSecret = await worker.fetch(
+    new Request(`https://example.test${created.redeem_path}`, {
+      method: "POST",
+      headers: { Origin: "null", Authorization: `StagePairing ${"x".repeat(32)}` },
+    }),
+    env,
+  );
+  assert.equal(wrongSecret.status, 401);
+  assert.equal((await wrongSecret.json()).code, "invalid_stage_pairing_secret");
+  assert.equal(stagePairingAdmission, undefined);
+
+  const unauthorizedApproval = await worker.fetch(
+    new Request(
+      `https://example.test/api/v1/stage-pairings/${created.pairing_code}/approve`,
+      { method: "POST", headers: { Origin: allowedOrigin } },
+    ),
+    env,
+  );
+  assert.equal(unauthorizedApproval.status, 403);
+  assert.equal(pairing.approved, false);
+
+  const pending = await worker.fetch(
+    new Request(`https://example.test${created.redeem_path}`, {
+      method: "POST",
+      headers: { Origin: "null", Authorization: `StagePairing ${created.polling_secret}` },
+    }),
+    env,
+  );
+  assert.equal(pending.status, 202);
+  const pendingBody = await pending.json();
+  assert.equal(pendingBody.status, "pending");
+  const validatePending = ajv.getSchema(`${schema.$id}#/$defs/StagePairingPendingResponse`);
+  assert.equal(validatePending(pendingBody), true, JSON.stringify(validatePending.errors));
+
+  const hostToken = await issueAuthorityToken({
+    sessionId: "ses_0123456789abcdef",
+    endpointId: "end_host0123456789",
+    audience: "host",
+    participantId: null,
+    authorityGeneration: 1,
+    expiresAtUnixMs: expiresAt,
+    origin: allowedOrigin,
+  }, signingKey);
+  const revokedApproval = await worker.fetch(
+    new Request(
+      `https://example.test/api/v1/stage-pairings/${created.pairing_code}/approve`,
+      {
+        method: "POST",
+        headers: { Origin: allowedOrigin, Cookie: `__Host-gp_authority=${hostToken}` },
+      },
+    ),
+    env,
+  );
+  assert.equal(revokedApproval.status, 401);
+  assert.equal((await revokedApproval.json()).code, "endpoint_revoked");
+  assert.equal(pairing.approved, false);
+
+  stagePairingAuthorizationAllowed = true;
+  const approval = await worker.fetch(
+    new Request(
+      `https://example.test/api/v1/stage-pairings/${created.pairing_code}/approve`,
+      {
+        method: "POST",
+        headers: { Origin: allowedOrigin, Cookie: `__Host-gp_authority=${hostToken}` },
+      },
+    ),
+    env,
+  );
+  assert.equal(approval.status, 200);
+  const approvalBody = await approval.json();
+  assert.equal(approvalBody.status, "approved");
+  assert.deepEqual(stagePairingAuthorization, {
+    endpointId: "end_host0123456789",
+    audience: "host",
+    authorityGeneration: "1",
+  });
+  const validateApproval = ajv.getSchema(`${schema.$id}#/$defs/StagePairingApprovalResponse`);
+  assert.equal(validateApproval(approvalBody), true, JSON.stringify(validateApproval.errors));
+
+  const redemption = await worker.fetch(
+    new Request(`https://example.test${created.redeem_path}`, {
+      method: "POST",
+      headers: { Origin: "null", Authorization: `StagePairing ${created.polling_secret}` },
+    }),
+    env,
+  );
+  assert.equal(redemption.status, 200);
+  assert.equal(redemption.headers.get("Set-Cookie"), null);
+  const admission = await redemption.json();
   assert.equal(admission.authority_transport, "bearer");
   assert.equal(admission.websocket_transport, "ticket_subprotocol");
   assert.equal(admission.websocket_ticket_endpoint, "/api/v1/websocket-tickets");
   assert.ok(admission.token.startsWith("gp1."));
+  assert.equal(stagePairingAdmission.transaction_id, pairing.transaction_id);
+  assert.deepEqual(stagePairingAdmission.endpoint, pairing.endpoint);
 
-  const ajv = new Ajv2020({ strict: true, strictRequired: false });
-  ajv.addSchema(schema);
   const validateJoin = ajv.getSchema(`${schema.$id}#/$defs/RemoteFriendsJoinResponse`);
   assert.equal(validateJoin(admission), true, JSON.stringify(validateJoin.errors));
 
@@ -384,6 +570,34 @@ test("packaged webOS Stage uses bearer authority and a registered WebSocket tick
   assert.equal(websocketForward.endpointId, admission.endpoint_id);
   assert.equal(websocketForward.authorityOrigin, null);
   assert.equal(websocketForward.ticketDigest, await sha256Hex(signedTicket));
+});
+
+test("Stage pairing fails closed before allocating a coordinator", async () => {
+  let called = false;
+  const env = await friendsEnvironment(async () => Response.json({}), async () => {
+    called = true;
+    return Response.json({});
+  });
+  const request = () => new Request("https://example.test/api/v1/stage-pairings", {
+    method: "POST",
+    headers: { Origin: "null", "Content-Type": "application/json" },
+    body: JSON.stringify({
+      protocol_version: "1.0",
+      endpoint: { platform: "webos", capabilities: ["public_display"] },
+    }),
+  });
+
+  env.STAGE_PAIRING_RATE_LIMITER = rateLimiter(false);
+  const limited = await worker.fetch(request(), env);
+  assert.equal(limited.status, 429);
+  assert.equal(called, false);
+
+  env.STAGE_PAIRING_RATE_LIMITER = rateLimiter();
+  delete env.STAGE_PAIRINGS;
+  const unavailable = await worker.fetch(request(), env);
+  assert.equal(unavailable.status, 503);
+  assert.equal((await unavailable.json()).code, "stage_pairing_binding_unavailable");
+  assert.equal(called, false);
 });
 
 test("websocket route requires the exact v1 subprotocol before authority", async () => {

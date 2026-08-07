@@ -1,0 +1,8 @@
+{
+  "protocol_version": "1.0",
+  "pairing_code": "ABCD-EFGH",
+  "polling_secret": "synthetic-polling-secret-0123456789",
+  "redeem_path": "/api/v1/stage-pairings/ABCD-EFGH/redeem",
+  "expires_at_unix_ms": 2000000000000,
+  "poll_after_ms": 1500
+}

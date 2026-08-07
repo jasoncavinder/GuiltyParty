@@ -1,0 +1,6 @@
+{
+  "protocol_version": "1.0",
+  "status": "pending",
+  "expires_at_unix_ms": 2000000000000,
+  "retry_after_ms": 1500
+}

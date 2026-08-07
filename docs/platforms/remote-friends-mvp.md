@@ -41,28 +41,37 @@ places it in a URL or browser storage.
 
 Browser HTTP calls use `credentials: "include"`. The gateway answers only
 exact-origin credentialed CORS preflights and never emits a wildcard origin.
-Because `SameSite=Strict` is intentional, the Host, Stage, and API test
-hostnames must be same-site subdomains of `guiltyparty.app`; a Host served from
-an unrelated site cannot rely on this cookie flow.
+Because `SameSite=Strict` is intentional, browser-client and API test hostnames
+must be same-site subdomains of `guiltyparty.app`; a Host served from an
+unrelated site cannot rely on this cookie flow.
 
-## Stage and Participant Pairing
+## Participant Pairing
 
 The client sends `POST /api/v1/join` with:
 
 - `X-GP-Session-ID: <opaque session identifier>`
 - `Authorization: Pairing <short-lived pairing proof>`
-- an exact allowed HTTPS `Origin` for a browser surface, opaque `null` Origin
-  for packaged webOS Stage, or no `Origin` for native iOS
+- an exact allowed HTTPS `Origin` for a browser surface or no `Origin` for
+  native iOS
 - the canonical `JoinRequest` body
 
-Hosted-browser Stage authority is delivered only through the HttpOnly cookie
-and the JSON response omits `token`. Native iOS receives
-`authority_transport: bearer` with `websocket_transport:
-authorization_header`. The packaged webOS Stage joins with its file-scheme
-Origin serialized as `null` and receives memory-only bearer authority with
-`websocket_transport: ticket_subprotocol`. It never persists that bearer.
-The hosted-Stage path remains protocol-compatible but is not an MVP product
-surface or deployed Stage fallback.
+Native iOS receives `authority_transport: bearer` with `websocket_transport:
+authorization_header`. Browser responses omit `token` and use the HttpOnly
+cookie. The hosted-Stage path remains protocol-compatible but is not an MVP
+product surface or deployed Stage fallback.
+
+## Packaged Stage Pairing
+
+The packaged webOS Stage creates a 120-second transaction at
+`POST /api/v1/stage-pairings` using its opaque `null` Origin. It displays the
+returned non-secret code and keeps the separate high-entropy polling secret
+only in process memory. An authenticated Host approves the code for the Host's
+current session, and that session revalidates the Host endpoint before the
+coordinator records approval. Until approval, authenticated polls disclose no
+session context. After approval, redemption idempotently creates exactly one
+Stage endpoint and returns memory-only bearer authority with
+`websocket_transport: ticket_subprotocol`. The display code never grants
+authority, and the Stage never receives the participant invitation proof.
 
 Guest aliases, endpoints, participants, rooms, and characters are separate.
 The session admits at most one Stage and eight participants. Participant
@@ -163,7 +172,6 @@ Before physical-client rehearsal, finish and document:
 - packaged webOS `null`-Origin CORS, ticket-subprotocol, memory clearing,
   reconnect, physical-device transport evidence, and private-field-negative
   tests
-- the Host-approved device-code coordinator for packaged Stage admission
 - a configured supported-build policy for every externally distributed client
 
 No named friend should receive an invitation until the final owner gate is

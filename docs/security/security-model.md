@@ -129,6 +129,11 @@ Examples include guessed codes, reused invitations, unauthorized room changes,
 and abandoned authenticated devices.
 
 Required response: scope, expire, validate, and revoke pairing authority.
+For packaged Stage pairing, the displayed code is only a locator. Redemption
+also requires the separate high-entropy polling secret and an authenticated
+Host approval. The session authority boundary revalidates that Host endpoint
+before approval is recorded, and retries must resolve to at most one endpoint
+authority.
 
 ### Native Companion Credential Storage
 

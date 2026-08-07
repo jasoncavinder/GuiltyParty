@@ -17,9 +17,11 @@ remains blocked by the operational and client acceptance gates below.
 - `POST /api/v1/sessions` requires an operator bootstrap proof, creates a
   four-hour session, sets browser Host authority in a Secure, HttpOnly,
   SameSite=Strict cookie, and returns a fifteen-minute pairing invitation.
-- `POST /api/v1/join` admits one Stage and up to eight guest participants using
-  the pairing proof. Browser authority uses the cookie; iOS and the packaged
-  webOS Stage use returned bearer authority.
+- `POST /api/v1/join` admits up to eight guest participants using the invitation
+  proof. The packaged Stage does not receive or redeem that shared proof.
+- `POST /api/v1/stage-pairings` creates a 120-second packaged Stage transaction;
+  an authenticated Host approves its non-secret display code, and the Stage
+  redeems with a separate high-entropy memory-only polling secret.
 - `POST /api/v1/websocket-tickets` lets only a current packaged Stage exchange
   its memory-only bearer for a registered, 30-second, single-use secondary
   WebSocket subprotocol credential.
@@ -31,8 +33,9 @@ remains blocked by the operational and client acceptance gates below.
   is never used.
 - After cheap origin, credential-shape, and body validation, Cloudflare Rate
   Limiting bindings reject excess authenticated Host creation traffic by Host
-  class and join traffic by an opaque session-resource digest before Durable
-  Object lookup; the exact per-session and per-endpoint limits remain separate.
+  class, join traffic by an opaque session-resource digest, and Stage pairing
+  traffic by operation or transaction digest before Durable Object lookup; the
+  exact per-session, pairing-transaction, and endpoint limits remain separate.
 - `GameSession` journals participant admission and every accepted gameplay
   transition, schedules expiry and seven-day maximum active-storage deletion
   through an alarm, and uses the Durable Object WebSocket hibernation API.
@@ -84,9 +87,9 @@ GP_HOST_BOOTSTRAP_PROOF='<read from the protected operator store>' \
 make rehearse-packaged-stage
 ```
 
-The rehearsal creates synthetic state and proves first-use `101`, replay
-`401`, and tamper `401` without printing the bootstrap proof, pairing proof,
-primary bearer, or connect ticket.
+The rehearsal creates synthetic state, exercises Host-approved Stage pairing,
+and proves first-use `101`, replay `401`, and tamper `401` without printing the
+bootstrap proof, polling secret, primary bearer, or connect ticket.
 
 After the proposed development lifecycle surface in ADR 0038 is reviewed and
 deployed, exercise its fixed short-lived synthetic sessions with:
@@ -124,6 +127,9 @@ The Remote Friends MVP boundary expects:
   Cloudflare location, and `SESSION_JOIN_RATE_LIMITER`, sixty validated-shape
   attempts per opaque session-resource digest per minute per location; both
   fail closed and neither uses or stores a network address
+- `STAGE_PAIRING_RATE_LIMITER`, 120 Stage pairing operations per minute per
+  operation or opaque transaction digest per Cloudflare location; the pairing
+  coordinator also enforces its exact per-transaction attempt ceiling
 - optional secret `EMERGENCY_DISABLED=true`, which keeps health and protocol
   discovery available while returning `503` from every stateful entry point
 
@@ -140,8 +146,9 @@ accepted opaque `null` Origin is transport metadata under ADR 0035.
 
 Secrets are configured with Wrangler and never placed in `wrangler.jsonc`, a
 request URL, application envelope, log, or committed file. The raw Host proof
-is supplied only when starting a session. Pairing proof is supplied only to the
-HTTPS join operation. Browser join responses omit the bearer token; native join
+is supplied only when starting a session. Participant invitation proof and the
+Stage polling secret are supplied only in HTTPS authorization headers. Browser
+join responses omit the bearer token; native and packaged-Stage authority
 responses contain it only in the non-cacheable HTTPS response.
 
 ## Remaining External-Test Gates

@@ -42,6 +42,12 @@ export class GameSession extends DurableObject {
     if (url.pathname === `${INTERNAL_PREFIX}join`) {
       return this.joinSession(request);
     }
+    if (url.pathname === `${INTERNAL_PREFIX}stage-pair`) {
+      return this.pairApprovedStage(request);
+    }
+    if (url.pathname === `${INTERNAL_PREFIX}authorize-stage-pairing`) {
+      return this.authorizeStagePairing(request);
+    }
     if (url.pathname === `${INTERNAL_PREFIX}control`) {
       return this.controlSession(request);
     }
@@ -149,6 +155,52 @@ export class GameSession extends DurableObject {
       expires_at_unix_ms: result.expiresAtUnixMs,
       server_sequence: result.serverSequence,
     });
+  }
+
+  async pairApprovedStage(request) {
+    if (request.method !== "POST") {
+      return internalProblem(405, "method_not_allowed", "Method not allowed");
+    }
+    const value = await safeJson(request);
+    if (!validApprovedStagePairing(value)) {
+      return internalProblem(400, "invalid_stage_pairing", "Invalid Stage pairing");
+    }
+    const result = await this.serializeOperation(async () =>
+      this.store.admitApprovedStage({
+        transactionId: value.transaction_id,
+        endpoint: value.endpoint,
+        endpointId: randomIdentifier("end"),
+        roomId: randomIdentifier("room"),
+        nowUnixMs: value.now_unix_ms,
+      }),
+    );
+    if (!result.ok) {
+      return internalProblem(result.status, result.code, result.title);
+    }
+    return internalJson({
+      audience: "stage",
+      endpoint_id: result.endpointId,
+      participant_id: null,
+      room_id: result.roomId,
+      authority_generation: result.authorityGeneration,
+      expires_at_unix_ms: result.expiresAtUnixMs,
+      duplicate: result.duplicate,
+    });
+  }
+
+  async authorizeStagePairing(request) {
+    if (request.method !== "POST") {
+      return internalProblem(405, "method_not_allowed", "Method not allowed");
+    }
+    const authority = authorityFromInternalRequest(request);
+    if (!authority || authority.audience !== "host") {
+      return internalProblem(403, "host_authority_required", "Host authority required");
+    }
+    const validation = this.store.validateAuthority(authority, Date.now());
+    if (!validation.ok) {
+      return internalProblem(401, validation.code, "Invalid authority");
+    }
+    return internalJson({ authorized: true });
   }
 
   async acceptWebSocket(request) {
@@ -723,6 +775,18 @@ function validWebSocketTicketRegistration(value) {
     value.now_unix_ms > 0 &&
     Number.isSafeInteger(value.ticket_expires_at_unix_ms) &&
     value.ticket_expires_at_unix_ms > value.now_unix_ms
+  );
+}
+
+function validApprovedStagePairing(value) {
+  return (
+    value &&
+    validIdentifier(value.transaction_id) &&
+    Number.isSafeInteger(value.now_unix_ms) &&
+    value.now_unix_ms > 0 &&
+    validEndpoint(value.endpoint) &&
+    value.endpoint.platform === "webos" &&
+    value.endpoint.capabilities.includes("public_display")
   );
 }
 
