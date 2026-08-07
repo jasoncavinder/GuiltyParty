@@ -68,6 +68,7 @@ export class GameSession extends DurableObject {
       hostEndpointId: value.host_endpoint_id,
       hostRoomId: value.host_room_id,
       hostOrigin: value.host_origin,
+      gameplayLanguage: value.gameplay_language,
       endpoint: value.endpoint,
       invitationDigest: value.invitation_digest,
       invitationExpiresAtUnixMs: value.invitation_expires_at_unix_ms,
@@ -269,6 +270,7 @@ export class GameSession extends DurableObject {
     return internalJson({
       ok: true,
       ...(result.expiresAtUnixMs ? { invitation_expires_at_unix_ms: result.expiresAtUnixMs } : {}),
+      ...(result.gameplayLanguage ? { gameplay_language: result.gameplayLanguage } : {}),
       ...(typeof result.duplicate === "boolean" ? { duplicate: result.duplicate } : {}),
       ...(result.deleteAtUnixMs ? { delete_at_unix_ms: result.deleteAtUnixMs } : {}),
     });
@@ -356,7 +358,7 @@ export class GameSession extends DurableObject {
       session_id: attachment.sessionId,
       endpoint_id: attachment.endpointId,
       server_sequence: result.server_sequence,
-      payload: { projection: result.projection },
+      payload: { projection: projectionWithLanguage(result.projection, this.store.gameplayLanguage()) },
     }));
   }
 
@@ -439,7 +441,7 @@ export class GameSession extends DurableObject {
         session_id: attachment.sessionId,
         endpoint_id: attachment.endpointId,
         server_sequence: result.server_sequence,
-        payload: { projection: result.projection },
+        payload: { projection: projectionWithLanguage(result.projection, this.store.gameplayLanguage()) },
       }));
     }
   }
@@ -691,6 +693,7 @@ function validSessionConfiguration(value) {
     validIdentifier(value.host_endpoint_id) &&
     validIdentifier(value.host_room_id) &&
     validHttpsOrigin(value.host_origin) &&
+    validGameplayLanguage(value.gameplay_language) &&
     validEndpoint(value.endpoint) &&
     /^[a-f0-9]{64}$/u.test(value.invitation_digest) &&
     validTimeline(value.created_at_unix_ms, value.invitation_expires_at_unix_ms) &&
@@ -733,6 +736,18 @@ function validEndpoint(value) {
     value.capabilities.length <= 32 &&
     value.capabilities.every((item) => typeof item === "string" && item.length <= 128)
   );
+}
+
+function validGameplayLanguage(value) {
+  return (
+    typeof value === "string" &&
+    value.length <= 63 &&
+    /^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/u.test(value)
+  );
+}
+
+function projectionWithLanguage(projection, gameplayLanguage) {
+  return { ...projection, gameplay_language: gameplayLanguage };
 }
 
 function validDisplayName(value) {

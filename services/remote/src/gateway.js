@@ -10,6 +10,7 @@ import {
   WEBSOCKET_TICKET_DURATION_MS,
   WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
 } from "./constants.js";
+import { evaluateClientBuild, validClientBuild } from "./client-build.js";
 import {
   authorityCookie,
   clearAuthorityCookie,
@@ -26,9 +27,11 @@ import {
   webSocketTicketSubprotocol,
 } from "./friends-auth.js";
 import { jsonResponse, methodNotAllowed, problemResponse } from "./http.js";
+import { encodeInvitationTransfer } from "./invitation-transfer.js";
 
 const SESSION_IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{16,128}$/;
 const FEATURE_IDENTIFIER_PATTERN = /^[a-z][a-z0-9_.-]{0,127}$/;
+const GAMEPLAY_LANGUAGE_PATTERN = /^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$/u;
 
 export default {
   async fetch(request, env) {
@@ -156,6 +159,11 @@ async function createSession(request, env) {
   if (!edgeLimit.ok) {
     return edgeLimit.response;
   }
+  const buildAdmission = clientBuildAdmission(parsed.value.endpoint.client_build, env);
+  if (buildAdmission) {
+    return buildAdmission;
+  }
+  const gameplayLanguage = parsed.value.gameplay_language ?? "en";
 
   const now = Date.now();
   const sessionId = randomIdentifier("ses");
@@ -175,6 +183,7 @@ async function createSession(request, env) {
       host_endpoint_id: endpointId,
       host_room_id: roomId,
       host_origin: origin,
+      gameplay_language: gameplayLanguage,
       endpoint: parsed.value.endpoint,
       invitation_digest: await sha256Hex(pairingCode),
       invitation_expires_at_unix_ms: invitationExpiresAt,
@@ -206,7 +215,14 @@ async function createSession(request, env) {
       endpoint_id: endpointId,
       room_id: roomId,
       authority_transport: "cookie",
+      gameplay_language: gameplayLanguage,
       pairing_code: pairingCode,
+      invitation_payload: encodeInvitationTransfer({
+        sessionId,
+        pairingCode,
+        expiresAtUnixMs: invitationExpiresAt,
+        gameplayLanguage,
+      }),
       pairing_expires_at_unix_ms: invitationExpiresAt,
       session_expires_at_unix_ms: sessionExpiresAt,
       maximum_participants: 8,
@@ -251,7 +267,6 @@ async function joinSession(request, env) {
       retryable: false,
     });
   }
-
   const requestOrigin = request.headers.get("Origin");
   const packagedStage = isPackagedStageJoin(parsed.value, requestOrigin);
   const browser = requestOrigin !== null && requestOrigin !== "null";
@@ -268,6 +283,10 @@ async function joinSession(request, env) {
       "Packaged Stage origin required",
       { retryable: false },
     );
+  }
+  const buildAdmission = clientBuildAdmission(parsed.value.endpoint.client_build, env);
+  if (buildAdmission) {
+    return buildAdmission;
   }
   const edgeLimit = await consumeEdgeLimit(
     env.SESSION_JOIN_RATE_LIMITER,
@@ -535,6 +554,12 @@ async function controlSession(request, env, action, endpointId = null) {
       ...(pairingCode
         ? {
             pairing_code: pairingCode,
+            invitation_payload: encodeInvitationTransfer({
+              sessionId: authority.sessionId,
+              pairingCode,
+              expiresAtUnixMs: result.invitation_expires_at_unix_ms,
+              gameplayLanguage: result.gameplay_language,
+            }),
             pairing_expires_at_unix_ms: result.invitation_expires_at_unix_ms,
           }
         : {}),
@@ -725,7 +750,14 @@ async function readJsonObject(request) {
 }
 
 function validCreateSessionRequest(value) {
-  return value.protocol_version === PROTOCOL_VERSION && validEndpoint(value.endpoint);
+  return (
+    value.protocol_version === PROTOCOL_VERSION &&
+    (value.gameplay_language === undefined ||
+      (typeof value.gameplay_language === "string" &&
+        value.gameplay_language.length <= 63 &&
+        GAMEPLAY_LANGUAGE_PATTERN.test(value.gameplay_language))) &&
+    validEndpoint(value.endpoint)
+  );
 }
 
 function validJoinRequest(value) {
@@ -751,7 +783,21 @@ function validEndpoint(value) {
     Array.isArray(value.capabilities) &&
     value.capabilities.length <= 32 &&
     new Set(value.capabilities).size === value.capabilities.length &&
-    value.capabilities.every((capability) => FEATURE_IDENTIFIER_PATTERN.test(capability))
+    value.capabilities.every((capability) => FEATURE_IDENTIFIER_PATTERN.test(capability)) &&
+    (value.client_build === undefined || validClientBuild(value.client_build))
+  );
+}
+
+function clientBuildAdmission(clientBuild, env) {
+  const result = evaluateClientBuild(clientBuild, env.CLIENT_BUILD_POLICY_JSON);
+  if (result.ok) {
+    return null;
+  }
+  return problemResponse(
+    result.status,
+    result.code,
+    result.status === 409 ? "Client upgrade required" : "Client build policy unavailable",
+    { retryable: result.status !== 409 },
   );
 }
 

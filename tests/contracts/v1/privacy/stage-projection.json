@@ -10,6 +10,7 @@
       "scenario_id": "scenario-synthetic-001",
       "scenario_version": 1,
       "scenario_title": "The Synthetic Artifact",
+      "gameplay_language": "en",
       "active_scene": {
         "id": "scene-synthetic-001",
         "name": "The Gallery",

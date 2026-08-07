@@ -2,8 +2,13 @@
   "protocol_version": "1.0",
   "kind": "participant",
   "display_name": "Synthetic ʻIolana",
-  "endpoint": {
-    "platform": "ios",
+    "endpoint": {
+      "platform": "ios",
+      "client_build": {
+        "application_id": "companion_ios",
+        "application_version": "0.1.0",
+        "build_number": 1
+      },
     "capabilities": ["private_display", "touch_input"]
   }
 }

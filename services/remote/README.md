@@ -105,7 +105,7 @@ The Remote Friends MVP boundary expects:
 - secret `HOST_BOOTSTRAP_TOKEN_SHA256`, the lowercase SHA-256 digest of the
   operator-controlled Host creation proof
 - `ALLOWED_ORIGINS`, an exact comma-separated HTTPS allowlist for the browser
-  Host and Stage origins
+  Host and Companion fallback origins
 - `SESSION_CREATE_RATE_LIMITER`, ten authenticated Host attempts per minute per
   Cloudflare location, and `SESSION_JOIN_RATE_LIMITER`, sixty validated-shape
   attempts per opaque session-resource digest per minute per location; both
@@ -114,8 +114,8 @@ The Remote Friends MVP boundary expects:
   discovery available while returning `503` from every stateful entry point
 
 The approved allowlist is committed as
-`https://host.test.guiltyparty.app,https://stage.test.guiltyparty.app`. The
-packaged Stage does not authenticate as the Stage web origin; its narrowly
+`https://host.test.guiltyparty.app,https://play.test.guiltyparty.app`. The
+packaged Stage has no web origin; its narrowly
 accepted opaque `null` Origin is transport metadata under ADR 0035.
 
 Secrets are configured with Wrangler and never placed in `wrangler.jsonc`, a

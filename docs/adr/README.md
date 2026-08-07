@@ -43,6 +43,8 @@ captured in a new ADR that supersedes the earlier decision.
 | [0033](0033-cloudflare-remote-services.md) | Accepted | Use a Worker gateway and one Durable Object per live session, with the shared Rust engine compiled to WebAssembly and separate global data, content, and media adapters. |
 | [0034](0034-first-party-mobile-contract-generator.md) | Accepted | Adopt the bounded first-party Rust generator for committed Swift and Kotlin control-plane models with offline regeneration and CI drift checks. |
 | [0035](0035-packaged-stage-realtime-authority.md) | Accepted | Give the packaged webOS Stage memory-only bearer authority and short-lived, single-use WebSocket connect tickets without cookie or URL credentials. |
+| [0036](0036-packaged-webos-stage-pairing.md) | Accepted | Verify the packaged webOS transport and pair the Stage through a Host-approved 120-second device-code flow. |
+| [0037](0037-remote-mvp-client-readiness.md) | Accepted | Separate remote client delivery surfaces and standardize session language, coarse build admission, non-URL invitations, and bounded beta preparation. |
 
 ## Adding an ADR
 

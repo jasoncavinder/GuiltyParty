@@ -11,7 +11,7 @@ invitation until the project owner records the final decision below.
 - Worker version and artifact digest: `TBD`
 - API hostname: `api.test.guiltyparty.app`
 - Browser Host origin: `https://host.test.guiltyparty.app`
-- Hosted Stage fallback origin: `https://stage.test.guiltyparty.app`
+- Browser Companion fallback origin: `https://play.test.guiltyparty.app`
 - Packaged Stage transport: opaque `null` Origin plus realtime connect ticket
 - Deployment operator and date: `TBD`
 - Rollback version: `TBD`

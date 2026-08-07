@@ -51,8 +51,8 @@ The client sends `POST /api/v1/join` with:
 
 - `X-GP-Session-ID: <opaque session identifier>`
 - `Authorization: Pairing <short-lived pairing proof>`
-- an exact allowed HTTPS `Origin` for hosted-browser Stage, opaque `null`
-  Origin for packaged webOS Stage, or no `Origin` for native iOS
+- an exact allowed HTTPS `Origin` for a browser surface, opaque `null` Origin
+  for packaged webOS Stage, or no `Origin` for native iOS
 - the canonical `JoinRequest` body
 
 Hosted-browser Stage authority is delivered only through the HttpOnly cookie
@@ -61,6 +61,8 @@ and the JSON response omits `token`. Native iOS receives
 authorization_header`. The packaged webOS Stage joins with its file-scheme
 Origin serialized as `null` and receives memory-only bearer authority with
 `websocket_transport: ticket_subprotocol`. It never persists that bearer.
+The hosted-Stage path remains protocol-compatible but is not an MVP product
+surface or deployed Stage fallback.
 
 Guest aliases, endpoints, participants, rooms, and characters are separate.
 The session admits at most one Stage and eight participants. Participant
@@ -155,10 +157,14 @@ Before physical-client rehearsal, finish and document:
 - Host UI integration for invitation rotation, pairing close, endpoint
   revocation, and explicit session end
 - deploy the API at `api.test.guiltyparty.app` and verify the approved Host and
-  hosted-Stage fallback origins
+  browser Companion origins; deploy the Host and browser Companion fallback
+  separately at `host.test.guiltyparty.app` and `play.test.guiltyparty.app`
 - iOS bearer injection, memory clearing, reconnect, and conformance fixtures
 - packaged webOS `null`-Origin CORS, ticket-subprotocol, memory clearing,
-  reconnect, and private-field-negative tests
+  reconnect, physical-device transport evidence, and private-field-negative
+  tests
+- the Host-approved device-code coordinator for packaged Stage admission
+- a configured supported-build policy for every externally distributed client
 
 No named friend should receive an invitation until the final owner gate is
 recorded.
