@@ -6,6 +6,7 @@ import {
   MAX_PARTICIPANTS,
   MAX_JOIN_ATTEMPTS_PER_WINDOW,
   MAX_MESSAGES_PER_WINDOW,
+  MAX_WEBSOCKET_TICKETS_PER_ENDPOINT,
   MAX_WEBSOCKET_MESSAGE_BYTES,
   MESSAGE_RATE_WINDOW_MS,
   PROTOCOL_VERSION,
@@ -44,6 +45,9 @@ export class GameSession extends DurableObject {
     }
     if (url.pathname === `${INTERNAL_PREFIX}control`) {
       return this.controlSession(request);
+    }
+    if (url.pathname === `${INTERNAL_PREFIX}websocket-ticket`) {
+      return this.registerWebSocketTicket(request);
     }
     if (url.pathname === `${INTERNAL_PREFIX}ws`) {
       return this.acceptWebSocket(request);
@@ -162,7 +166,14 @@ export class GameSession extends DurableObject {
     if (!authority) {
       return internalProblem(400, "invalid_authority_context", "Invalid authority context");
     }
-    const valid = this.store.validateAuthority(authority, Date.now());
+    const ticketDigest = request.headers.get("X-GP-WebSocket-Ticket-Digest");
+    const valid = ticketDigest === null
+      ? this.store.validateAuthority(authority, Date.now())
+      : this.store.consumeWebSocketTicket({
+          authority,
+          ticketDigest,
+          nowUnixMs: Date.now(),
+        });
     if (!valid.ok) {
       return internalProblem(401, valid.code, "Invalid authority");
     }
@@ -186,6 +197,28 @@ export class GameSession extends DurableObject {
       webSocket: client,
       headers: { "Sec-WebSocket-Protocol": CONTROL_SUBPROTOCOL },
     });
+  }
+
+  async registerWebSocketTicket(request) {
+    if (request.method !== "POST") {
+      return internalProblem(405, "method_not_allowed", "Method not allowed");
+    }
+    const authority = authorityFromInternalRequest(request);
+    const value = await safeJson(request);
+    if (!authority || !validWebSocketTicketRegistration(value)) {
+      return internalProblem(400, "invalid_websocket_ticket", "Invalid WebSocket ticket");
+    }
+    const result = this.store.registerWebSocketTicket({
+      authority,
+      ticketDigest: value.ticket_digest,
+      ticketExpiresAtUnixMs: value.ticket_expires_at_unix_ms,
+      nowUnixMs: value.now_unix_ms,
+      maximumTicketsPerEndpoint: MAX_WEBSOCKET_TICKETS_PER_ENDPOINT,
+    });
+    if (!result.ok) {
+      return internalProblem(result.status, result.code, result.title);
+    }
+    return internalJson({ registered: true }, 201);
   }
 
   async controlSession(request) {
@@ -677,6 +710,17 @@ function validAdmissionRequest(value) {
     ["stage", "participant"].includes(value.join.kind) &&
     validEndpoint(value.join.endpoint) &&
     (value.join.kind === "stage" || validDisplayName(value.join.display_name))
+  );
+}
+
+function validWebSocketTicketRegistration(value) {
+  return (
+    value &&
+    /^[a-f0-9]{64}$/u.test(value.ticket_digest) &&
+    Number.isSafeInteger(value.now_unix_ms) &&
+    value.now_unix_ms > 0 &&
+    Number.isSafeInteger(value.ticket_expires_at_unix_ms) &&
+    value.ticket_expires_at_unix_ms > value.now_unix_ms
   );
 }
 

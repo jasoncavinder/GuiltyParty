@@ -13,6 +13,22 @@ test("development Wrangler configuration is narrowly scoped and contains no acco
   assert.equal(configuration.dependencies_instrumentation.enabled, false);
   assert.equal(configuration.observability.enabled, false);
   assert.equal(configuration.vars.ENVIRONMENT_PROFILE, "friends-mvp-development");
+  assert.equal(
+    configuration.vars.ALLOWED_ORIGINS,
+    "https://host.test.guiltyparty.app,https://stage.test.guiltyparty.app",
+  );
+  assert.deepEqual(configuration.ratelimits, [
+    {
+      name: "SESSION_CREATE_RATE_LIMITER",
+      namespace_id: "1001",
+      simple: { limit: 10, period: 60 },
+    },
+    {
+      name: "SESSION_JOIN_RATE_LIMITER",
+      namespace_id: "1002",
+      simple: { limit: 60, period: 60 },
+    },
+  ]);
   assert.equal(configuration.exports.GameSession.type, "durable-object");
   assert.equal(configuration.exports.GameSession.storage, "sqlite");
   assert.equal(configuration.account_id, undefined);

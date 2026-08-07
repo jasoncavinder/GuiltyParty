@@ -52,6 +52,9 @@ commercial, production, or market-validation traffic.
   successful rehearsal
 - Cloudflare `workers.dev` for engineering checks and the owner-approved
   `api.test.guiltyparty.app` Worker Custom Domain before named friends join
+- owner-approved browser surfaces at `host.test.guiltyparty.app` and
+  `stage.test.guiltyparty.app`; the fully packaged webOS Stage uses its opaque
+  file-scheme transport rather than cookie authority from the Stage hostname
 - owner-operated manual deployments until release automation is separately
   approved
 
@@ -106,8 +109,11 @@ identity or authority.
 - Successful pairing issues short-lived endpoint authority bound to session,
   endpoint, audience, authority generation, expiry, and exact browser origin
   where applicable.
-- Browser authority uses a Secure, HttpOnly, SameSite cookie. Native authority
-  uses a bearer credential kept in the approved protected client boundary.
+- Browser Host and hosted-browser authority use a Secure, HttpOnly, SameSite
+  cookie. Native iOS authority uses a bearer credential kept in the approved
+  protected client boundary. The packaged webOS Stage keeps bearer authority
+  only in process memory and derives a 30-second, single-use WebSocket ticket
+  for each connection under ADR 0035.
 - Raw credentials stay out of URLs, logs, application envelopes, Durable Object
   names, and browser-readable persistent storage.
 - The Durable Object rechecks current endpoint generation and revocation before
@@ -160,8 +166,8 @@ the accepted permanent-account model.
 3. Implement Host session creation, invitation lifecycle, Stage and participant
    joining, browser cookie authority, and native bearer authority.
 4. Route authenticated control-plane v1 WebSockets to the session Durable
-   Object and enforce endpoint generation, origin, message size, and protocol
-   rules.
+   Object and enforce endpoint generation, origin, message size, protocol
+   rules, and atomic packaged-Stage ticket consumption.
 5. Wire engine commands, atomic journal/idempotency commits, projections, fanout,
    and sequence-based reconnect.
 6. Add session end, expiry, deletion, bounded resource use, safe diagnostics,
@@ -218,13 +224,16 @@ The Remote Friends MVP is ready for owner approval when:
 The owner must approve:
 
 - any new third-party dependency or WebAssembly build tool after ADR 0025 intake
-- the exact Host and Stage test origins and their DNS changes
+- any change to the approved Host or Stage test hostnames and their DNS changes
 - the named-tester notice and external-test readiness record
 - the first invitation sent to a friend
 
 The owner approved `api.test.guiltyparty.app` as the API test hostname and
 accepted the documented 30-day Cloudflare SQLite recovery horizon for this
-limited friends MVP on 2026-08-07.
+limited friends MVP on 2026-08-07. The owner approved
+`host.test.guiltyparty.app` and `stage.test.guiltyparty.app` on the same date,
+selected a fully packaged webOS Stage, and approved the corresponding
+authentication-transport redesign recorded in ADR 0035.
 
 ### Completion Notes
 

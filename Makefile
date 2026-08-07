@@ -1,4 +1,4 @@
-.PHONY: setup run-server run-host run-stage build-stage check-contracts test-remote check-scenario-wasm check-cloudflare test
+.PHONY: setup run-server run-host run-stage build-stage check-contracts test-remote check-scenario-wasm check-cloudflare rehearse-packaged-stage test
 
 setup:
 	@echo "Checking dependencies..."
@@ -40,6 +40,9 @@ check-scenario-wasm:
 
 check-cloudflare:
 	@WRANGLER_LOG_PATH=.tmp/wrangler-check.log WRANGLER_LOG_SANITIZE=true npm run --silent cloudflare:check
+
+rehearse-packaged-stage:
+	@node tooling/rehearse_packaged_stage.mjs
 
 test:
 	@$(MAKE) check-contracts

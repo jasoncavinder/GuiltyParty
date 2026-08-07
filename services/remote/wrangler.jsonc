@@ -19,8 +19,27 @@
     "enabled": false
   },
   "vars": {
-    "ENVIRONMENT_PROFILE": "friends-mvp-development"
+    "ENVIRONMENT_PROFILE": "friends-mvp-development",
+    "ALLOWED_ORIGINS": "https://host.test.guiltyparty.app,https://stage.test.guiltyparty.app"
   },
+  "ratelimits": [
+    {
+      "name": "SESSION_CREATE_RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": {
+        "limit": 10,
+        "period": 60
+      }
+    },
+    {
+      "name": "SESSION_JOIN_RATE_LIMITER",
+      "namespace_id": "1002",
+      "simple": {
+        "limit": 60,
+        "period": 60
+      }
+    }
+  ],
   "durable_objects": {
     "bindings": [
       {

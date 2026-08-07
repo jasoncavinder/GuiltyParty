@@ -42,6 +42,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0032](0032-mobile-store-privacy-and-review-readiness.md) | Accepted | Tie mobile store disclosures, account deletion, review access, ratings, and release approval to evidence from the exact distributed build. |
 | [0033](0033-cloudflare-remote-services.md) | Accepted | Use a Worker gateway and one Durable Object per live session, with the shared Rust engine compiled to WebAssembly and separate global data, content, and media adapters. |
 | [0034](0034-first-party-mobile-contract-generator.md) | Accepted | Adopt the bounded first-party Rust generator for committed Swift and Kotlin control-plane models with offline regeneration and CI drift checks. |
+| [0035](0035-packaged-stage-realtime-authority.md) | Accepted | Give the packaged webOS Stage memory-only bearer authority and short-lived, single-use WebSocket connect tickets without cookie or URL credentials. |
 
 ## Adding an ADR
 

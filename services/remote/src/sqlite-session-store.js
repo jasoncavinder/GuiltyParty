@@ -61,6 +61,15 @@ export class SqliteSessionStore {
         window_started_at_unix_ms INTEGER NOT NULL,
         attempt_count INTEGER NOT NULL
       );
+      CREATE TABLE IF NOT EXISTS websocket_tickets (
+        ticket_digest TEXT PRIMARY KEY,
+        endpoint_id TEXT NOT NULL,
+        authority_generation INTEGER NOT NULL,
+        expires_at_unix_ms INTEGER NOT NULL,
+        consumed_at_unix_ms INTEGER
+      );
+      CREATE INDEX IF NOT EXISTS websocket_tickets_endpoint
+        ON websocket_tickets (endpoint_id, expires_at_unix_ms DESC);
     `);
   }
 
@@ -225,6 +234,98 @@ export class SqliteSessionStore {
       return { ok: false, code: "invalid_authority" };
     }
     return { ok: true };
+  }
+
+  registerWebSocketTicket({
+    authority,
+    ticketDigest,
+    ticketExpiresAtUnixMs,
+    nowUnixMs,
+    maximumTicketsPerEndpoint,
+  }) {
+    return this.storage.transactionSync(() => {
+      const validation = this.validateAuthority(authority, nowUnixMs);
+      if (!validation.ok || authority.audience !== "stage" || authority.origin !== null) {
+        return {
+          ok: false,
+          status: 403,
+          code: "packaged_stage_authority_required",
+          title: "Packaged Stage authority required",
+        };
+      }
+      if (
+        !/^[a-f0-9]{64}$/u.test(ticketDigest) ||
+        !Number.isSafeInteger(ticketExpiresAtUnixMs) ||
+        ticketExpiresAtUnixMs <= nowUnixMs ||
+        ticketExpiresAtUnixMs > authority.expiresAtUnixMs
+      ) {
+        return {
+          ok: false,
+          status: 400,
+          code: "invalid_websocket_ticket",
+          title: "Invalid WebSocket ticket",
+        };
+      }
+      this.sql.exec(
+        `DELETE FROM websocket_tickets
+         WHERE endpoint_id = ? AND (expires_at_unix_ms <= ? OR consumed_at_unix_ms IS NOT NULL)`,
+        authority.endpointId,
+        nowUnixMs,
+      );
+      this.sql.exec(
+        `INSERT INTO websocket_tickets (
+           ticket_digest, endpoint_id, authority_generation, expires_at_unix_ms
+         ) VALUES (?, ?, ?, ?)`,
+        ticketDigest,
+        authority.endpointId,
+        authority.authorityGeneration,
+        ticketExpiresAtUnixMs,
+      );
+      this.sql.exec(
+        `DELETE FROM websocket_tickets
+         WHERE ticket_digest IN (
+           SELECT ticket_digest FROM websocket_tickets
+           WHERE endpoint_id = ?
+           ORDER BY expires_at_unix_ms DESC
+           LIMIT -1 OFFSET ?
+         )`,
+        authority.endpointId,
+        maximumTicketsPerEndpoint,
+      );
+      return { ok: true };
+    });
+  }
+
+  consumeWebSocketTicket({ authority, ticketDigest, nowUnixMs }) {
+    return this.storage.transactionSync(() => {
+      const validation = this.validateAuthority(authority, nowUnixMs);
+      if (!validation.ok || authority.audience !== "stage" || authority.origin !== null) {
+        return { ok: false, code: "invalid_authority" };
+      }
+      const row = Array.from(
+        this.sql.exec(
+          `SELECT endpoint_id, authority_generation, expires_at_unix_ms, consumed_at_unix_ms
+           FROM websocket_tickets WHERE ticket_digest = ?`,
+          ticketDigest,
+        ),
+      )[0];
+      if (
+        !row ||
+        row.endpoint_id !== authority.endpointId ||
+        Number(row.authority_generation) !== authority.authorityGeneration ||
+        Number(row.expires_at_unix_ms) <= nowUnixMs ||
+        row.consumed_at_unix_ms !== null
+      ) {
+        return { ok: false, code: "invalid_websocket_ticket" };
+      }
+      this.sql.exec(
+        `UPDATE websocket_tickets SET consumed_at_unix_ms = ?
+         WHERE ticket_digest = ? AND consumed_at_unix_ms IS NULL`,
+        nowUnixMs,
+        ticketDigest,
+      );
+      return { ok: true };
+    });
   }
 
   rotateInvitation(authority, invitationDigest, expiresAtUnixMs, nowUnixMs) {

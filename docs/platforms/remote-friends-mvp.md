@@ -51,14 +51,16 @@ The client sends `POST /api/v1/join` with:
 
 - `X-GP-Session-ID: <opaque session identifier>`
 - `Authorization: Pairing <short-lived pairing proof>`
-- an exact allowed `Origin` for browser Stage; no `Origin` for native iOS
+- an exact allowed HTTPS `Origin` for hosted-browser Stage, opaque `null`
+  Origin for packaged webOS Stage, or no `Origin` for native iOS
 - the canonical `JoinRequest` body
 
-Browser Stage authority is delivered only through the HttpOnly cookie and the
-JSON response omits `token`. Native iOS receives `authority_transport: bearer`
-and the opaque token in the non-cacheable response. The iOS app keeps the
-access token in process memory and may store only separately approved opaque
-resume authority in its protected device boundary.
+Hosted-browser Stage authority is delivered only through the HttpOnly cookie
+and the JSON response omits `token`. Native iOS receives
+`authority_transport: bearer` with `websocket_transport:
+authorization_header`. The packaged webOS Stage joins with its file-scheme
+Origin serialized as `null` and receives memory-only bearer authority with
+`websocket_transport: ticket_subprotocol`. It never persists that bearer.
 
 Guest aliases, endpoints, participants, rooms, and characters are separate.
 The session admits at most one Stage and eight participants. Participant
@@ -68,10 +70,14 @@ and does not become scenario truth.
 
 ## Realtime Control
 
-Clients open `/ws/v1` and offer only `guiltyparty.control.v1`. Browsers send the
-cookie automatically from their exact bound origin. iOS supplies the bearer
-credential in the opening request. Credentials never appear in the WebSocket
-URL or application envelope.
+Ordinary clients open `/ws/v1` and offer `guiltyparty.control.v1`. Browsers send
+the cookie automatically from their exact bound origin. iOS supplies the bearer
+credential in the opening request. Before each packaged Stage connection, the
+app exchanges its bearer at `POST /api/v1/websocket-tickets`, then offers both
+the control subprotocol and the returned 30-second, single-use ticket
+subprotocol. The Durable Object atomically consumes the registered ticket
+digest with current Stage-authority validation. Credentials never appear in
+the WebSocket URL or application envelope.
 
 The service supports canonical v1 `get_projection`, `submit_command`, and the
 following deterministic commands:
@@ -148,11 +154,11 @@ Before physical-client rehearsal, finish and document:
 
 - Host UI integration for invitation rotation, pairing close, endpoint
   revocation, and explicit session end
-- edge protection for invalid session creation and join traffic
-- deploy the API at `api.test.guiltyparty.app` and approve exact Host/Stage
-  origins
+- deploy the API at `api.test.guiltyparty.app` and verify the approved Host and
+  hosted-Stage fallback origins
 - iOS bearer injection, memory clearing, reconnect, and conformance fixtures
-- webOS cookie pairing and private-field-negative tests
+- packaged webOS `null`-Origin CORS, ticket-subprotocol, memory clearing,
+  reconnect, and private-field-negative tests
 
 No named friend should receive an invitation until the final owner gate is
 recorded.

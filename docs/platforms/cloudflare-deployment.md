@@ -174,11 +174,14 @@ Before the owner-operated development promotion:
    commit, not an uncommitted worktree.
 2. Deploy the API Custom Domain at `api.test.guiltyparty.app`. Cloudflare
    creates the DNS record and exact-hostname certificate for a Worker Custom
-   Domain; verify both are active before smoke testing. Choose same-site HTTPS
-   Host and Stage origins under `guiltyparty.app`, then store those exact
-   origins as the comma-separated `ALLOWED_ORIGINS` value; do not use
-   wildcards. The SameSite=Strict browser authority cookie will not support an
-   unrelated application site.
+   Domain; verify both are active before smoke testing. The owner approved
+   `https://host.test.guiltyparty.app` and
+   `https://stage.test.guiltyparty.app`, and the exact comma-separated
+   `ALLOWED_ORIGINS` value is committed in the reviewed configuration; do not
+   use wildcards. The fully packaged webOS Stage does not use that hosted Stage
+   cookie origin. Under ADR 0035, only its Stage pairing and realtime-ticket
+   paths accept the opaque file-scheme Origin value `null` with bearer
+   authority.
 3. Generate an independent random `AUTHORITY_SIGNING_KEY` of at least 32 bytes.
    Store the raw value only in the Worker secret and the owner's protected
    credential store.
@@ -187,15 +190,21 @@ Before the owner-operated development promotion:
    the raw proof only in the owner's protected credential store.
 5. Install the approved official Rust `wasm32-unknown-unknown` target and run
    `make test`, `make check-scenario-wasm`, and `make check-cloudflare`.
-6. Use pinned local Wrangler and interactive standard input to set the three
-   values. Never place a raw value on a command line, in shell history, an
-   issue, task, screenshot, or committed file.
+6. Use pinned local Wrangler and interactive standard input to set the two
+   secret values. Never place a raw value on a command line, in shell history,
+   an issue, task, screenshot, or committed file. Confirm the declarative
+   `SESSION_CREATE_RATE_LIMITER` and `SESSION_JOIN_RATE_LIMITER` bindings are
+   present in the artifact before deploying.
 7. Deploy manually and verify `/health` reports
    `friends-mvp-development` with status `test-gated`.
 8. Rehearse Host creation, invalid bootstrap, invalid/expired pairing, one
-   Stage, two native participants, exact-origin rejection, the full game loop,
-   private projections, idempotent retry, forbidden command, reconnect, and
-   rollback using synthetic aliases only.
+   packaged Stage, two native participants, exact-origin rejection, opaque
+   packaged-Origin rejection, one-time Stage ticket replay rejection, the full
+   game loop, private projections, idempotent retry, forbidden command,
+   reconnect, admission throttling, and rollback using synthetic aliases only.
+   Run `make rehearse-packaged-stage` with `GP_REMOTE_BASE_URL` and
+   `GP_HOST_BOOTSTRAP_PROOF` supplied through the protected operator process
+   environment as the repeatable ticket-use/replay/tamper check.
 9. After the replacement is proven, remove the obsolete
    `DEVELOPMENT_ACCESS_TOKEN_SHA256` secret. Its old raw synthetic token is no
    longer an accepted authority path.
@@ -209,10 +218,10 @@ The first-party WebAssembly module and original scenario are bundled with the
 Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
 Queues, Realtime, Containers, analytics, and remote AI remain absent.
 
-Before named friends join, a separate PR must complete hibernation and deletion
-evidence, app conformance, edge protection for invalid session-create and join
-traffic, API Custom Domain DNS/certificate verification, exact Host/Stage
-origins, tester notice, and the final owner go/no-go record. The
+Before named friends join, a separate readiness slice must complete hibernation
+and deletion evidence, app conformance, API Custom Domain DNS/certificate
+verification, packaged Stage transport evidence, tester notice, and the final
+owner go/no-go record. The
 emergency disable, invitation rotation and closure, endpoint revocation,
 explicit session end, per-session join limiting, and per-endpoint message
 limiting are implemented and still require app-level rehearsal.

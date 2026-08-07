@@ -95,6 +95,9 @@
           "413": {
             "$ref": "#/components/responses/Problem"
           },
+          "429": {
+            "$ref": "#/components/responses/Problem"
+          },
           "503": {
             "$ref": "#/components/responses/Problem"
           }
@@ -168,6 +171,53 @@
             "$ref": "#/components/responses/Problem"
           },
           "429": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/api/v1/websocket-tickets": {
+      "post": {
+        "operationId": "createPackagedStageWebSocketTicket",
+        "summary": "Mint a short-lived, single-use packaged Stage WebSocket ticket",
+        "description": "Requires packaged Stage bearer authority over HTTPS with the opaque file-scheme Origin value. The returned credential is offered as a secondary WebSocket subprotocol and is never placed in a URL or gameplay envelope.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "const": "null"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "A registered WebSocket ticket was issued",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/RealtimeConnectTicketResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "403": {
             "$ref": "#/components/responses/Problem"
           },
           "503": {

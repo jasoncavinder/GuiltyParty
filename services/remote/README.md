@@ -18,12 +18,20 @@ remains blocked by the operational and client acceptance gates below.
   four-hour session, sets browser Host authority in a Secure, HttpOnly,
   SameSite=Strict cookie, and returns a fifteen-minute pairing invitation.
 - `POST /api/v1/join` admits one Stage and up to eight guest participants using
-  the pairing proof. Browser authority uses the cookie; iOS authority uses the
-  returned bearer token.
+  the pairing proof. Browser authority uses the cookie; iOS and the packaged
+  webOS Stage use returned bearer authority.
+- `POST /api/v1/websocket-tickets` lets only a current packaged Stage exchange
+  its memory-only bearer for a registered, 30-second, single-use secondary
+  WebSocket subprotocol credential.
 - `/ws/v1` validates the exact control subprotocol, origin, signed authority,
   endpoint generation, expiry, and current Durable Object authority record.
 - Credentialed browser API preflight and responses echo only an exact allowed
-  origin. Wildcard CORS is never used.
+  HTTPS origin. Packaged Stage pairing and ticket responses narrowly echo the
+  opaque `null` file-scheme Origin without credentialed cookies. Wildcard CORS
+  is never used.
+- Cloudflare Rate Limiting bindings reject excess session creation and join
+  traffic before Durable Object lookup; the exact per-session and per-endpoint
+  limits remain separate.
 - `GameSession` journals participant admission and every accepted gameplay
   transition, schedules expiry and seven-day maximum active-storage deletion
   through an alarm, and uses the Durable Object WebSocket hibernation API.
@@ -65,6 +73,20 @@ make check-cloudflare
 
 The test suite does not contact Cloudflare or require an account.
 
+After starting the local Worker or deploying a reviewed version, exercise the
+packaged Stage handshake with the bootstrap proof supplied only through the
+process environment:
+
+```sh
+GP_REMOTE_BASE_URL='https://api.test.guiltyparty.app' \
+GP_HOST_BOOTSTRAP_PROOF='<read from the protected operator store>' \
+make rehearse-packaged-stage
+```
+
+The rehearsal creates synthetic state and proves first-use `101`, replay
+`401`, and tamper `401` without printing the bootstrap proof, pairing proof,
+primary bearer, or connect ticket.
+
 ## Configuration Safety
 
 `wrangler.jsonc` declares the approved synthetic development Worker
@@ -83,8 +105,16 @@ The Remote Friends MVP boundary expects:
   operator-controlled Host creation proof
 - `ALLOWED_ORIGINS`, an exact comma-separated HTTPS allowlist for the browser
   Host and Stage origins
+- `SESSION_CREATE_RATE_LIMITER`, ten attempts per minute per Cloudflare
+  location, and `SESSION_JOIN_RATE_LIMITER`, sixty attempts per minute per
+  location; both fail closed and neither uses or stores a network address
 - optional secret `EMERGENCY_DISABLED=true`, which keeps health and protocol
   discovery available while returning `503` from every stateful entry point
+
+The approved allowlist is committed as
+`https://host.test.guiltyparty.app,https://stage.test.guiltyparty.app`. The
+packaged Stage does not authenticate as the Stage web origin; its narrowly
+accepted opaque `null` Origin is transport metadata under ADR 0035.
 
 Secrets are configured with Wrangler and never placed in `wrangler.jsonc`, a
 request URL, application envelope, log, or committed file. The raw Host proof
@@ -94,12 +124,11 @@ responses contain it only in the non-cacheable HTTPS response.
 
 ## Remaining External-Test Gates
 
-- an edge guard for invalid session-create and join traffic
 - reconnect acceptance across real Durable Object hibernation
 - automated alarm expiry and deletion evidence
 - physical Host, webOS Stage, and two-iOS-Companion conformance
-- the approved `api.test.guiltyparty.app` deployment, exact Host/Stage origins,
-  named-tester notice, and explicit final owner approval
+- the approved `api.test.guiltyparty.app` deployment, packaged Stage Origin and
+  subprotocol evidence, named-tester notice, and explicit final owner approval
 
 Until those pass, local runtime tests use synthetic aliases and the committed
 original scenario only.

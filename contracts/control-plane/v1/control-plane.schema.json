@@ -337,7 +337,7 @@
         }
       }
     },
-    "RemoteNativeJoinResponse": {
+    "RemoteBearerJoinResponseBase": {
       "allOf": [
         {
           "$ref": "#/$defs/JoinResponse"
@@ -351,7 +351,8 @@
           ],
           "properties": {
             "authority_transport": {
-              "const": "bearer"
+              "type": "string",
+              "pattern": "^bearer$"
             },
             "authority_expires_at_unix_ms": {
               "type": "integer",
@@ -367,6 +368,42 @@
         }
       ]
     },
+    "RemoteNativeJoinResponse": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/RemoteBearerJoinResponseBase"
+        },
+        {
+          "type": "object",
+          "required": ["websocket_transport"],
+          "properties": {
+            "websocket_transport": {
+              "const": "authorization_header"
+            }
+          }
+        }
+      ]
+    },
+    "RemotePackagedStageJoinResponse": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/RemoteBearerJoinResponseBase"
+        },
+        {
+          "type": "object",
+          "required": ["websocket_transport", "websocket_ticket_endpoint"],
+          "properties": {
+            "websocket_transport": {
+              "const": "ticket_subprotocol"
+            },
+            "websocket_ticket_endpoint": {
+              "type": "string",
+              "pattern": "^/api/v1/websocket-tickets$"
+            }
+          }
+        }
+      ]
+    },
     "RemoteBrowserJoinResponse": {
       "type": "object",
       "required": [
@@ -376,6 +413,7 @@
         "room_id",
         "participant_id",
         "authority_transport",
+        "websocket_transport",
         "authority_expires_at_unix_ms",
         "primary_authority_generation"
       ],
@@ -404,8 +442,12 @@
           "description": "Null for a Stage join; an opaque participant identifier for a participant join."
         },
         "authority_transport": {
-          "const": "cookie",
+          "type": "string",
+          "pattern": "^cookie$",
           "description": "Browser authority is delivered as Secure, HttpOnly, SameSite=Strict."
+        },
+        "websocket_transport": {
+          "const": "cookie"
         },
         "authority_expires_at_unix_ms": {
           "type": "integer",
@@ -425,9 +467,34 @@
           "$ref": "#/$defs/RemoteNativeJoinResponse"
         },
         {
+          "$ref": "#/$defs/RemotePackagedStageJoinResponse"
+        },
+        {
           "$ref": "#/$defs/RemoteBrowserJoinResponse"
         }
       ]
+    },
+    "RealtimeConnectTicketResponse": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "websocket_subprotocol",
+        "ticket_expires_at_unix_ms"
+      ],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "websocket_subprotocol": {
+          "$ref": "#/$defs/Token",
+          "description": "Short-lived, single-use packaged Stage credential offered alongside the control WebSocket subprotocol."
+        },
+        "ticket_expires_at_unix_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
     },
     "ErrorBody": {
       "type": "object",
