@@ -302,6 +302,9 @@ def compare_committed(outputs: dict[str, Path]) -> None:
 
 def replace_committed(outputs: dict[str, Path]) -> None:
     staged: list[tuple[Path, Path]] = []
+    backups: dict[Path, Path | None] = {}
+    replaced: list[Path] = []
+    preserved_backups: set[Path] = set()
     try:
         for language, generated in outputs.items():
             destination = COMMITTED_OUTPUTS[language]
@@ -310,12 +313,55 @@ def replace_committed(outputs: dict[str, Path]) -> None:
                 prefix=f".{destination.name}.", dir=destination.parent, delete=False
             ) as temporary:
                 temporary.write(generated.read_bytes())
-                staged.append((Path(temporary.name), destination))
+                staged_path = Path(temporary.name)
+                staged.append((staged_path, destination))
+            if destination.is_file():
+                os.chmod(staged_path, destination.stat().st_mode)
+                with tempfile.NamedTemporaryFile(
+                    prefix=f".{destination.name}.backup.",
+                    dir=destination.parent,
+                    delete=False,
+                ) as backup:
+                    backup.write(destination.read_bytes())
+                    backup_path = Path(backup.name)
+                os.chmod(backup_path, destination.stat().st_mode)
+                backups[destination] = backup_path
+            else:
+                os.chmod(staged_path, 0o644)
+                backups[destination] = None
         for temporary, destination in staged:
             os.replace(temporary, destination)
+            replaced.append(destination)
+    except OSError as replacement_error:
+        rollback_errors = []
+        for destination in reversed(replaced):
+            backup = backups[destination]
+            try:
+                if backup is None:
+                    destination.unlink(missing_ok=True)
+                else:
+                    os.replace(backup, destination)
+            except OSError as rollback_error:
+                recovery = ""
+                if backup is not None:
+                    preserved_backups.add(backup)
+                    recovery = f"; original preserved at {backup}"
+                rollback_errors.append(
+                    f"{destination}: {rollback_error}{recovery}"
+                )
+        if rollback_errors:
+            details = "; ".join(rollback_errors)
+            raise RuntimeError(
+                "mobile contract replacement failed and rollback was incomplete: "
+                f"{details}"
+            ) from replacement_error
+        raise
     finally:
         for temporary, _ in staged:
             temporary.unlink(missing_ok=True)
+        for backup in backups.values():
+            if backup is not None and backup not in preserved_backups:
+                backup.unlink(missing_ok=True)
 
 
 def main(command_line: list[str] | None = None) -> int:
@@ -362,7 +408,7 @@ def main(command_line: list[str] | None = None) -> int:
     print(swift_result)
     print(kotlin_result)
     if arguments.mode == "generate":
-        print("Committed mobile contract outputs updated atomically.")
+        print("Committed mobile contract outputs updated with rollback protection.")
     elif arguments.mode == "check":
         print("Committed mobile contract outputs match deterministic generation.")
     print("Disposable generated and compiled output removed.")

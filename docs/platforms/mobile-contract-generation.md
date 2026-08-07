@@ -47,9 +47,12 @@ byte-identical output, reject forbidden behavior markers, compile with warnings
 as errors, and run all 22 shared and derived compatibility cases. Temporary
 source, harness, compiler, and executable artifacts are deleted afterward.
 
-Generation stages both verified files beside their destinations before using
-atomic file replacement. A validation or compiler failure leaves the committed
-outputs untouched.
+Generation stages both verified files and rollback backups beside their
+destinations before using per-file atomic replacement. A validation or compiler
+failure leaves the committed outputs untouched. If a later replacement fails,
+the command restores any earlier output before returning the error. If that
+restoration also fails, the command preserves the original as a hidden backup
+beside its destination and reports the recovery path.
 
 ## Generated Files
 

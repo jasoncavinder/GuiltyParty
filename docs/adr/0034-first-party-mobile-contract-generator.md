@@ -100,8 +100,10 @@ The generation integration slice will add these root commands:
 
 - `make generate-mobile-contracts` validates the canonical schema and fixtures,
   builds the locked first-party generator offline, generates both languages in
-  a temporary directory, verifies both outputs, and atomically replaces the two
-  committed files only after every step succeeds.
+  a temporary directory, verifies both outputs, and replaces each committed file
+  atomically only after every step succeeds. If a later replacement fails, the
+  command restores every earlier file from a staged backup before returning the
+  error.
 - `make check-mobile-contracts` performs the same offline generation into a
   temporary directory and fails when either result differs from its committed
   output. It never modifies the worktree.

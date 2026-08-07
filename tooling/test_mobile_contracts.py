@@ -97,6 +97,105 @@ class MobileContractIntegrationTests(unittest.TestCase):
                 [path for path in directory.rglob(".*") if path.is_file()], []
             )
 
+    def test_generate_rolls_back_when_second_replace_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            generated = {
+                "swift": directory / "new.swift",
+                "kotlin": directory / "new.kt",
+            }
+            committed = {
+                "swift": directory / "swift" / "committed.swift",
+                "kotlin": directory / "kotlin" / "committed.kt",
+            }
+            generated["swift"].write_bytes(b"new swift\n")
+            generated["kotlin"].write_bytes(b"new kotlin\n")
+            for path, content in (
+                (committed["swift"], b"old swift\n"),
+                (committed["kotlin"], b"old kotlin\n"),
+            ):
+                path.parent.mkdir(parents=True)
+                path.write_bytes(content)
+
+            real_replace = mobile_contracts.os.replace
+            replace_calls = 0
+
+            def fail_second_replace(source: Path, destination: Path) -> None:
+                nonlocal replace_calls
+                replace_calls += 1
+                if replace_calls == 2:
+                    raise OSError("synthetic second replacement failure")
+                real_replace(source, destination)
+
+            with (
+                mock.patch.object(mobile_contracts, "COMMITTED_OUTPUTS", committed),
+                mock.patch.object(
+                    mobile_contracts.os,
+                    "replace",
+                    side_effect=fail_second_replace,
+                ),
+                self.assertRaisesRegex(OSError, "synthetic second replacement failure"),
+            ):
+                mobile_contracts.replace_committed(generated)
+
+            self.assertEqual(committed["swift"].read_bytes(), b"old swift\n")
+            self.assertEqual(committed["kotlin"].read_bytes(), b"old kotlin\n")
+            self.assertEqual(
+                [path for path in directory.rglob(".*") if path.is_file()], []
+            )
+
+    def test_generate_preserves_backup_when_rollback_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary)
+            generated = {
+                "swift": directory / "new.swift",
+                "kotlin": directory / "new.kt",
+            }
+            committed = {
+                "swift": directory / "swift" / "committed.swift",
+                "kotlin": directory / "kotlin" / "committed.kt",
+            }
+            generated["swift"].write_bytes(b"new swift\n")
+            generated["kotlin"].write_bytes(b"new kotlin\n")
+            for path, content in (
+                (committed["swift"], b"old swift\n"),
+                (committed["kotlin"], b"old kotlin\n"),
+            ):
+                path.parent.mkdir(parents=True)
+                path.write_bytes(content)
+
+            real_replace = mobile_contracts.os.replace
+            replace_calls = 0
+
+            def fail_second_replace_and_rollback(
+                source: Path, destination: Path
+            ) -> None:
+                nonlocal replace_calls
+                replace_calls += 1
+                if replace_calls in (2, 3):
+                    raise OSError(f"synthetic replacement failure {replace_calls}")
+                real_replace(source, destination)
+
+            with (
+                mock.patch.object(mobile_contracts, "COMMITTED_OUTPUTS", committed),
+                mock.patch.object(
+                    mobile_contracts.os,
+                    "replace",
+                    side_effect=fail_second_replace_and_rollback,
+                ),
+                self.assertRaisesRegex(RuntimeError, "rollback was incomplete") as error,
+            ):
+                mobile_contracts.replace_committed(generated)
+
+            backups = list(
+                committed["swift"].parent.glob(".committed.swift.backup.*")
+            )
+            self.assertEqual(committed["swift"].read_bytes(), b"new swift\n")
+            self.assertEqual(committed["kotlin"].read_bytes(), b"old kotlin\n")
+            self.assertEqual(len(backups), 1)
+            self.assertEqual(backups[0].read_bytes(), b"old swift\n")
+            self.assertIn(str(backups[0]), str(error.exception))
+
     def test_exact_toolchain_version_parsing(self) -> None:
         swift = "swift-driver version: 1.0 Apple Swift version 6.3.3"
         kotlin = "info: kotlinc-jvm 2.4.10 (JRE 21)"
