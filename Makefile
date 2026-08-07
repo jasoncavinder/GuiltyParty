@@ -1,12 +1,12 @@
-.PHONY: setup run-server run-host run-stage build-stage check-contracts test-remote test
+.PHONY: setup run-server run-host run-stage build-stage check-contracts test-remote check-cloudflare test
 
 setup:
 	@echo "Checking dependencies..."
 	@command -v cargo > /dev/null || (echo "Rust/Cargo not found. Install it from https://rustup.rs/" && exit 1)
 	@command -v python3 > /dev/null || (echo "Python 3 is required to serve the current static Host Console." && exit 1)
-	@command -v node > /dev/null || (echo "Node.js 20 or later is required for standards contract validation." && exit 1)
+	@command -v node > /dev/null || (echo "Node.js 22 or later is required for project tooling." && exit 1)
 	@command -v npm > /dev/null || (echo "npm is required to install development tooling." && exit 1)
-	@node -e 'const major = Number(process.versions.node.split(".")[0]); if (major < 20) { console.error("Node.js 20 or later is required."); process.exit(1); }'
+	@node -e 'const major = Number(process.versions.node.split(".")[0]); if (major < 22) { console.error("Node.js 22 or later is required."); process.exit(1); }'
 	@npm ci --ignore-scripts --cache .cache/npm
 	@command -v xcodebuild > /dev/null || echo "Optional: install Xcode before creating the iOS Companion."
 	@command -v ares-package > /dev/null || echo "Optional: install LG webOS CLI before packaging the Stage."
@@ -34,6 +34,9 @@ check-contracts:
 
 test-remote:
 	@npm run --silent test:remote
+
+check-cloudflare:
+	@WRANGLER_LOG_PATH=.tmp/wrangler-check.log WRANGLER_LOG_SANITIZE=true npm run --silent cloudflare:check
 
 test:
 	@$(MAKE) check-contracts

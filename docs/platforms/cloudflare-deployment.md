@@ -2,14 +2,18 @@
 
 ## Status
 
-Preparation only. No Cloudflare resource, route, domain, database, bucket,
-namespace, secret, or CI credential is created by this document.
+Development deployment approved. The first deployment is limited to the
+synthetic `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
+`workers.dev` endpoint, and one development access-token digest. No custom
+domain, D1 database, R2 bucket, Queue, media resource, production resource, or
+CI credential is approved.
 
 The architecture is accepted in
-[ADR 0033](../adr/0033-cloudflare-remote-services.md). Deployment remains blocked
-by the owner approvals and technical gates below. The currently evaluated
-Wrangler release is not approved; see the
-[third-party component inventory](../legal/third-party-components.md#proposed-remote-deployment-tool--not-approved).
+[ADR 0033](../adr/0033-cloudflare-remote-services.md). The owner approved the
+temporary development-only Wrangler exception and recommended development
+settings on 2026-08-06. Staging and production remain blocked by the gates
+below. See the
+[third-party component inventory](../legal/third-party-components.md#remote-deployment-tool--temporary-development-exception).
 
 ## Owner Website Checklist
 
@@ -63,9 +67,10 @@ Before any Cloudflare authentication or resource mutation:
 
 1. Confirm the branch is not `main` or `dev` and is current with `origin/dev`.
 2. Run `make test` from a clean dependency install.
-3. Confirm `services/remote/wrangler.jsonc` still has `workers_dev: false`,
-   `send_metrics: false`, dependency instrumentation disabled, and persisted
-   observability disabled.
+3. Confirm `services/remote/wrangler.jsonc` has the exact
+   `guilty-party-remote-dev` name, `workers_dev: true`, `preview_urls: false`,
+   `send_metrics: false`, dependency instrumentation disabled, persisted
+   observability disabled, and no custom route.
 4. Scan the repository and generated artifact for credentials, account IDs,
    resource IDs, private data, production endpoints, and licensed content.
 5. Verify the exact approved Wrangler version and lockfile integrity, then run

@@ -2,9 +2,11 @@
 
 ## Status
 
-Point-in-time evaluation as of 2026-08-06. This document does not approve or
-add a dependency. Adoption still requires the complete intake and explicit
-owner decision required by [ADR 0025](../adr/0025-third-party-dependency-governance.md).
+Point-in-time evaluation as of 2026-08-06. The owner approved a temporary,
+development-only exception for the exact Wrangler and Undici combination below.
+It is not approved for production, product redistribution, or CI deployment
+authority. Any version or graph change requires renewed intake under
+[ADR 0025](../adr/0025-third-party-dependency-governance.md).
 
 ## Scope
 
@@ -23,7 +25,9 @@ testing pool, telemetry SDK, or Cloudflare service client package.
 
 ### Wrangler 4.119.0
 
-- **Candidate only:** not approved or installed in Guilty Party
+- **Development-only exception:** exact package and override approved and
+  installed as repository development tooling; production and CI deployment
+  remain prohibited
 - **Package:** exact development dependency `wrangler@4.119.0`
 - **Publisher and source:** Cloudflare, in the
   [workers-sdk repository](https://github.com/cloudflare/workers-sdk)
@@ -74,12 +78,12 @@ and its declared license is MIT. However, Miniflare pins 7.28.0 rather than a
 compatible range. Overriding the pin without Cloudflare compatibility evidence
 would make Guilty Party responsible for an unreviewed combination.
 
-**Recommendation:** do not adopt Wrangler 4.119.0 as currently resolved. Wait
-for a Cloudflare release that resolves the Undici advisories, then repeat the
-full locked-graph, license, script, binary, behavior, and audit review. A
-temporary override should be considered only as a time-bounded local spike with
-explicit owner approval; it must not become the deployment or CI baseline on
-the evidence currently available.
+**Temporary decision:** do not use Wrangler 4.119.0 with its unmodified graph.
+The repository temporarily pins Wrangler 4.119.0 and overrides only Undici to
+exact 7.29.0 for owner-operated development builds and the approved synthetic
+development deployment. Installs keep scripts disabled. This exception must be
+removed or re-reviewed when Cloudflare publishes a suitable patched release and
+must not become the production or CI deployment baseline.
 
 ### Owner-Approved Isolated Override Spike
 
@@ -106,10 +110,12 @@ also exposed a redundant close-frame echo that attempted to send reserved code
 `1006`; the service removed that handler, and the corrected runtime smoke test
 shut down without an exception.
 
-This evidence reduces compatibility uncertainty but does not approve the
-override for repository adoption, Cloudflare authentication, deployment, or CI.
-The Miniflare pin remains overridden, native-package notice reconciliation is
-unfinished, and production-like rollback and removal have not been exercised.
+This evidence supported the owner's subsequent repository-adoption and first
+synthetic-development-deployment exception. The Miniflare pin remains
+overridden, native-package notice reconciliation is limited to internal
+development use, and production-like rollback and removal have not been
+exercised. CI receives the locked development graph for tests but receives no
+Cloudflare credential or deployment authority.
 
 Advisory references:
 
@@ -149,17 +155,18 @@ Official references:
 - [Durable Object class exports](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/)
 - [Cloudflare dependency-instrumentation notice](https://developers.cloudflare.com/changelog/post/2026-07-07-wrangler-deploy-upload-dependencies-metadata/)
 
-## Proposed Adoption Test
+## Adoption and Deployment Test
 
-After a clean candidate release passes renewed intake:
+The temporary exception follows this sequence:
 
-1. add only exact pinned development dependencies and a committed lockfile
+1. add only the exact pinned development dependencies and committed lockfile
 2. install with scripts disabled into an empty cache and reconcile actual files
 3. prove config validation and a no-network dry-run build
 4. run `workerd` locally against `/health`, `/api/protocol`, fail-closed join,
    WebSocket negotiation, hibernation, SQLite schema, replay, and idempotency
 5. inspect process, file, log, and network behavior with no Cloudflare login
-6. authenticate by browser OAuth with keychain storage only after owner approval
+6. authenticate by browser OAuth with keychain storage only for the approved
+   human development deploy
 7. deploy the synthetic development environment with automatic resource
    provisioning disabled and no production resource identifiers
 8. export and remove the test deployment to prove rollback and removal

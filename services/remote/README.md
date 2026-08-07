@@ -46,11 +46,12 @@ The test suite does not contact Cloudflare or require an account.
 
 ## Configuration Safety
 
-`wrangler.jsonc` contains only a local binding shape. It deliberately disables a
-`workers.dev` route, Wrangler usage metrics, dependency instrumentation, and
-persisted Worker observability. It includes no account ID, resource ID, token,
-database, bucket, domain, or secret. Do not enable deployment until the
-owner-gated steps in the architecture document are complete.
+`wrangler.jsonc` declares the approved synthetic development Worker
+`guilty-party-remote-dev`. It enables only its `workers.dev` endpoint, disables
+preview URLs, Wrangler usage metrics, dependency instrumentation, and persisted
+Worker observability, and includes no account ID, resource ID, token, database,
+bucket, custom domain, or secret. It is not a staging or production
+configuration.
 
 The temporary development WebSocket boundary expects:
 

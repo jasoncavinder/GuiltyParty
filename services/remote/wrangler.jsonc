@@ -1,8 +1,10 @@
 {
-  "name": "guilty-party-remote-development",
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "guilty-party-remote-dev",
   "main": "src/worker.js",
   "compatibility_date": "2026-08-06",
-  "workers_dev": false,
+  "workers_dev": true,
+  "preview_urls": false,
   "send_metrics": false,
   "dependencies_instrumentation": {
     "enabled": false

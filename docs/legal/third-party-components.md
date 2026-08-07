@@ -184,12 +184,15 @@ Before invitation-only external beta:
 Do not infer approval from a prior informal note, a package metadata label, a
 successful build, or this pending table.
 
-## Proposed Remote Deployment Tool — Not Approved
+## Remote Deployment Tool — Temporary Development Exception
 
 ### Wrangler 4.119.0
 
-- **Status:** Proposed; blocked from installation and use pending a patched
-  dependency graph and explicit owner approval.
+- **Status:** Exact `wrangler@4.119.0` plus exact `undici@7.29.0` override
+  approved by the owner on 2026-08-06 for internal development builds and the
+  first synthetic development deployment only. Production deployment,
+  product bundling, redistribution, and Cloudflare CI credentials are not
+  approved.
 - **Category and risk:** Elevated development, deployment, credential, remote-
   configuration, build-execution, and native-binary tool.
 - **Purpose and alternatives:** Build and locally emulate the first-party Worker
@@ -204,9 +207,9 @@ successful build, or this pending table.
   [cloudflare/workers-sdk](https://github.com/cloudflare/workers-sdk). Official
   installation and configuration guidance is in the
   [Cloudflare Wrangler documentation](https://developers.cloudflare.com/workers/wrangler/install-and-update/).
-- **Package coordinates and exact proposed version:** `wrangler@4.119.0`,
-  published 2026-08-05, requiring Node.js 22 or later. It is **not present** in
-  `package.json` or `package-lock.json`.
+- **Package coordinates and exact approved exception:** `wrangler@4.119.0`,
+  published 2026-08-05, requiring Node.js 22 or later, with root npm override
+  `undici@7.29.0`. Both are pinned in `package.json` and `package-lock.json`.
 - **Provenance and integrity evidence:** npm registry integrity
   `sha512-ookClf+zly4DTc8pBMNrwGQzZKH8IpIYTXkjDw3XS7ZvBQ5mLYH6eOvfD5BEpk3U63zTbv91WRlo1UeRSKXa0g==`;
   registry tarball `wrangler-4.119.0.tgz`; canonical repository is the public
@@ -247,9 +250,10 @@ successful build, or this pending table.
   response desynchronization, cache-related information disclosure and crash,
   CRLF injection, and cookie attribute injection advisories for versions before
   `7.29.0`. The registry's suggested downgrade is not accepted as a safe fix.
-  Wrangler 4.119.0 must not enter the repository until Cloudflare publishes a
-  suitable patched graph or a separately reviewed exact override passes source,
-  compatibility, local-runtime, deployment, and rollback tests.
+  The separately reviewed exact override passed source, audit, bundle, and local
+  runtime checks and is temporarily admitted for the narrow development scope.
+  It must be removed or re-reviewed when Cloudflare publishes a suitable patched
+  graph; production deployment and rollback approval remain closed.
 - **Privacy and store impact:** Development/CI only; it must not be bundled into
   the Worker, browser, webOS, iOS, Android, or other product artifact. No
   gameplay, participant, private scenario, or production database content may
@@ -270,10 +274,11 @@ successful build, or this pending table.
   runtime SBOM.
 - **Reviewer and explicit owner decision:** Technical intake prepared by Codex
   on 2026-08-06. The owner approved only the documented local, time-bounded
-  `undici@7.29.0` override spike on 2026-08-06. Repository adoption,
-  authentication, deployment, CI use, and redistribution remain unapproved; no
-  broader approval is inferred from the spike or accepted Cloudflare
-  architecture.
+  `undici@7.29.0` override spike on 2026-08-06 and subsequently approved the
+  exact locked combination for repository adoption, owner browser
+  authentication, and the first synthetic development deployment. Production,
+  product redistribution, version changes, and CI Cloudflare authority remain
+  unapproved.
 - **Review triggers and exception:** Any release, transitive, native package,
   install script, advisory, telemetry, credential, endpoint, config-schema, or
   deployment-authority change requires renewed review. No exception is
