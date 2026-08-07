@@ -73,6 +73,10 @@ The current slice proves:
 - Secure, HttpOnly browser authority and native bearer authority
 - packaged webOS Stage memory-only bearer authority with registered,
   30-second, single-use realtime connect tickets
+- a separate 120-second Stage pairing coordinator that stores only polling
+  digests and minimal endpoint/approval metadata before idempotent session
+  admission; the authoritative session revalidates live Host authority before
+  the coordinator records approval
 - Cloudflare-native pre-Durable-Object admission budgets of ten session-create
   attempts and sixty join attempts per minute per Cloudflare location, backed
   by the existing exact per-session join limit
@@ -101,6 +105,7 @@ authority, storage, replay, or projection continues to fail closed.
 | Live session journal and sequence | Session Durable Object SQLite | Only canonical writer for the session. |
 | Current scenario state | Rebuilt by `gp_scenario` from the journal | Cacheable, never an independent truth source. |
 | WebSocket connection state | Session Durable Object runtime | Reconstructable; hibernation attachment excludes secrets. |
+| Pending Stage pairing | Ephemeral StagePairing Durable Object SQLite | Polling-secret digest, endpoint claims, Host approval context, bounded attempts, and 120-second expiry only. |
 | Media packets | Selected media-plane provider | Never enter the control journal by default. |
 | Retryable side effects | Queue consumer | Must not create scenario truth. |
 
@@ -161,15 +166,16 @@ arbitrary endpoint-context headers to its opening handshake. An origin
 allowlist prevents cross-origin use but does not authenticate a browser Host or
 Stage.
 
-The Remote Friends MVP HTTPS pairing flow exchanges the bounded pairing proof
-for signed, short-lived authority. Browser Host and hosted-browser Stage
-authority is carried in a Secure, HttpOnly, SameSite=Strict cookie; the iOS
-Companion uses a bearer credential. A fully packaged webOS Stage cannot use
-cookies and cannot attach an Authorization header to a standard WebSocket. It
-therefore keeps primary bearer authority in memory and exchanges it over HTTPS
-for a 30-second, single-use ticket offered as a secondary WebSocket
-subprotocol. The Durable Object stores only its digest and atomically consumes
-it with current endpoint-authority validation before accepting the socket.
+Participant invitation pairing exchanges the bounded invitation proof for
+signed, short-lived authority. Browser authority is carried in a Secure,
+HttpOnly, SameSite=Strict cookie; the iOS Companion uses a bearer credential.
+A fully packaged webOS Stage instead uses a separate 120-second display-code
+transaction: the code locates the coordinator, the Host explicitly approves
+it, and only the Stage's high-entropy polling secret can redeem it. The Stage
+then keeps primary bearer authority in memory and exchanges it over HTTPS for a
+30-second, single-use ticket offered as a secondary WebSocket subprotocol. The
+session Durable Object stores only the ticket digest and atomically consumes it
+with current endpoint-authority validation before accepting the socket.
 
 The server binds authority to the session, endpoint, audience, participant
 where applicable, authority generation, expiry, and exact browser origin where
@@ -183,11 +189,12 @@ envelopes, Durable Object names, and browser-readable persistent storage. See
 ## Admission Abuse Boundary
 
 After cheap origin, credential-shape, and request-body validation, the Worker
-invokes separate Cloudflare Rate Limiting bindings before session creation or
-join can allocate or address a Durable Object. The development budgets are ten
+invokes separate Cloudflare Rate Limiting bindings before session creation,
+join, or Stage pairing can allocate or address a Durable Object. The development budgets are ten
 authenticated Host session-create attempts per 60 seconds using a Host-class
 key and sixty join attempts per 60 seconds using the SHA-256 digest of the
-opaque session identifier as the resource key. Neither key contains a network
+opaque session identifier as the resource key, plus 120 Stage pairing operations
+per minute per operation or transaction digest. No key contains a network
 address or participant identifier. Cloudflare's binding is permissive,
 eventually consistent, and local to each serving location, so it is coarse cost
 protection rather than authorization or exact accounting. The session Durable

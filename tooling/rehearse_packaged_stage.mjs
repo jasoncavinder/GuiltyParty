@@ -23,9 +23,15 @@ const created = await fetch(new URL("/api/v1/sessions", baseUrl), {
   },
   body: JSON.stringify({
     protocol_version: "1.0",
+    gameplay_language: "en",
     endpoint: {
       platform: "browser",
       capabilities: ["host_control", "private_display"],
+      client_build: {
+        application_id: "host_web",
+        application_version: "0.1.0",
+        build_number: 1,
+      },
     },
   }),
 });
@@ -35,29 +41,82 @@ const hostCookie = setCookie?.split(";", 1)[0] ?? null;
 let rehearsalError = null;
 try {
   assert.match(hostCookie, /^__Host-gp_authority=.+/u, "Host authority cookie is required");
-  const session = await created.json();
+  await created.body?.cancel();
 
-  const joined = await fetch(new URL("/api/v1/join", baseUrl), {
+  const pairingResponse = await fetch(new URL("/api/v1/stage-pairings", baseUrl), {
     method: "POST",
     headers: {
-      Authorization: `Pairing ${session.pairing_code}`,
-      "X-GP-Session-ID": session.session_id,
       Origin: "null",
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       protocol_version: "1.0",
-      kind: "stage",
-      endpoint: { platform: "webos", capabilities: ["public_display"] },
+      endpoint: {
+        platform: "webos",
+        capabilities: ["public_display"],
+        client_build: {
+          application_id: "stage_webos",
+          application_version: "0.1.0",
+          build_number: 1,
+        },
+      },
     }),
   });
-  await requireStatus(joined, 200, "packaged Stage join");
+  await requireStatus(pairingResponse, 201, "packaged Stage pairing creation");
+  const pairing = await pairingResponse.json();
+  assert.match(pairing.pairing_code, /^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$/u);
+  assert.ok(pairing.expires_at_unix_ms - Date.now() <= 120_000);
+
+  const pending = await fetch(new URL(pairing.redeem_path, baseUrl), {
+    method: "POST",
+    headers: {
+      Authorization: `StagePairing ${pairing.polling_secret}`,
+      Origin: "null",
+    },
+  });
+  await requireStatus(pending, 202, "pending Stage pairing poll");
+  await pending.body?.cancel();
+
+  const approved = await fetch(
+    new URL(`/api/v1/stage-pairings/${pairing.pairing_code}/approve`, baseUrl),
+    {
+      method: "POST",
+      headers: { Cookie: hostCookie, Origin: hostOrigin },
+    },
+  );
+  await requireStatus(approved, 200, "Host Stage pairing approval");
+  await approved.body?.cancel();
+
+  const joined = await fetch(new URL(pairing.redeem_path, baseUrl), {
+    method: "POST",
+    headers: {
+      Authorization: `StagePairing ${pairing.polling_secret}`,
+      Origin: "null",
+    },
+  });
+  await requireStatus(joined, 200, "approved packaged Stage redemption");
   assert.equal(joined.headers.get("set-cookie"), null, "packaged Stage must not receive a cookie");
   assert.equal(joined.headers.get("access-control-allow-origin"), "null");
   assert.equal(joined.headers.get("access-control-allow-credentials"), null);
   const stage = await joined.json();
   assert.equal(stage.authority_transport, "bearer");
   assert.equal(stage.websocket_transport, "ticket_subprotocol");
+
+  const retriedRedemption = await fetch(new URL(pairing.redeem_path, baseUrl), {
+    method: "POST",
+    headers: {
+      Authorization: `StagePairing ${pairing.polling_secret}`,
+      Origin: "null",
+    },
+  });
+  await requireStatus(retriedRedemption, 200, "idempotent Stage redemption retry");
+  const retriedStage = await retriedRedemption.json();
+  assert.equal(retriedStage.endpoint_id, stage.endpoint_id);
+  assert.equal(retriedStage.room_id, stage.room_id);
+  assert.equal(
+    retriedStage.primary_authority_generation,
+    stage.primary_authority_generation,
+  );
 
   async function mintTicket() {
     const response = await fetch(new URL("/api/v1/websocket-tickets", baseUrl), {
@@ -81,7 +140,7 @@ try {
   assert.equal(await upgrade(tampered.websocket_subprotocol), 401);
 
   console.log(
-    "Packaged Stage rehearsal passed: join 200, first upgrade 101, replay 401, tamper 401.",
+    "Packaged Stage rehearsal passed: Host approval 200, idempotent redemption, first upgrade 101, replay 401, tamper 401.",
   );
 } catch (error) {
   rehearsalError = error;

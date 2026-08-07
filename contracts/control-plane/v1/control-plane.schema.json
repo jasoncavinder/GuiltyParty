@@ -278,6 +278,123 @@
       },
       "description": "Decoded GP1 invitation transfer content. The encoded payload is not a URL, authority, or durable invitation record."
     },
+    "StagePairingCode": {
+      "type": "string",
+      "pattern": "^[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}$",
+      "description": "A non-secret display code that locates a pending Stage pairing. It never grants authority."
+    },
+    "StagePairingCreateRequest": {
+      "type": "object",
+      "required": ["protocol_version", "endpoint"],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "endpoint": {
+          "$ref": "#/$defs/EndpointRegistration"
+        }
+      }
+    },
+    "StagePairingCreateResponse": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "pairing_code",
+        "polling_secret",
+        "redeem_path",
+        "expires_at_unix_ms",
+        "poll_after_ms"
+      ],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "pairing_code": {
+          "$ref": "#/$defs/StagePairingCode"
+        },
+        "polling_secret": {
+          "type": "string",
+          "minLength": 32,
+          "maxLength": 128,
+          "writeOnly": true,
+          "description": "High-entropy redemption secret kept only in packaged Stage process memory."
+        },
+        "redeem_path": {
+          "type": "string",
+          "pattern": "^/api/v1/stage-pairings/[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}/redeem$"
+        },
+        "expires_at_unix_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "poll_after_ms": {
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 10000
+        }
+      }
+    },
+    "StagePairingApprovalResponse": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "action",
+        "pairing_code",
+        "status",
+        "duplicate",
+        "expires_at_unix_ms"
+      ],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "action": {
+          "const": "approve_stage_pairing"
+        },
+        "pairing_code": {
+          "$ref": "#/$defs/StagePairingCode"
+        },
+        "status": {
+          "const": "approved"
+        },
+        "duplicate": {
+          "type": "boolean"
+        },
+        "expires_at_unix_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "StagePairingPendingResponse": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "status",
+        "expires_at_unix_ms",
+        "retry_after_ms"
+      ],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "status": {
+          "const": "pending"
+        },
+        "expires_at_unix_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "retry_after_ms": {
+          "type": "integer",
+          "minimum": 500,
+          "maximum": 10000
+        }
+      }
+    },
     "RotateInvitationResponse": {
       "type": "object",
       "required": [

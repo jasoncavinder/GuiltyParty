@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Guilty Party Control Plane",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "description": "Protocol v1 HTTP operations. JSON Schema in contracts/control-plane/v1 is authoritative for payload shapes."
   },
   "servers": [
@@ -250,6 +250,123 @@
           "503": {
             "$ref": "#/components/responses/Problem"
           }
+        }
+      }
+    },
+    "/api/v1/stage-pairings": {
+      "post": {
+        "operationId": "createPackagedStagePairing",
+        "summary": "Create a short-lived packaged Stage pairing transaction",
+        "description": "Requires the opaque packaged-app Origin value and no existing authority. The display code is non-secret; the polling secret remains only in Stage process memory.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/StagePairingCreateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "A 120-second Stage pairing transaction was created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/StagePairingCreateResponse"
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "409": { "$ref": "#/components/responses/Problem" },
+          "413": { "$ref": "#/components/responses/Problem" },
+          "429": { "$ref": "#/components/responses/Problem" },
+          "503": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/v1/stage-pairings/{pairing_code}/approve": {
+      "post": {
+        "operationId": "approvePackagedStagePairing",
+        "summary": "Approve a displayed Stage code for the Host's session",
+        "parameters": [
+          {
+            "name": "pairing_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/StagePairingCode"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The Host approved this Stage pairing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/StagePairingApprovalResponse"
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "404": { "$ref": "#/components/responses/Problem" },
+          "409": { "$ref": "#/components/responses/Problem" },
+          "410": { "$ref": "#/components/responses/Problem" },
+          "429": { "$ref": "#/components/responses/Problem" },
+          "503": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/v1/stage-pairings/{pairing_code}/redeem": {
+      "post": {
+        "operationId": "redeemPackagedStagePairing",
+        "summary": "Poll or redeem an approved packaged Stage pairing",
+        "description": "Requires Authorization: StagePairing with the high-entropy polling secret and the opaque packaged-app Origin. A pending response discloses no session context.",
+        "parameters": [
+          {
+            "name": "pairing_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/StagePairingCode"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The approved Stage endpoint authority was issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/RemoteFriendsJoinResponse"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "The transaction is valid and awaiting Host approval",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/StagePairingPendingResponse"
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/Problem" },
+          "401": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "404": { "$ref": "#/components/responses/Problem" },
+          "409": { "$ref": "#/components/responses/Problem" },
+          "410": { "$ref": "#/components/responses/Problem" },
+          "429": { "$ref": "#/components/responses/Problem" },
+          "503": { "$ref": "#/components/responses/Problem" }
         }
       }
     },

@@ -38,6 +38,14 @@
         "limit": 60,
         "period": 60
       }
+    },
+    {
+      "name": "STAGE_PAIRING_RATE_LIMITER",
+      "namespace_id": "1003",
+      "simple": {
+        "limit": 120,
+        "period": 60
+      }
     }
   ],
   "durable_objects": {
@@ -45,11 +53,19 @@
       {
         "name": "GAME_SESSIONS",
         "class_name": "GameSession"
+      },
+      {
+        "name": "STAGE_PAIRINGS",
+        "class_name": "StagePairing"
       }
     ]
   },
   "exports": {
     "GameSession": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    },
+    "StagePairing": {
       "type": "durable-object",
       "storage": "sqlite"
     }

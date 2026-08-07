@@ -10,6 +10,8 @@ import {
   PROTOCOL_VERSION,
   SESSION_ACTIVE_DURATION_MS,
   SESSION_RETENTION_MS,
+  STAGE_PAIRING_DURATION_MS,
+  STAGE_PAIRING_POLL_AFTER_MS,
   WEBSOCKET_TICKET_DURATION_MS,
   WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
 } from "./constants.js";
@@ -90,6 +92,41 @@ export default {
         return withCors(methodNotAllowed("POST"), request, env);
       }
       return withCors(await joinSession(request, env), request, env);
+    }
+
+    if (url.pathname === "/api/v1/stage-pairings") {
+      if (request.method !== "POST") {
+        return withCors(methodNotAllowed("POST"), request, env);
+      }
+      return withCors(await createStagePairing(request, env), request, env);
+    }
+
+    const stagePairingApproval = url.pathname.match(
+      /^\/api\/v1\/stage-pairings\/([A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4})\/approve$/u,
+    );
+    if (stagePairingApproval) {
+      if (request.method !== "POST") {
+        return withCors(methodNotAllowed("POST"), request, env);
+      }
+      return withCors(
+        await approveStagePairing(request, env, stagePairingApproval[1]),
+        request,
+        env,
+      );
+    }
+
+    const stagePairingRedemption = url.pathname.match(
+      /^\/api\/v1\/stage-pairings\/([A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4})\/redeem$/u,
+    );
+    if (stagePairingRedemption) {
+      if (request.method !== "POST") {
+        return withCors(methodNotAllowed("POST"), request, env);
+      }
+      return withCors(
+        await redeemStagePairing(request, env, stagePairingRedemption[1]),
+        request,
+        env,
+      );
     }
 
     if (url.pathname === "/api/v1/websocket-tickets") {
@@ -262,6 +299,11 @@ async function joinSession(request, env) {
   if (unavailable) {
     return unavailable;
   }
+  if (request.headers.get("Origin") === "null") {
+    return problemResponse(409, "stage_pairing_required", "Host-approved Stage pairing required", {
+      retryable: false,
+    });
+  }
   const sessionId = request.headers.get("X-GP-Session-ID") ?? "";
   if (!SESSION_IDENTIFIER_PATTERN.test(sessionId)) {
     return problemResponse(400, "invalid_session_context", "Invalid session context", {
@@ -375,6 +417,249 @@ async function joinSession(request, env) {
         : undefined,
     },
   );
+}
+
+async function createStagePairing(request, env) {
+  const unavailable = stagePairingServiceUnavailable(env);
+  if (unavailable) {
+    return unavailable;
+  }
+  if (
+    request.headers.get("Origin") !== "null" ||
+    request.headers.has("Cookie") ||
+    request.headers.has("Authorization")
+  ) {
+    return problemResponse(403, "packaged_stage_transport_required", "Packaged Stage transport required", {
+      retryable: false,
+    });
+  }
+  const parsed = await readJsonObject(request);
+  if (!parsed.ok) {
+    return parsed.response;
+  }
+  if (!validStagePairingRequest(parsed.value)) {
+    return problemResponse(400, "invalid_stage_pairing_request", "Invalid Stage pairing request", {
+      retryable: false,
+    });
+  }
+  const buildAdmission = clientBuildAdmission(parsed.value.endpoint.client_build, env);
+  if (buildAdmission) {
+    return buildAdmission;
+  }
+  const edgeLimit = await consumeEdgeLimit(env.STAGE_PAIRING_RATE_LIMITER, "create");
+  if (!edgeLimit.ok) {
+    return edgeLimit.response;
+  }
+  const now = Date.now();
+  const expiresAtUnixMs = now + STAGE_PAIRING_DURATION_MS;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const pairingCode = randomStagePairingCode();
+    const pollingSecret = randomSecret(24);
+    const response = await stagePairingStub(env, pairingCode).fetch(
+      "https://stage-pairing.internal/internal/stage-pairing/create",
+      {
+        method: "POST",
+        headers: internalHeaders(),
+        body: JSON.stringify({
+          transaction_id: randomIdentifier("stp"),
+          polling_digest: await sha256Hex(pollingSecret),
+          endpoint: parsed.value.endpoint,
+          created_at_unix_ms: now,
+          expires_at_unix_ms: expiresAtUnixMs,
+        }),
+      },
+    );
+    if (response.status === 409) {
+      continue;
+    }
+    if (!response.ok) {
+      return safeInternalFailure(response, "stage_pairing_failed", "Stage pairing unavailable");
+    }
+    return jsonResponse(
+      {
+        protocol_version: PROTOCOL_VERSION,
+        pairing_code: pairingCode,
+        polling_secret: pollingSecret,
+        redeem_path: `/api/v1/stage-pairings/${pairingCode}/redeem`,
+        expires_at_unix_ms: expiresAtUnixMs,
+        poll_after_ms: STAGE_PAIRING_POLL_AFTER_MS,
+      },
+      { status: 201 },
+    );
+  }
+  return problemResponse(503, "stage_pairing_code_unavailable", "Stage pairing unavailable", {
+    retryable: true,
+  });
+}
+
+async function approveStagePairing(request, env, pairingCode) {
+  const unavailable = stagePairingServiceUnavailable(env);
+  if (unavailable) {
+    return unavailable;
+  }
+  if (!requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
+    return problemResponse(403, "origin_not_allowed", "Origin not allowed", { retryable: false });
+  }
+  const resolved = await resolveFriendsAuthority(request, env);
+  if (!resolved.ok || resolved.authority?.audience !== "host") {
+    return problemResponse(403, "host_authority_required", "Host authority required", {
+      retryable: false,
+    });
+  }
+  const edgeLimit = await consumeEdgeLimit(
+    env.STAGE_PAIRING_RATE_LIMITER,
+    `approve:${await sha256Hex(resolved.authority.sessionId)}`,
+  );
+  if (!edgeLimit.ok) {
+    return edgeLimit.response;
+  }
+  const authorityResponse = await sessionStub(env, resolved.authority.sessionId).fetch(
+    "https://session.internal/internal/session/authorize-stage-pairing",
+    {
+      method: "POST",
+      headers: internalAuthorityHeaders(resolved.authority),
+    },
+  );
+  if (!authorityResponse.ok) {
+    return safeInternalFailure(
+      authorityResponse,
+      "stage_pairing_approval_failed",
+      "Stage pairing approval failed",
+    );
+  }
+  const response = await stagePairingStub(env, pairingCode).fetch(
+    "https://stage-pairing.internal/internal/stage-pairing/approve",
+    {
+      method: "POST",
+      headers: internalHeaders(),
+      body: JSON.stringify({
+        session_id: resolved.authority.sessionId,
+        host_endpoint_id: resolved.authority.endpointId,
+        now_unix_ms: Date.now(),
+      }),
+    },
+  );
+  if (!response.ok) {
+    return safeInternalFailure(response, "stage_pairing_approval_failed", "Stage pairing approval failed");
+  }
+  const result = await response.json();
+  return jsonResponse({
+    protocol_version: PROTOCOL_VERSION,
+    action: "approve_stage_pairing",
+    pairing_code: pairingCode,
+    status: "approved",
+    duplicate: result.duplicate === true,
+    expires_at_unix_ms: result.expires_at_unix_ms,
+  });
+}
+
+async function redeemStagePairing(request, env, pairingCode) {
+  const unavailable = stagePairingServiceUnavailable(env);
+  if (unavailable) {
+    return unavailable;
+  }
+  if (request.headers.get("Origin") !== "null" || request.headers.has("Cookie")) {
+    return problemResponse(403, "packaged_stage_transport_required", "Packaged Stage transport required", {
+      retryable: false,
+    });
+  }
+  const authorization = request.headers.get("Authorization") ?? "";
+  if (!authorization.startsWith("StagePairing ")) {
+    return problemResponse(401, "invalid_stage_pairing_secret", "Invalid Stage pairing secret", {
+      retryable: false,
+    });
+  }
+  const pollingSecret = authorization.slice("StagePairing ".length);
+  if (pollingSecret.length < 32 || pollingSecret.length > 128) {
+    return problemResponse(401, "invalid_stage_pairing_secret", "Invalid Stage pairing secret", {
+      retryable: false,
+    });
+  }
+  const edgeLimit = await consumeEdgeLimit(
+    env.STAGE_PAIRING_RATE_LIMITER,
+    `redeem:${await sha256Hex(pairingCode)}`,
+  );
+  if (!edgeLimit.ok) {
+    return edgeLimit.response;
+  }
+  const response = await stagePairingStub(env, pairingCode).fetch(
+    "https://stage-pairing.internal/internal/stage-pairing/redeem",
+    {
+      method: "POST",
+      headers: internalHeaders(),
+      body: JSON.stringify({
+        polling_digest: await sha256Hex(pollingSecret),
+        now_unix_ms: Date.now(),
+      }),
+    },
+  );
+  if (response.status === 202) {
+    const result = await response.json();
+    return jsonResponse(
+      {
+        protocol_version: PROTOCOL_VERSION,
+        status: "pending",
+        expires_at_unix_ms: result.expires_at_unix_ms,
+        retry_after_ms: STAGE_PAIRING_POLL_AFTER_MS,
+      },
+      { status: 202, headers: { "Retry-After": "2" } },
+    );
+  }
+  if (!response.ok) {
+    return safeInternalFailure(response, "stage_pairing_redemption_failed", "Stage pairing failed");
+  }
+  const approved = await response.json();
+  const buildAdmission = clientBuildAdmission(approved.endpoint.client_build, env);
+  if (buildAdmission) {
+    return buildAdmission;
+  }
+  const admissionNow = Date.now();
+  if (admissionNow >= approved.expires_at_unix_ms) {
+    return problemResponse(410, "stage_pairing_expired", "Stage pairing expired", {
+      retryable: false,
+    });
+  }
+  const sessionResponse = await sessionStub(env, approved.session_id).fetch(
+    "https://session.internal/internal/session/stage-pair",
+    {
+      method: "POST",
+      headers: internalHeaders(),
+      body: JSON.stringify({
+        transaction_id: approved.transaction_id,
+        endpoint: approved.endpoint,
+        now_unix_ms: admissionNow,
+      }),
+    },
+  );
+  if (!sessionResponse.ok) {
+    return safeInternalFailure(sessionResponse, "stage_pairing_admission_failed", "Stage pairing failed");
+  }
+  const admission = await sessionResponse.json();
+  const token = await issueAuthorityToken(
+    {
+      sessionId: approved.session_id,
+      endpointId: admission.endpoint_id,
+      audience: "stage",
+      participantId: null,
+      authorityGeneration: admission.authority_generation,
+      expiresAtUnixMs: admission.expires_at_unix_ms,
+      origin: null,
+    },
+    env.AUTHORITY_SIGNING_KEY,
+  );
+  return jsonResponse({
+    protocol_version: PROTOCOL_VERSION,
+    token,
+    session_id: approved.session_id,
+    endpoint_id: admission.endpoint_id,
+    room_id: admission.room_id,
+    participant_id: null,
+    authority_transport: "bearer",
+    websocket_transport: "ticket_subprotocol",
+    websocket_ticket_endpoint: "/api/v1/websocket-tickets",
+    authority_expires_at_unix_ms: admission.expires_at_unix_ms,
+    primary_authority_generation: admission.authority_generation,
+  });
 }
 
 async function createWebSocketTicket(request, env) {
@@ -614,6 +899,17 @@ function friendsServiceUnavailable(env) {
   return null;
 }
 
+function stagePairingServiceUnavailable(env) {
+  const unavailable = friendsServiceUnavailable(env);
+  if (unavailable) {
+    return unavailable;
+  }
+  if (!env.STAGE_PAIRINGS) {
+    return problemResponse(503, "stage_pairing_binding_unavailable", "Stage pairing unavailable");
+  }
+  return null;
+}
+
 async function consumeEdgeLimit(binding, key) {
   if (!binding || typeof binding.limit !== "function") {
     return {
@@ -654,6 +950,10 @@ function sessionStub(env, sessionId) {
   return env.GAME_SESSIONS.get(env.GAME_SESSIONS.idFromName(sessionId));
 }
 
+function stagePairingStub(env, pairingCode) {
+  return env.STAGE_PAIRINGS.get(env.STAGE_PAIRINGS.idFromName(pairingCode));
+}
+
 function internalHeaders(initial = {}) {
   const headers = new Headers(initial);
   headers.set("X-GP-Internal-Route", "1");
@@ -682,6 +982,8 @@ function isCredentialedApiPath(pathname) {
     pathname === "/api/v1/sessions" ||
     pathname === "/api/v1/rehearsals/lifecycle/sessions" ||
     pathname === "/api/v1/join" ||
+    pathname === "/api/v1/stage-pairings" ||
+    /^\/api\/v1\/stage-pairings\/[^/]+\/(approve|redeem)$/u.test(pathname) ||
     pathname === "/api/v1/websocket-tickets" ||
     pathname === "/api/v1/session/invitation" ||
     pathname === "/api/v1/session/end" ||
@@ -690,7 +992,12 @@ function isCredentialedApiPath(pathname) {
 }
 
 function isPackagedStageCorsPath(pathname) {
-  return pathname === "/api/v1/join" || pathname === "/api/v1/websocket-tickets";
+  return (
+    pathname === "/api/v1/join" ||
+    pathname === "/api/v1/websocket-tickets" ||
+    pathname === "/api/v1/stage-pairings" ||
+    /^\/api\/v1\/stage-pairings\/[^/]+\/redeem$/u.test(pathname)
+  );
 }
 
 function corsPreflight(request, env) {
@@ -784,6 +1091,16 @@ function validCreateSessionRequest(value) {
   );
 }
 
+function validStagePairingRequest(value) {
+  return (
+    value &&
+    value.protocol_version === PROTOCOL_VERSION &&
+    validEndpoint(value.endpoint) &&
+    value.endpoint.platform === "webos" &&
+    value.endpoint.capabilities.includes("public_display")
+  );
+}
+
 function validJoinRequest(value) {
   if (value.protocol_version !== PROTOCOL_VERSION || !validEndpoint(value.endpoint)) {
     return false;
@@ -865,4 +1182,12 @@ function randomSecret(byteLength) {
     binary += String.fromCharCode(byte);
   }
   return btoa(binary).replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/u, "");
+}
+
+function randomStagePairingCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  const bytes = new Uint8Array(8);
+  crypto.getRandomValues(bytes);
+  const characters = Array.from(bytes, (byte) => alphabet[byte % alphabet.length]);
+  return `${characters.slice(0, 4).join("")}-${characters.slice(4).join("")}`;
 }

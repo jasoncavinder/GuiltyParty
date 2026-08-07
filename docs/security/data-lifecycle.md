@@ -156,14 +156,17 @@ categories in its SQLite Durable Object:
 | Canonical journal | Participant admission, endpoint registration, character assignment, scene and clue identifiers, voting transitions, and vote target identifiers. No credential, raw pairing proof, private communication, media, transcript, or recording. | The shared deterministic engine and authorized recipient projector within the session Durable Object. | `deleteAll()` on the same schedule; replay becomes unavailable afterward in active storage. |
 | Idempotency records | Endpoint identifier, bounded idempotency identifier, canonical command fingerprint, safe result, and sequence. | The session Durable Object only. | Bounded to 256 records per endpoint and removed with session storage. |
 | Packaged Stage connect tickets | SHA-256 ticket digest, endpoint identifier, authority generation, expiry, and consumption time. No raw ticket or primary bearer. | The session Durable Object only. | Thirty-second maximum ticket validity; expired and consumed rows are pruned during issuance, bounded to 16 rows per endpoint, and removed with session storage. |
+| Pending packaged Stage pairing | Random transaction identifier, polling-secret digest, coarse endpoint claims, attempt count, non-secret display-code routing, approval session/Host endpoint context, and lifecycle times. No raw polling secret, invitation proof, bearer, scenario content, or participant data. | The ephemeral StagePairing Durable Object and gateway; the session object receives only an approved transaction and endpoint claims. | Exactly 120 seconds; every access enforces expiry and an alarm calls `deleteAll()`. The provider recovery caveat below still applies. |
 
 The raw Host bootstrap proof, authority signing key, raw endpoint authority,
-raw packaged Stage bearer, raw connect ticket, and raw pairing proof are not
-stored in the session database. Browser, iOS, and packaged Stage credential
+raw packaged Stage bearer, raw connect ticket, raw Stage polling secret, and raw
+participant invitation proof are not stored in either Durable Object database.
+Browser, iOS, and packaged Stage credential
 responses use `Cache-Control: no-store`, and persisted Worker observability is
 disabled. The Cloudflare edge admission bindings use an authenticated Host
-class key for creation and the SHA-256 digest of an opaque session identifier
-for joins, rather than a network address or participant identifier. They are
+class key for creation, the SHA-256 digest of an opaque session identifier for
+joins, and operation or transaction-digest keys for Stage pairing, rather than
+a network address or participant identifier. They are
 permissive coarse protection rather than retained identity or exact accounting.
 
 Cloudflare documents point-in-time recovery for SQLite Durable Objects across

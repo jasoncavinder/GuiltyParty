@@ -74,6 +74,12 @@ export class SqliteSessionStore {
       );
       CREATE INDEX IF NOT EXISTS websocket_tickets_endpoint
         ON websocket_tickets (endpoint_id, expires_at_unix_ms DESC);
+      CREATE TABLE IF NOT EXISTS stage_pairing_admissions (
+        transaction_id TEXT PRIMARY KEY,
+        endpoint_id TEXT NOT NULL UNIQUE,
+        room_id TEXT NOT NULL,
+        created_at_unix_ms INTEGER NOT NULL
+      );
     `);
   }
 
@@ -208,6 +214,78 @@ export class SqliteSessionStore {
         authorityGeneration: 1,
         expiresAtUnixMs: metadata.session_expires_at_unix_ms,
         serverSequence: currentSequence + canonicalEntries.length,
+      };
+    });
+  }
+
+  admitApprovedStage({ transactionId, endpoint, endpointId, roomId, nowUnixMs }) {
+    return this.storage.transactionSync(() => {
+      const metadata = this.sessionMetadata();
+      if (!metadata) {
+        return { ok: false, status: 404, code: "session_not_found", title: "Session not found" };
+      }
+      if (metadata.ended_at_unix_ms !== null || nowUnixMs >= metadata.session_expires_at_unix_ms) {
+        return { ok: false, status: 410, code: "session_expired", title: "Session expired" };
+      }
+      const prior = Array.from(
+        this.sql.exec(
+          `SELECT a.endpoint_id, a.room_id, e.authority_generation,
+                  e.expires_at_unix_ms, e.revoked_at_unix_ms
+           FROM stage_pairing_admissions a
+           JOIN endpoint_authorities e ON e.endpoint_id = a.endpoint_id
+           WHERE a.transaction_id = ?`,
+          transactionId,
+        ),
+      )[0];
+      if (prior) {
+        if (prior.revoked_at_unix_ms !== null) {
+          return { ok: false, status: 403, code: "endpoint_revoked", title: "Stage endpoint revoked" };
+        }
+        return {
+          ok: true,
+          duplicate: true,
+          endpointId: prior.endpoint_id,
+          roomId: prior.room_id,
+          authorityGeneration: Number(prior.authority_generation),
+          expiresAtUnixMs: Number(prior.expires_at_unix_ms),
+        };
+      }
+      const stages = Array.from(
+        this.sql.exec(
+          `SELECT COUNT(*) AS count FROM endpoint_authorities
+           WHERE audience = 'stage' AND revoked_at_unix_ms IS NULL`,
+        ),
+      )[0];
+      if (Number(stages.count) >= 1) {
+        return { ok: false, status: 409, code: "stage_already_paired", title: "Stage already paired" };
+      }
+      this.sql.exec(
+        `INSERT INTO endpoint_authorities (
+           endpoint_id, audience, participant_id, room_id, authority_generation,
+           origin, platform, capabilities_json, expires_at_unix_ms
+         ) VALUES (?, 'stage', NULL, ?, 1, NULL, ?, ?, ?)`,
+        endpointId,
+        roomId,
+        endpoint.platform,
+        JSON.stringify(endpoint.capabilities),
+        metadata.session_expires_at_unix_ms,
+      );
+      this.sql.exec(
+        `INSERT INTO stage_pairing_admissions (
+           transaction_id, endpoint_id, room_id, created_at_unix_ms
+         ) VALUES (?, ?, ?, ?)`,
+        transactionId,
+        endpointId,
+        roomId,
+        nowUnixMs,
+      );
+      return {
+        ok: true,
+        duplicate: false,
+        endpointId,
+        roomId,
+        authorityGeneration: 1,
+        expiresAtUnixMs: Number(metadata.session_expires_at_unix_ms),
       };
     });
   }

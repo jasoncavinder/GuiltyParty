@@ -38,12 +38,21 @@ authority, connect tickets, player names, or private scenario content here.
 - [x] Clean checkout passes `make test` and `make check-cloudflare`.
 - [x] Custom Domain DNS and certificate are active.
 - [x] `/health` reports `friends-mvp-development` and `test-gated`.
-- [x] Host and join edge limits return safe `429` responses under rehearsal.
+- [x] Host and participant-join edge limits return safe `429` responses under
+      rehearsal.
+- [ ] The Stage pairing edge limit returns safe `429` responses under
+      rehearsal.
 - [x] Invalid or unavailable rate-limit bindings fail admission closed.
 - [ ] Invalid Host bootstrap and invalid, expired, rotated, and closed pairing
       proofs fail before unauthorized state is created.
 - [x] A packaged Stage obtains bearer authority without a cookie, mints a
       30-second connect ticket, and connects without a URL credential.
+- [ ] A Stage display code alone grants no authority; only the memory-only
+      polling secret can observe pending state or redeem after Host approval.
+- [ ] Pending Stage pairing discloses no session context, expires after 120
+      seconds, and cannot create more than one Stage endpoint when retried.
+- [ ] A Host-approved packaged Stage obtains bearer authority without a cookie,
+      mints a 30-second connect ticket, and connects without a URL credential.
 - [ ] A consumed, expired, tampered, revoked, or stale-generation connect
       ticket fails.
 - [ ] Durable Object hibernation and reactivation preserve the authorized
