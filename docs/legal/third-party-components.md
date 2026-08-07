@@ -18,10 +18,11 @@ Reviewed source-of-truth files:
 
 - `server/Cargo.toml`
 - `server/Cargo.lock`
+- `server/crates/gp_contract_gen/Cargo.toml`
 - `server/crates/gp_scenario/Cargo.toml`
+- `server/crates/gp_scenario_wasm/Cargo.toml`
 - `server/crates/gp_session/Cargo.toml`
 - `server/crates/gp_server/Cargo.toml`
-- `server/crates/gp_contract_gen/Cargo.toml`
 - browser client HTML, CSS, and JavaScript under `clients/`
 
 The browser Host and Stage currently have no package-manager manifest and load
@@ -59,6 +60,20 @@ installed Xcode, Android Studio, webOS, browser, and simulator tools are
 development environment prerequisites rather than redistributed components.
 Plugins, extensions, templates, generated artifacts, or runtimes copied from
 those tools into a release still require review.
+
+## First-Party WebAssembly Adapter
+
+`gp_scenario_wasm` is first-party Guilty Party source, not a third-party
+component. It depends only on the already inventoried workspace `serde` and
+`serde_json` crates plus the first-party `gp_scenario` crate. It adds no bindgen,
+Cloudflare Rust SDK, allocator, JavaScript package, or runtime network service.
+
+The owner approved installation of Rust's official
+`wasm32-unknown-unknown` standard-library target on 2026-08-06 for this
+development and CI build. The resulting module is built from repository source,
+parity-checked against the native engine, and bundled into the Worker. Any new
+crate, bindgen tool, optimizer, component model, target, prebuilt binary, or
+distribution purpose requires renewed ADR 0025 review.
 
 ### Focused Scope Approval: `serde_json` for `gp_contract_gen`
 

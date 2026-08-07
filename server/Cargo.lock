@@ -380,6 +380,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "gp_scenario_wasm"
+version = "0.1.0"
+dependencies = [
+ "gp_scenario",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "gp_server"
 version = "0.1.0"
 dependencies = [

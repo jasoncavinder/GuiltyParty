@@ -2,6 +2,7 @@
 members = [
     "crates/gp_contract_gen",
     "crates/gp_scenario",
+    "crates/gp_scenario_wasm",
     "crates/gp_session",
     "crates/gp_server"
 ]

@@ -29,7 +29,7 @@ No implementation may interpret `TBD` as permission for indefinite retention.
 | Account data | Limited to account functionality and continuity. | Exact lifecycle requires approval; user deletion and legal constraints must be defined. |
 | Payment-related data | Limited to what is necessary to provide payments. | Provider responsibilities and retained fields require approval before integration. |
 | Gameplay history | Optional and user-controlled where practical. | Product decision required for defaults, duration, export, and deletion. |
-| Scenario session journal | Minimum events needed for live execution and deterministic recovery. | Operational and post-session retention require approval; append-only does not mean permanent. |
+| Scenario session journal | Minimum events needed for live execution and deterministic recovery. | Remote Friends MVP active storage is deleted within seven days after end or expiry. The owner accepted Cloudflare's documented 30-day SQLite recovery history for this limited MVP on 2026-08-07; the tester notice must disclose it, and append-only does not mean permanent. |
 | Voice and video | Not stored by default. | No retention unless an explicitly approved recording or safety process applies. |
 | Captions and transcripts | Not stored by default. | Generation, accessibility use, and any retention require explicit approval and notice. |
 | Private messages and whispers | Not stored by default. | Exceptions require a documented safety or legal basis, limited access, and automatic deletion. |
@@ -140,8 +140,34 @@ contain private gameplay references and therefore still requires authorization,
 retention, and deletion controls.
 
 Replay guarantees apply only while the required scenario version, initial
-state, and authorized journal entries exist. A future deletion policy must state
-when replay is no longer available.
+state, and authorized journal entries exist. The Remote Friends MVP loses
+ordinary replay availability when active session storage is deleted; the
+provider recovery caveat below does not create a product replay feature.
+
+## Remote Friends MVP Server Lifecycle
+
+The invitation-only Remote Friends MVP stores only the following per-session
+categories in its SQLite Durable Object:
+
+| Category | Purpose and fields | Readers | Active lifecycle |
+| --- | --- | --- | --- |
+| Session metadata | Opaque session and room identifiers; invitation verifier and expiry; active, end, and deletion times. | Worker gateway and the one session Durable Object. | Mutation stops after four hours or explicit end; `deleteAll()` no later than seven days afterward. |
+| Guest admission | Synthetic alias, opaque participant/room/endpoint identifiers, coarse platform and capabilities, exact browser origin, authority generation/expiry/revocation, and bounded rate counters. | The session Durable Object; clients receive only their authorized identifiers and Host operational projection. | Authority is revoked on endpoint removal, end, or expiry; `deleteAll()` on the same schedule. |
+| Canonical journal | Participant admission, endpoint registration, character assignment, scene and clue identifiers, voting transitions, and vote target identifiers. No credential, raw pairing proof, private communication, media, transcript, or recording. | The shared deterministic engine and authorized recipient projector within the session Durable Object. | `deleteAll()` on the same schedule; replay becomes unavailable afterward in active storage. |
+| Idempotency records | Endpoint identifier, bounded idempotency identifier, canonical command fingerprint, safe result, and sequence. | The session Durable Object only. | Bounded to 256 records per endpoint and removed with session storage. |
+
+The raw Host bootstrap proof, authority signing key, raw endpoint authority,
+and raw pairing proof are not stored in the session database. Browser and iOS
+responses use `Cache-Control: no-store`, and persisted Worker observability is
+disabled.
+
+Cloudflare documents point-in-time recovery for SQLite Durable Objects across
+the preceding 30 days. `deleteAll()` removes active data and storage billing,
+but the project has not established that it shortens that provider recovery
+window. The owner accepted this provider horizon for the tightly limited
+friends MVP on 2026-08-07. The named-tester notice must disclose it. Seven-day
+active deletion must not be represented as seven-day complete provider
+erasure, and the acceptance does not extend to production or broader data.
 
 ## Decision Register
 

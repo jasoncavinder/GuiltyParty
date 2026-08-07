@@ -51,6 +51,7 @@ export class SessionCore {
     idempotencyId,
     command,
     createEvent,
+    assertCommitAllowed = () => {},
     timestampUnixMs = Date.now(),
   }) {
     if (!this.loaded) {
@@ -60,6 +61,7 @@ export class SessionCore {
       throw new SessionFault("invalid_command_context", "Command identifiers are invalid");
     }
 
+    assertCommitAllowed();
     const fingerprint = canonicalJson(command);
     const prior = await this.store.getIdempotency(endpointId, idempotencyId);
     if (prior) {
@@ -97,6 +99,7 @@ export class SessionCore {
       fingerprint,
       result,
       maximumRecordsPerEndpoint: MAX_IDEMPOTENCY_RECORDS_PER_ENDPOINT,
+      assertCommitAllowed,
     });
     this.sequence = sequence;
     return { ...result, duplicate: false };

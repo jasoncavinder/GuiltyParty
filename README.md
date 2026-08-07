@@ -38,11 +38,16 @@ Public visibility of this repository does not make Guilty Party open source.
 
 ## Prototype Development Status
 
-The repository currently contains an early local-only server, deterministic
-scenario engine, versioned synthetic scenario fixture, canonical control-plane
-v1 contracts, and v1 browser proof-of-concept Host and Stage surfaces. It is
-not yet the complete playable MVP, a production service, or commercially
-deployable software.
+The active prototype is now the invitation-only **Remote Friends MVP**. It uses
+the existing deterministic scenario engine and canonical control-plane v1
+contracts while moving session authority to the accepted Cloudflare Worker and
+per-session Durable Object architecture. The earlier local-only prototype
+remains useful development evidence but is no longer the primary MVP target.
+
+The repository is not yet ready for named-friend traffic, a production service,
+or commercial deployment. Until the Remote Friends MVP acceptance and explicit
+external-test gates in [PLANS.md](PLANS.md) pass, use only synthetic identities
+and the original test scenario.
 
 Run the current checks with:
 

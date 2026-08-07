@@ -19,6 +19,7 @@ logs/
 .cache/
 .tmp/
 tmp/
+.wrangler/
 
 # JavaScript tooling
 node_modules/
