@@ -213,8 +213,8 @@ Promotion evidence:
 
 - Reviewed source commit:
   `2501ff021b5a033c1357d9c9cea4f414a233fd6a`.
-- Final Worker version after secret cleanup:
-  `53c5d110-d305-4322-82c5-170842116f1d`.
+- Current Worker version after secret cleanup and the emergency-disable
+  restoration rehearsal: `9f74107a-d613-4566-91ae-ad6f88d1dcd5`.
 - Provider script ETag for the final Worker version:
   `1e6df89f84ba45a75a9a9b852a9d477dd8eec0f32be6a543d40371b7efa0055c`.
 - Reproduced Wrangler 4.119.0 dry-run runtime artifact manifest from the
@@ -258,6 +258,18 @@ Setting the Worker secret `EMERGENCY_DISABLED` to the exact string `true`
 keeps `/health` and `/api/protocol` available while every session creation,
 join, WebSocket, and Host-control path returns `503`. Removing or changing that
 secret restores the ordinary test gate after a reviewed smoke check.
+
+The live emergency rehearsal completed on 2026-08-07 HST. Health reported
+`disabled`; protocol discovery remained `200`; and creation, join, and a raw
+standards-compliant WebSocket upgrade each returned the safe disabled `503`.
+After the temporary secret was deleted, `workers.dev` served the restored
+version before the Custom Domain converged. Redeploying the unchanged reviewed
+bundle restored both hostnames to `test-gated`; the provider script ETag stayed
+`1e6df89f84ba45a75a9a9b852a9d477dd8eec0f32be6a543d40371b7efa0055c`,
+the secret inventory returned to the two intended values, and the authenticated
+packaged-Stage create/join/ticket/WebSocket/end rehearsal passed. Operators
+must therefore verify every routed hostname after a secret-only restoration
+and redeploy the reviewed bundle if a Custom Domain lags.
 
 The development-only lifecycle rehearsal proposed in ADR 0038 uses a separate
 operator-authenticated creation route with code-fixed short windows. After its

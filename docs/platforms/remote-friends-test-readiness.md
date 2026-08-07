@@ -8,7 +8,7 @@ invitation until the project owner records the final decision below.
 ## Candidate Deployment
 
 - Reviewed source commit: `2501ff021b5a033c1357d9c9cea4f414a233fd6a`
-- Worker version: `53c5d110-d305-4322-82c5-170842116f1d`
+- Worker version: `9f74107a-d613-4566-91ae-ad6f88d1dcd5`
 - Provider script ETag:
   `1e6df89f84ba45a75a9a9b852a9d477dd8eec0f32be6a543d40371b7efa0055c`
 - Wrangler 4.119.0 dry-run runtime artifact manifest:
@@ -21,7 +21,10 @@ invitation until the project owner records the final decision below.
 
 - API hostname: `api.test.guiltyparty.app`
 - Browser Host origin: `https://host.test.guiltyparty.app`
-- Browser Companion fallback origin: `https://play.test.guiltyparty.app`
+- Currently deployed secondary browser origin:
+  `https://stage.test.guiltyparty.app`
+- Next reviewed browser Companion origin, not yet promoted:
+  `https://play.test.guiltyparty.app`
 - Packaged Stage transport: opaque `null` Origin plus realtime connect ticket
 - Deployment operator and date: project owner through authenticated Wrangler,
   2026-08-07 HST
@@ -50,7 +53,7 @@ authority, connect tickets, player names, or private scenario content here.
 - [x] Explicit session end revokes all authority and schedules deletion.
 - [ ] Alarm expiry and active-storage deletion are observed in the deployed
       environment within the approved lifecycle.
-- [ ] Emergency disable, restoration, rollback, and redeployment succeed.
+- [x] Emergency disable, restoration, rollback, and redeployment succeed.
 
 ## Physical Client Evidence
 
