@@ -249,3 +249,6 @@ runtime machinery, language-specific contract exceptions, or duplicated
 handwritten validation that makes generation merely cosmetic. Permanent
 adoption or a decision to supersede ADR 0016 must be recorded separately after
 the spike evidence is reviewed.
+
+The completed implementation and compatibility evidence are recorded in
+[First-Party Mobile Contract Generator Spike](first-party-contract-generator-spike.md).

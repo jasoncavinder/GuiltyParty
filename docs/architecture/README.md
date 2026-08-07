@@ -182,6 +182,7 @@ Users should understand when information is captured and why.
 - [Cloudflare remote services](cloudflare-remote-services.md)
 - [Cloudflare tooling evaluation](cloudflare-tooling-evaluation.md)
 - [Mobile contract generator evaluation](mobile-contract-generator-evaluation.md)
+- [First-party mobile contract generator spike](first-party-contract-generator-spike.md)
 
 Related documentation:
 
