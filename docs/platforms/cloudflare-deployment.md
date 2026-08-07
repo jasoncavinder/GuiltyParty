@@ -25,8 +25,10 @@ resources manually:
 - [ ] Store recovery codes outside the development machine.
 - [ ] Confirm the account name and ownership are appropriate for Guilty Party.
 - [ ] Add the intended billing method and select the approved Workers plan.
-- [ ] Create conservative account-level budget alerts for actual and forecast
-      spend; record their thresholds in the private operations record.
+- [x] Create a conservative account-level budget alert. Cloudflare currently
+      exposes the selected alert as a total-spend threshold rather than separate
+      actual and forecast thresholds; the development account threshold is
+      USD 10.
 - [ ] Reserve the intended `workers.dev` subdomain for development.
 - [ ] Review the current Self-Serve Subscription Agreement, Developer Platform
       terms, Data Processing Addendum, Security Exhibit, and subprocessor list
@@ -102,6 +104,53 @@ Do not create D1, R2, Queue, Realtime, or production resources in this first
 slice; the current code has no bindings for them. Each is added only with its
 schema, access boundary, lifecycle, provider intake, test evidence, and rollback
 plan.
+
+## Development Deployment Evidence
+
+The first synthetic deployment was completed on 2026-08-06 HST
+(2026-08-07 UTC) from source commit `ddebbea`.
+
+- Worker: `guilty-party-remote-dev`
+- Development endpoint:
+  `https://guilty-party-remote-dev.guilty-party.workers.dev`
+- Stateful resource: the `GameSession` SQLite Durable Object export using
+  Cloudflare's default placement
+- Authentication: the named human operator used browser OAuth scoped to the
+  Guilty Party account; Wrangler credentials are stored in the macOS Keychain
+- Development access control: only the SHA-256 digest is stored in the Worker
+  secret `DEVELOPMENT_ACCESS_TOKEN_SHA256`; the synthetic plaintext token is
+  stored in the macOS Keychain under service
+  `Guilty Party Cloudflare Development Access Token` and account
+  `guilty-party-development`
+- Browser origin policy: `ALLOWED_ORIGINS` is intentionally unset, so requests
+  carrying an `Origin` header fail closed until the Host and Stage development
+  origins are approved; native and command-line smoke tests without an Origin
+  remain available
+- Billing guardrail: an enabled account-wide Billing Budget Alert emails the
+  owner when total Cloudflare spend approaches USD 10; this dashboard alert
+  type does not provide a separate forecast threshold
+
+The deployed service passed the following live smoke checks before and after
+the rollback rehearsal:
+
+| Check | Expected and observed result |
+| --- | --- |
+| `GET /health` | `200` |
+| `GET /api/protocol` | `200` |
+| `POST /api/v1/join` | `501` fail-closed placeholder |
+| WebSocket without credentials | `401` |
+| WebSocket with an unapproved Origin | `403` |
+| Authorized WebSocket upgrade without an Origin | `101`, reaching the Durable Object |
+
+Rollback to the initial development version and redeployment of commit
+`ddebbea` both succeeded. The Worker secret remained available across the
+rollback. Cloudflare-side version identifiers remain in the provider activity
+record and are intentionally not copied into the public repository.
+
+No D1 database, R2 bucket, Queue, Realtime or media resource, custom domain,
+DNS route, production resource, or CI credential was created. No production
+identity, private participant information, or licensed scenario content was
+sent to Cloudflare.
 
 ## Staging Gate
 
