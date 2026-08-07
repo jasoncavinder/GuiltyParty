@@ -9,8 +9,16 @@ invitation until the project owner records the final decision below.
 
 - Reviewed source commit: `2501ff021b5a033c1357d9c9cea4f414a233fd6a`
 - Worker version: `53c5d110-d305-4322-82c5-170842116f1d`
-- Dry-run artifact SHA-256:
-  `8711d18c16a50459c84432425a44aaeae9e6b63c8014e1e00f0aed66fc08905d`
+- Provider script ETag:
+  `1e6df89f84ba45a75a9a9b852a9d477dd8eec0f32be6a543d40371b7efa0055c`
+- Wrangler 4.119.0 dry-run runtime artifact manifest:
+
+  - `worker.js` SHA-256:
+    `6b7ec8358e613ae53501d3042fef14634dca44cf5cb7e09d289528f1f4371f82`
+  - `85b31fdbd5ef4c5f690c397f89cbbb70b9af79d5-gp_scenario_wasm.wasm`
+    SHA-256:
+    `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`
+
 - API hostname: `api.test.guiltyparty.app`
 - Browser Host origin: `https://host.test.guiltyparty.app`
 - Hosted Stage fallback origin: `https://stage.test.guiltyparty.app`
