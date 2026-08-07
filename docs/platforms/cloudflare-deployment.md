@@ -259,6 +259,16 @@ keeps `/health` and `/api/protocol` available while every session creation,
 join, WebSocket, and Host-control path returns `503`. Removing or changing that
 secret restores the ordinary test gate after a reviewed smoke check.
 
+The development-only lifecycle rehearsal proposed in ADR 0038 uses a separate
+operator-authenticated creation route with code-fixed short windows. After its
+implementation is reviewed and deployed, run `make rehearse-remote-lifecycle`
+with the base URL and Host bootstrap proof supplied through the protected
+operator process environment. The rehearsal must observe the documented
+10-second Cloudflare hibernation window before requesting the same Stage
+projection, then observe retained expiry and active-session data deletion. It
+does not change the ordinary four-hour and seven-day defaults and does not
+claim deletion from Cloudflare's provider-controlled recovery history.
+
 The first-party WebAssembly module and original scenario are bundled with the
 Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
 Queues, Realtime, Containers, analytics, and remote AI remain absent.

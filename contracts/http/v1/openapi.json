@@ -107,6 +107,77 @@
         }
       }
     },
+    "/api/v1/rehearsals/lifecycle/sessions": {
+      "post": {
+        "operationId": "createRemoteFriendsLifecycleRehearsalSession",
+        "summary": "Create an operator-only short lifecycle rehearsal session",
+        "description": "Development-profile verification surface. Requires the operator-controlled Host bootstrap proof and uses fixed 15-second invitation, 45-second active-session, and 30-second active-storage retention windows. It is not a client gameplay route and does not change ordinary session defaults.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/CreateSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Synthetic short-lived session and Host authority were created",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/CreateSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "413": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "429": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/api/v1/join": {
       "post": {
         "operationId": "joinRemoteFriendsSession",

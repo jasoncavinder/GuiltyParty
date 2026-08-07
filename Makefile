@@ -1,4 +1,4 @@
-.PHONY: setup run-server run-host run-stage build-stage check-contracts generate-mobile-contracts check-mobile-contracts test-remote check-scenario-wasm check-cloudflare rehearse-packaged-stage test
+.PHONY: setup run-server run-host run-stage build-stage check-contracts generate-mobile-contracts check-mobile-contracts test-remote check-scenario-wasm check-cloudflare rehearse-packaged-stage rehearse-remote-lifecycle test
 
 setup:
 	@echo "Checking dependencies..."
@@ -53,6 +53,9 @@ check-cloudflare:
 
 rehearse-packaged-stage:
 	@node tooling/rehearse_packaged_stage.mjs
+
+rehearse-remote-lifecycle:
+	@node tooling/rehearse_remote_lifecycle.mjs
 
 test:
 	@$(MAKE) check-contracts

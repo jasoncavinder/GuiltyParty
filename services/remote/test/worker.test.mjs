@@ -7,6 +7,12 @@ import Ajv2020 from "ajv/dist/2020.js";
 import worker from "../src/gateway.js";
 import {
   CONTROL_SUBPROTOCOL,
+  INVITATION_DURATION_MS,
+  LIFECYCLE_REHEARSAL_ACTIVE_DURATION_MS,
+  LIFECYCLE_REHEARSAL_INVITATION_DURATION_MS,
+  LIFECYCLE_REHEARSAL_RETENTION_MS,
+  SESSION_ACTIVE_DURATION_MS,
+  SESSION_RETENTION_MS,
   WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
 } from "../src/constants.js";
 import { issueAuthorityToken, sha256Hex } from "../src/friends-auth.js";
@@ -87,6 +93,7 @@ test("OpenAPI declares the session admission failures returned at runtime", () =
   }
   assert.equal(joinResponses["500"], undefined);
   assert.ok(openapi.paths["/api/v1/websocket-tickets"].post.responses["200"]);
+  assert.ok(openapi.paths["/api/v1/rehearsals/lifecycle/sessions"].post.responses["201"]);
 });
 
 test("Host creates a bounded session and receives HttpOnly cookie authority", async () => {
@@ -128,6 +135,18 @@ test("Host creates a bounded session and receives HttpOnly cookie authority", as
   assert.equal(captured.body.gameplay_language, "en-US");
   assert.equal(captured.body.invitation_digest, await sha256Hex(body.pairing_code));
   assert.equal(JSON.stringify(captured).includes(body.pairing_code), false);
+  assert.equal(
+    captured.body.invitation_expires_at_unix_ms - captured.body.created_at_unix_ms,
+    INVITATION_DURATION_MS,
+  );
+  assert.equal(
+    captured.body.session_expires_at_unix_ms - captured.body.created_at_unix_ms,
+    SESSION_ACTIVE_DURATION_MS,
+  );
+  assert.equal(
+    captured.body.delete_at_unix_ms - captured.body.session_expires_at_unix_ms,
+    SESSION_RETENTION_MS,
+  );
   assert.deepEqual(decodeInvitationTransfer(body.invitation_payload), {
     version: "1",
     session_id: body.session_id,
@@ -135,6 +154,42 @@ test("Host creates a bounded session and receives HttpOnly cookie authority", as
     expires_at_unix_ms: body.pairing_expires_at_unix_ms,
     gameplay_language: "en-US",
   });
+});
+
+test("operator lifecycle rehearsal uses fixed short windows without changing normal defaults", async () => {
+  let captured;
+  const before = Date.now();
+  const env = await friendsEnvironment(async (_name, request) => {
+    captured = await request.json();
+    return new Response(JSON.stringify({ created: true }), { status: 201 });
+  });
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/rehearsals/lifecycle/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${bootstrapProof}`,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        endpoint: { platform: "browser", capabilities: ["host_control"] },
+      }),
+    }),
+    env,
+  );
+  const after = Date.now();
+
+  assert.equal(response.status, 201);
+  const body = await response.json();
+  assert.ok(body.pairing_expires_at_unix_ms >= before + LIFECYCLE_REHEARSAL_INVITATION_DURATION_MS);
+  assert.ok(body.pairing_expires_at_unix_ms <= after + LIFECYCLE_REHEARSAL_INVITATION_DURATION_MS);
+  assert.ok(body.session_expires_at_unix_ms >= before + LIFECYCLE_REHEARSAL_ACTIVE_DURATION_MS);
+  assert.ok(body.session_expires_at_unix_ms <= after + LIFECYCLE_REHEARSAL_ACTIVE_DURATION_MS);
+  assert.equal(
+    captured.delete_at_unix_ms - captured.session_expires_at_unix_ms,
+    LIFECYCLE_REHEARSAL_RETENTION_MS,
+  );
 });
 
 test("join hashes pairing proof before Durable Object admission and issues native bearer authority", async () => {
