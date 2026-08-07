@@ -123,8 +123,10 @@ an acknowledged sequence is not yet implemented. Session expiry revokes stored
 endpoint authority and closes sockets. A second alarm removes active session
 data no later than seven days after the four-hour active window. Cloudflare
 separately documents SQLite point-in-time recovery over the prior 30 days. The
-service cannot claim unrecoverability at day seven; that provider recovery
-horizon requires owner acceptance and tester notice before external use.
+service cannot claim unrecoverability at day seven. The owner accepted that
+provider recovery horizon for this limited MVP on 2026-08-07; tester notice is
+still required before external use, and the acceptance does not extend to
+production or additional data categories.
 
 ## Local Verification
 
@@ -146,8 +148,9 @@ Before physical-client rehearsal, finish and document:
 
 - Host UI integration for invitation rotation, pairing close, endpoint
   revocation, and explicit session end
-- edge protection for invalid Host creation
-- stable test hostname and exact Host/Stage origins
+- edge protection for invalid session creation and join traffic
+- deploy the API at `api.test.guiltyparty.app` and approve exact Host/Stage
+  origins
 - iOS bearer injection, memory clearing, reconnect, and conformance fixtures
 - webOS cookie pairing and private-field-negative tests
 

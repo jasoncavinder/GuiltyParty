@@ -45,9 +45,9 @@ from the native Axum server under `server/`:
 - `src/game-session.js` is the per-session Durable Object adapter.
 - `src/session-core.js` contains provider-neutral command/journal rules that can
   run under Node's built-in test runner.
-- `wrangler.jsonc` declares local-development bindings but contains no account
-  identifier, token, production route, domain, database ID, bucket ID, or
-  secret.
+- `wrangler.jsonc` declares local-development bindings and the owner-approved
+  `api.test.guiltyparty.app` test Custom Domain, but contains no account
+  identifier, token, production route, database ID, bucket ID, or secret.
 - `test/` proves the first-party logic without connecting to Cloudflare.
 
 The native and remote implementations share the canonical files in
@@ -76,15 +76,16 @@ The current slice proves:
 - character assignment, scenes, clues, votes, deterministic outcome, and
   private-projection filtering
 - four-hour session expiry and seven-day maximum active-storage deletion
-  scheduling; Cloudflare's separate 30-day SQLite recovery history remains an
-  explicit owner gate before named-friend traffic
+  scheduling; the owner accepted Cloudflare's separate 30-day SQLite recovery
+  history for this limited friends MVP on 2026-08-07, subject to tester notice
 - no account system, licensed scenario, private player content, remote media,
   analytics, AI provider, or production deployment
 
 The remaining friend-test gate includes real hibernation/deletion evidence, app
-conformance, an edge guard for invalid Host-create traffic, and the
-owner-approved test hostname. Any uncertainty in authority, storage, replay,
-or projection continues to fail closed.
+conformance, edge protection for invalid session-create and join traffic,
+exact Host and Stage origins, tester notice, and deployment at the
+owner-approved `api.test.guiltyparty.app` hostname. Any uncertainty in
+authority, storage, replay, or projection continues to fail closed.
 
 ## Data Ownership
 

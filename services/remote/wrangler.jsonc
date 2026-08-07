@@ -5,6 +5,12 @@
   "compatibility_date": "2026-08-06",
   "workers_dev": true,
   "preview_urls": false,
+  "routes": [
+    {
+      "pattern": "api.test.guiltyparty.app",
+      "custom_domain": true
+    }
+  ],
   "send_metrics": false,
   "dependencies_instrumentation": {
     "enabled": false

@@ -68,11 +68,11 @@ The test suite does not contact Cloudflare or require an account.
 ## Configuration Safety
 
 `wrangler.jsonc` declares the approved synthetic development Worker
-`guilty-party-remote-dev`. It enables only its `workers.dev` endpoint, disables
-preview URLs, Wrangler usage metrics, dependency instrumentation, and persisted
-Worker observability, and includes no account ID, resource ID, token, database,
-bucket, custom domain, or secret. It is not a staging or production
-configuration.
+`guilty-party-remote-dev`. It enables its `workers.dev` endpoint and the
+owner-approved `api.test.guiltyparty.app` Worker Custom Domain, disables preview
+URLs, Wrangler usage metrics, dependency instrumentation, and persisted Worker
+observability, and includes no account ID, resource ID, token, database, bucket,
+or secret. It is not a staging or production configuration.
 
 The Remote Friends MVP boundary expects:
 
@@ -94,12 +94,12 @@ responses contain it only in the non-cacheable HTTPS response.
 
 ## Remaining External-Test Gates
 
-- an edge guard for invalid Host-create traffic
+- an edge guard for invalid session-create and join traffic
 - reconnect acceptance across real Durable Object hibernation
 - automated alarm expiry and deletion evidence
 - physical Host, webOS Stage, and two-iOS-Companion conformance
-- reviewed test hostname, exact deployed origins, named-tester notice, and
-  explicit owner approval
+- the approved `api.test.guiltyparty.app` deployment, exact Host/Stage origins,
+  named-tester notice, and explicit final owner approval
 
 Until those pass, local runtime tests use synthetic aliases and the committed
 original scenario only.

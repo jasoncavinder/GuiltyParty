@@ -50,8 +50,8 @@ commercial, production, or market-validation traffic.
 - automatic deletion from active Durable Object storage no later than seven
   days after session end or expiry; earlier deletion is preferred after a
   successful rehearsal
-- Cloudflare `workers.dev` for engineering checks and a project test subdomain
-  before named friends join
+- Cloudflare `workers.dev` for engineering checks and the owner-approved
+  `api.test.guiltyparty.app` Worker Custom Domain before named friends join
 - owner-operated manual deployments until release automation is separately
   approved
 
@@ -131,9 +131,10 @@ the accepted permanent-account model.
 - Expired and ended sessions reject mutation, revoke authority, and are deleted
   from active storage within the approved seven-day maximum.
 - Cloudflare documents a provider-controlled SQLite point-in-time recovery
-  history covering the preceding 30 days. Named-friend testing remains blocked
-  until the owner accepts that recovery horizon and it appears in the tester
-  notice, or selects a different storage design.
+  history covering the preceding 30 days. The owner accepted that recovery
+  horizon for this limited friends MVP on 2026-08-07. It must appear in the
+  tester notice, and seven-day active deletion must not be described as
+  complete provider erasure.
 - Named testers receive a concise notice that this is a private development
   test using aliases and automatically expiring gameplay state.
 
@@ -217,11 +218,13 @@ The Remote Friends MVP is ready for owner approval when:
 The owner must approve:
 
 - any new third-party dependency or WebAssembly build tool after ADR 0025 intake
-- the exact test hostname and DNS change
-- the documented 30-day Cloudflare SQLite recovery horizon after the service's
-  seven-day active-storage deletion, or an alternative storage decision
+- the exact Host and Stage test origins and their DNS changes
 - the named-tester notice and external-test readiness record
 - the first invitation sent to a friend
+
+The owner approved `api.test.guiltyparty.app` as the API test hostname and
+accepted the documented 30-day Cloudflare SQLite recovery horizon for this
+limited friends MVP on 2026-08-07.
 
 ### Completion Notes
 

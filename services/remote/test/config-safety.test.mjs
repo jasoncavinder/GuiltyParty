@@ -17,7 +17,12 @@ test("development Wrangler configuration is narrowly scoped and contains no acco
   assert.equal(configuration.exports.GameSession.storage, "sqlite");
   assert.equal(configuration.account_id, undefined);
   assert.equal(configuration.route, undefined);
-  assert.equal(configuration.routes, undefined);
+  assert.deepEqual(configuration.routes, [
+    {
+      pattern: "api.test.guiltyparty.app",
+      custom_domain: true,
+    },
+  ]);
   assert.equal(configuration.database_id, undefined);
   assert.equal(configuration.bucket_name, undefined);
   assert.equal(configuration.vars.AUTHORITY_SIGNING_KEY, undefined);

@@ -6,10 +6,10 @@ The original development skeleton is deployed. Promotion of the Remote Friends
 MVP code in the current implementation branch has not yet occurred. That next
 development deployment remains limited to the synthetic
 `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
-`workers.dev` endpoint, exact browser origins, and the minimum test authority
-secrets described below. No named-friend traffic, custom domain, D1 database,
-R2 bucket, Queue, media resource, production resource, or CI credential is
-approved.
+`workers.dev` endpoint, the owner-approved `api.test.guiltyparty.app` Custom
+Domain, exact browser origins, and the minimum test authority secrets described
+below. No named-friend traffic, D1 database, R2 bucket, Queue, media resource,
+production resource, or CI credential is approved.
 
 The architecture is accepted in
 [ADR 0033](../adr/0033-cloudflare-remote-services.md). The owner approved the
@@ -18,10 +18,10 @@ settings on 2026-08-06. Staging and production remain blocked by the gates
 below. See the
 [third-party component inventory](../legal/third-party-components.md#remote-deployment-tool--temporary-development-exception).
 
-## Owner Website Checklist
+## Initial Skeleton Website Checklist (Historical)
 
-Complete these in the Cloudflare dashboard without creating application
-resources manually:
+This checklist records the pre-skeleton state. Later sections govern promotion
+of PR #17 and the now-approved API Custom Domain.
 
 - [ ] Use the intended long-term owner email and verify it.
 - [ ] Enable phishing-resistant two-factor authentication where available.
@@ -62,9 +62,10 @@ The owner must explicitly approve and record:
 - whether a `workers.dev` development endpoint is temporarily enabled and
   which access control protects it
 
-Development initially uses only synthetic identities and original synthetic
-scenario content. A custom domain is unnecessary for this phase and should wait
-for product naming, trademark, and DNS approval.
+The initial skeleton used only synthetic identities and original synthetic
+scenario content. A custom domain was unnecessary for that phase. The owner
+subsequently approved `api.test.guiltyparty.app` for the Remote Friends MVP on
+2026-08-07; the promotion procedure below governs its creation.
 
 ## Repository Preflight
 
@@ -75,7 +76,8 @@ Before any Cloudflare authentication or resource mutation:
 3. Confirm `services/remote/wrangler.jsonc` has the exact
    `guilty-party-remote-dev` name, `workers_dev: true`, `preview_urls: false`,
    `send_metrics: false`, dependency instrumentation disabled, persisted
-   observability disabled, and no custom route.
+   observability disabled, and only the
+   `api.test.guiltyparty.app` Custom Domain route.
 4. Scan the repository and generated artifact for credentials, account IDs,
    resource IDs, private data, production endpoints, and licensed content.
 5. Verify the exact approved Wrangler version and lockfile integrity, then run
@@ -94,7 +96,7 @@ the human operator:
 
 1. verify the authenticated account and profile without printing credentials
 2. perform an artifact-only dry run and review its output
-3. enable a development route in reviewed configuration
+3. verify the reviewed `api.test.guiltyparty.app` Custom Domain configuration
 4. deploy the Worker and declarative SQLite Durable Object export
 5. set a synthetic development access-token digest through the secret command,
    reading the secret interactively from standard input
@@ -170,11 +172,13 @@ Before the owner-operated development promotion:
 
 1. Merge the implementation PR into `dev` after review and deploy the reviewed
    commit, not an uncommitted worktree.
-2. Choose same-site HTTPS Host, Stage, and API test subdomains under
-   `guiltyparty.app`. Store the exact Host and Stage origins as the
-   comma-separated `ALLOWED_ORIGINS` value; do not use wildcards. The
-   SameSite=Strict browser authority cookie will not support an unrelated
-   application site.
+2. Deploy the API Custom Domain at `api.test.guiltyparty.app`. Cloudflare
+   creates the DNS record and exact-hostname certificate for a Worker Custom
+   Domain; verify both are active before smoke testing. Choose same-site HTTPS
+   Host and Stage origins under `guiltyparty.app`, then store those exact
+   origins as the comma-separated `ALLOWED_ORIGINS` value; do not use
+   wildcards. The SameSite=Strict browser authority cookie will not support an
+   unrelated application site.
 3. Generate an independent random `AUTHORITY_SIGNING_KEY` of at least 32 bytes.
    Store the raw value only in the Worker secret and the owner's protected
    credential store.
@@ -206,8 +210,9 @@ Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
 Queues, Realtime, Containers, analytics, and remote AI remain absent.
 
 Before named friends join, a separate PR must complete hibernation and deletion
-evidence, app conformance, edge protection for invalid Host creation,
-test-hostname DNS, tester notice, and the final owner go/no-go record. The
+evidence, app conformance, edge protection for invalid session-create and join
+traffic, API Custom Domain DNS/certificate verification, exact Host/Stage
+origins, tester notice, and the final owner go/no-go record. The
 emergency disable, invitation rotation and closure, endpoint revocation,
 explicit session end, per-session join limiting, and per-endpoint message
 limiting are implemented and still require app-level rehearsal.
@@ -257,6 +262,7 @@ required release and deletion evidence.
 
 - [Wrangler installation](https://developers.cloudflare.com/workers/wrangler/install-and-update/)
 - [Wrangler configuration](https://developers.cloudflare.com/workers/wrangler/configuration/)
+- [Workers Custom Domains](https://developers.cloudflare.com/workers/configuration/routing/custom-domains/)
 - [Durable Object class exports](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/)
 - [Durable Object data location](https://developers.cloudflare.com/durable-objects/reference/data-location/)
 - [D1 data location](https://developers.cloudflare.com/d1/configuration/data-location/)

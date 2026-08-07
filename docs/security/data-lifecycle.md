@@ -29,7 +29,7 @@ No implementation may interpret `TBD` as permission for indefinite retention.
 | Account data | Limited to account functionality and continuity. | Exact lifecycle requires approval; user deletion and legal constraints must be defined. |
 | Payment-related data | Limited to what is necessary to provide payments. | Provider responsibilities and retained fields require approval before integration. |
 | Gameplay history | Optional and user-controlled where practical. | Product decision required for defaults, duration, export, and deletion. |
-| Scenario session journal | Minimum events needed for live execution and deterministic recovery. | Remote Friends MVP active storage is deleted within seven days after end or expiry. Cloudflare's documented 30-day SQLite recovery history remains an owner gate before external testing; append-only does not mean permanent. |
+| Scenario session journal | Minimum events needed for live execution and deterministic recovery. | Remote Friends MVP active storage is deleted within seven days after end or expiry. The owner accepted Cloudflare's documented 30-day SQLite recovery history for this limited MVP on 2026-08-07; the tester notice must disclose it, and append-only does not mean permanent. |
 | Voice and video | Not stored by default. | No retention unless an explicitly approved recording or safety process applies. |
 | Captions and transcripts | Not stored by default. | Generation, accessibility use, and any retention require explicit approval and notice. |
 | Private messages and whispers | Not stored by default. | Exceptions require a documented safety or legal basis, limited access, and automatic deletion. |
@@ -164,10 +164,10 @@ disabled.
 Cloudflare documents point-in-time recovery for SQLite Durable Objects across
 the preceding 30 days. `deleteAll()` removes active data and storage billing,
 but the project has not established that it shortens that provider recovery
-window. Named-friend traffic therefore requires an explicit owner decision to
-accept and disclose the 30-day recovery horizon or to choose another storage
-design. Seven-day active deletion must not be represented as seven-day complete
-provider erasure.
+window. The owner accepted this provider horizon for the tightly limited
+friends MVP on 2026-08-07. The named-tester notice must disclose it. Seven-day
+active deletion must not be represented as seven-day complete provider
+erasure, and the acceptance does not extend to production or broader data.
 
 ## Decision Register
 
