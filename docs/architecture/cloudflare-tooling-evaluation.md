@@ -81,6 +81,36 @@ temporary override should be considered only as a time-bounded local spike with
 explicit owner approval; it must not become the deployment or CI baseline on
 the evidence currently available.
 
+### Owner-Approved Isolated Override Spike
+
+The owner approved a local-only, time-bounded compatibility spike on
+2026-08-06. The spike did not authenticate to Cloudflare, mutate the account,
+deploy a Worker, or add a dependency to the repository.
+
+The isolated npm project pinned `wrangler@4.119.0` and overrode only Undici to
+exact `7.29.0`. Its lock contained 92 package entries, 36 packages installed on
+the Apple Silicon macOS host with scripts disabled, and `npm audit` reported no
+known vulnerabilities. `wrangler --version` executed successfully without
+install scripts.
+
+Wrangler's artifact-only deployment dry run validated the committed
+configuration and produced a 14.67 KiB Worker bundle (4.28 KiB gzip) with only
+the `GAME_SESSIONS` Durable Object and the development profile binding. The
+bundle and sanitized log scan contained no account identifier, credential,
+domain, or secret value.
+
+The local `workerd` runtime passed `/health`, `/api/protocol`, fail-closed join,
+unauthorized WebSocket, exact subprotocol, authenticated Durable Object routing,
+SQLite initialization, and application-message rejection checks. The first run
+also exposed a redundant close-frame echo that attempted to send reserved code
+`1006`; the service removed that handler, and the corrected runtime smoke test
+shut down without an exception.
+
+This evidence reduces compatibility uncertainty but does not approve the
+override for repository adoption, Cloudflare authentication, deployment, or CI.
+The Miniflare pin remains overridden, native-package notice reconciliation is
+unfinished, and production-like rollback and removal have not been exercised.
+
 Advisory references:
 
 - [GHSA-8xcm-r25x-g524](https://github.com/advisories/GHSA-8xcm-r25x-g524)

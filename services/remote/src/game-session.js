@@ -91,10 +91,6 @@ export class GameSession extends DurableObject {
     );
   }
 
-  async webSocketClose(socket, code, reason) {
-    socket.close(code, reason);
-  }
-
   async webSocketError(socket) {
     socket.close(1011, "WebSocket failure");
   }

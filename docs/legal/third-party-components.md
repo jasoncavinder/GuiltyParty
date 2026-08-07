@@ -269,8 +269,11 @@ successful build, or this pending table.
   tool graph in the development/CI SBOM and prove it absent from the product
   runtime SBOM.
 - **Reviewer and explicit owner decision:** Technical intake prepared by Codex
-  on 2026-08-06. Owner decision is pending; no approval is inferred from the
-  accepted Cloudflare architecture.
+  on 2026-08-06. The owner approved only the documented local, time-bounded
+  `undici@7.29.0` override spike on 2026-08-06. Repository adoption,
+  authentication, deployment, CI use, and redistribution remain unapproved; no
+  broader approval is inferred from the spike or accepted Cloudflare
+  architecture.
 - **Review triggers and exception:** Any release, transitive, native package,
   install script, advisory, telemetry, credential, endpoint, config-schema, or
   deployment-authority change requires renewed review. No exception is
