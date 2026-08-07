@@ -30,9 +30,10 @@ function binding(handler) {
   };
 }
 
-function rateLimiter(success = true) {
+function rateLimiter(success = true, consumedKeys = null) {
   return {
-    async limit() {
+    async limit({ key }) {
+      consumedKeys?.push(key);
       return { success };
     },
   };
@@ -384,10 +385,12 @@ test("credentialed browser API preflight is exact-origin and narrowly scoped", a
 
 test("session creation rejects missing bootstrap proof before allocating an object", async () => {
   let called = false;
+  const consumedKeys = [];
   const env = await friendsEnvironment(async () => {
     called = true;
     return Response.json({});
   });
+  env.SESSION_CREATE_RATE_LIMITER = rateLimiter(true, consumedKeys);
   const response = await worker.fetch(
     new Request("https://example.test/api/v1/sessions", {
       method: "POST",
@@ -401,42 +404,133 @@ test("session creation rejects missing bootstrap proof before allocating an obje
   );
   assert.equal(response.status, 401);
   assert.equal(called, false);
+  assert.deepEqual(consumedKeys, []);
 });
 
-test("Cloudflare edge limits reject session creation and joining before Durable Object lookup", async () => {
+test("invalid join traffic cannot consume a session-scoped Cloudflare budget", async () => {
+  const consumedKeys = [];
+  const env = await friendsEnvironment(async () => {
+    assert.fail("invalid join traffic must not address a Durable Object");
+  });
+  env.SESSION_JOIN_RATE_LIMITER = rateLimiter(true, consumedKeys);
+  const sessionId = "ses_0123456789abcdef";
+  const validBody = JSON.stringify({
+    protocol_version: "1.0",
+    kind: "participant",
+    display_name: "Synthetic Player",
+    endpoint: { platform: "browser", capabilities: ["private_display"] },
+  });
+  const requests = [
+    new Request("https://example.test/api/v1/join", { method: "POST" }),
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: { "X-GP-Session-ID": sessionId },
+    }),
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-code",
+        "X-GP-Session-ID": sessionId,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    }),
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-code",
+        "X-GP-Session-ID": sessionId,
+        Origin: "https://untrusted.example.test",
+        "Content-Type": "application/json",
+      },
+      body: validBody,
+    }),
+  ];
+
+  for (const request of requests) {
+    const response = await worker.fetch(request, env);
+    assert.ok(response.status >= 400 && response.status < 500);
+  }
+  assert.deepEqual(consumedKeys, []);
+});
+
+test("Cloudflare edge limits use validated actor and resource scopes before object lookup", async () => {
   let called = false;
+  const createKeys = [];
+  const joinKeys = [];
   const env = await friendsEnvironment(async () => {
     called = true;
     return Response.json({});
   });
-  env.SESSION_CREATE_RATE_LIMITER = rateLimiter(false);
+  env.SESSION_CREATE_RATE_LIMITER = rateLimiter(false, createKeys);
   const create = await worker.fetch(
     new Request("https://example.test/api/v1/sessions", {
       method: "POST",
-      headers: { Origin: allowedOrigin },
+      headers: {
+        Authorization: `Bearer ${bootstrapProof}`,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        endpoint: { platform: "browser", capabilities: ["host_control"] },
+      }),
     }),
     env,
   );
   assert.equal(create.status, 429);
   assert.equal((await create.json()).code, "edge_rate_limited");
+  assert.deepEqual(createKeys, ["authenticated-host"]);
   assert.equal(called, false);
 
   env.SESSION_CREATE_RATE_LIMITER = rateLimiter();
-  env.SESSION_JOIN_RATE_LIMITER = rateLimiter(false);
+  env.SESSION_JOIN_RATE_LIMITER = rateLimiter(false, joinKeys);
+  const sessionId = "ses_0123456789abcdef";
   const join = await worker.fetch(
-    new Request("https://example.test/api/v1/join", { method: "POST" }),
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-code",
+        "X-GP-Session-ID": sessionId,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        kind: "participant",
+        display_name: "Synthetic Player",
+        endpoint: { platform: "browser", capabilities: ["private_display"] },
+      }),
+    }),
     env,
   );
   assert.equal(join.status, 429);
   assert.equal((await join.json()).code, "edge_rate_limited");
+  assert.deepEqual(joinKeys, [await sha256Hex(sessionId)]);
   assert.equal(called, false);
 });
 
 test("admission fails closed when the Cloudflare edge limiter is unavailable", async () => {
   const env = await friendsEnvironment(async () => Response.json({}));
   delete env.SESSION_JOIN_RATE_LIMITER;
+  const sessionId = "ses_0123456789abcdef";
   const response = await worker.fetch(
-    new Request("https://example.test/api/v1/join", { method: "POST" }),
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-code",
+        "X-GP-Session-ID": sessionId,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        kind: "participant",
+        display_name: "Synthetic Player",
+        endpoint: { platform: "browser", capabilities: ["private_display"] },
+      }),
+    }),
     env,
   );
   assert.equal(response.status, 503);

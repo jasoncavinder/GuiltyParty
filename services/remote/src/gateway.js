@@ -124,10 +124,6 @@ async function createSession(request, env) {
   if (unavailable) {
     return unavailable;
   }
-  const edgeLimit = await consumeEdgeLimit(env.SESSION_CREATE_RATE_LIMITER, "all");
-  if (!edgeLimit.ok) {
-    return edgeLimit.response;
-  }
   if (!requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
     return problemResponse(403, "origin_not_allowed", "Origin not allowed", { retryable: false });
   }
@@ -152,6 +148,13 @@ async function createSession(request, env) {
     return problemResponse(400, "invalid_session_request", "Invalid session request", {
       retryable: false,
     });
+  }
+  const edgeLimit = await consumeEdgeLimit(
+    env.SESSION_CREATE_RATE_LIMITER,
+    "authenticated-host",
+  );
+  if (!edgeLimit.ok) {
+    return edgeLimit.response;
   }
 
   const now = Date.now();
@@ -220,10 +223,6 @@ async function joinSession(request, env) {
   if (unavailable) {
     return unavailable;
   }
-  const edgeLimit = await consumeEdgeLimit(env.SESSION_JOIN_RATE_LIMITER, "all");
-  if (!edgeLimit.ok) {
-    return edgeLimit.response;
-  }
   const sessionId = request.headers.get("X-GP-Session-ID") ?? "";
   if (!SESSION_IDENTIFIER_PATTERN.test(sessionId)) {
     return problemResponse(400, "invalid_session_context", "Invalid session context", {
@@ -269,6 +268,13 @@ async function joinSession(request, env) {
       "Packaged Stage origin required",
       { retryable: false },
     );
+  }
+  const edgeLimit = await consumeEdgeLimit(
+    env.SESSION_JOIN_RATE_LIMITER,
+    await sha256Hex(sessionId),
+  );
+  if (!edgeLimit.ok) {
+    return edgeLimit.response;
   }
 
   const authorityOrigin = browser ? requestOrigin : null;

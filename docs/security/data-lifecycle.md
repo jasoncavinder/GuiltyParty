@@ -161,9 +161,10 @@ The raw Host bootstrap proof, authority signing key, raw endpoint authority,
 raw packaged Stage bearer, raw connect ticket, and raw pairing proof are not
 stored in the session database. Browser, iOS, and packaged Stage credential
 responses use `Cache-Control: no-store`, and persisted Worker observability is
-disabled. The two Cloudflare edge admission bindings use fixed class keys,
-rather than a network address or participant identifier, and are permissive
-coarse protection rather than retained identity or exact accounting.
+disabled. The Cloudflare edge admission bindings use an authenticated Host
+class key for creation and the SHA-256 digest of an opaque session identifier
+for joins, rather than a network address or participant identifier. They are
+permissive coarse protection rather than retained identity or exact accounting.
 
 Cloudflare documents point-in-time recovery for SQLite Durable Objects across
 the preceding 30 days. `deleteAll()` removes active data and storage billing,

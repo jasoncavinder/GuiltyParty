@@ -29,9 +29,10 @@ remains blocked by the operational and client acceptance gates below.
   HTTPS origin. Packaged Stage pairing and ticket responses narrowly echo the
   opaque `null` file-scheme Origin without credentialed cookies. Wildcard CORS
   is never used.
-- Cloudflare Rate Limiting bindings reject excess session creation and join
-  traffic before Durable Object lookup; the exact per-session and per-endpoint
-  limits remain separate.
+- After cheap origin, credential-shape, and body validation, Cloudflare Rate
+  Limiting bindings reject excess authenticated Host creation traffic by Host
+  class and join traffic by an opaque session-resource digest before Durable
+  Object lookup; the exact per-session and per-endpoint limits remain separate.
 - `GameSession` journals participant admission and every accepted gameplay
   transition, schedules expiry and seven-day maximum active-storage deletion
   through an alarm, and uses the Durable Object WebSocket hibernation API.
@@ -105,9 +106,10 @@ The Remote Friends MVP boundary expects:
   operator-controlled Host creation proof
 - `ALLOWED_ORIGINS`, an exact comma-separated HTTPS allowlist for the browser
   Host and Stage origins
-- `SESSION_CREATE_RATE_LIMITER`, ten attempts per minute per Cloudflare
-  location, and `SESSION_JOIN_RATE_LIMITER`, sixty attempts per minute per
-  location; both fail closed and neither uses or stores a network address
+- `SESSION_CREATE_RATE_LIMITER`, ten authenticated Host attempts per minute per
+  Cloudflare location, and `SESSION_JOIN_RATE_LIMITER`, sixty validated-shape
+  attempts per opaque session-resource digest per minute per location; both
+  fail closed and neither uses or stores a network address
 - optional secret `EMERGENCY_DISABLED=true`, which keeps health and protocol
   discovery available while returning `503` from every stateful entry point
 

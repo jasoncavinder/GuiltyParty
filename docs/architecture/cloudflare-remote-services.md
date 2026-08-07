@@ -182,14 +182,17 @@ envelopes, Durable Object names, and browser-readable persistent storage. See
 
 ## Admission Abuse Boundary
 
-The Worker invokes separate Cloudflare Rate Limiting bindings before session
-creation or join can allocate or address a Durable Object. The development
-budgets are ten session-create attempts and sixty join attempts per 60 seconds,
-using one fixed class key rather than retaining a network address. Cloudflare's
-binding is permissive, eventually consistent, and local to each serving
-location, so it is coarse cost protection rather than authorization or exact
-accounting. The session Durable Object independently retains its exact bounded
-join-attempt counter, and all pairing and Host bootstrap checks remain
+After cheap origin, credential-shape, and request-body validation, the Worker
+invokes separate Cloudflare Rate Limiting bindings before session creation or
+join can allocate or address a Durable Object. The development budgets are ten
+authenticated Host session-create attempts per 60 seconds using a Host-class
+key and sixty join attempts per 60 seconds using the SHA-256 digest of the
+opaque session identifier as the resource key. Neither key contains a network
+address or participant identifier. Cloudflare's binding is permissive,
+eventually consistent, and local to each serving location, so it is coarse cost
+protection rather than authorization or exact accounting. The session Durable
+Object independently retains its exact bounded join-attempt counter, and all
+pairing and Host bootstrap checks remain
 mandatory. A missing or failed edge binding closes admission with `503`.
 
 ## Failure and Recovery Rules
