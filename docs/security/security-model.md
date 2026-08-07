@@ -55,7 +55,7 @@ create game truth or broaden access.
 
 The Stage is a public room surface. Companions and authorized host or creator
 tools may contain private information. Public endpoints must not receive private
-payloads and rely on UI hiding.
+payloads or rely on UI hiding.
 
 ### Scenario Engine to AI Stage Manager
 

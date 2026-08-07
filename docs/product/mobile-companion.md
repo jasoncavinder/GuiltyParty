@@ -2,13 +2,13 @@
 
 ## Status
 
-Accepted product direction as of 2026-08-05.
+Accepted product direction as of 2026-08-06.
 
 This document records product decisions for the intended mobile Companion. It
 does not expand the approved local MVP, define production networking, or
 authorize implementation. The long-term native-client direction is recorded in
-[ADR 0015](../adr/0015-native-mobile-client-strategy.md). Open technical and
-product questions are tracked in the
+[ADR 0015](../adr/0015-native-mobile-client-strategy.md). The accepted decision
+history and any future queued questions are tracked in the
 [mobile decision register](../platforms/mobile-decision-register.md).
 
 ## Role and Surfaces
@@ -400,13 +400,19 @@ remain valid. See
 
 ## Authority and Scope
 
-These decisions are product requirements. Significant implementation choices
-still require an accepted ADR. In particular, this document does not select:
+These decisions are product requirements. The referenced ADRs establish the
+accepted native-client, authentication, recovery, control-plane, transport,
+LAN-trust, media, privacy, testing, maintenance, and store-readiness direction.
+Significant remaining implementation choices still require focused evidence
+and, where appropriate, another accepted ADR. They include:
 
-- an authentication provider or account recovery design
-- a media protocol, provider, or mixing topology
-- production transport security or local certificate handling
-- release cadence
+- the production identity-service and account-backend implementation beyond the
+  accepted sign-in and recovery methods
+- the exact generated-contract tool and configuration
+- exact dependency versions and deployment or operations choices for the
+  accepted media reference adapter and any future AI or push provider
+- production infrastructure, key management, and data-store implementation
+- release scheduling and commercial-distribution timing
 
 The accepted MVP technology decision remains
 [ADR 0004](../adr/0004-mvp-technology-stack.md): the first Companion slice is a

@@ -223,6 +223,7 @@ Preferred languages:
 - CSS
 - JavaScript
 - Swift
+- Kotlin
 - Rust
 
 Use Rust when it provides meaningful benefits.
