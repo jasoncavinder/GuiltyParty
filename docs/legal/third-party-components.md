@@ -21,6 +21,7 @@ Reviewed source-of-truth files:
 - `server/crates/gp_scenario/Cargo.toml`
 - `server/crates/gp_session/Cargo.toml`
 - `server/crates/gp_server/Cargo.toml`
+- `server/crates/gp_contract_gen/Cargo.toml`
 - browser client HTML, CSS, and JavaScript under `clients/`
 
 The browser Host and Stage currently have no package-manager manifest and load
@@ -40,7 +41,7 @@ transitives are in `server/Cargo.lock` and must be reconciled during review.
 | `axum` | `0.7` | Prototype HTTP and WebSocket server | Pending |
 | `reqwest` | `0.12` | Local AI-adapter HTTP client | Pending |
 | `serde` | `1.0` | Structured serialization and deserialization | Pending |
-| `serde_json` | `1.0` | JSON contracts, scenarios, projections, and journal data | Pending |
+| `serde_json` | `1.0` | JSON contracts, scenarios, projections, journal data, and first-party contract generation | Pending except the generator scope approved below |
 | `tokio` | `1.37` | Async runtime and synchronization | Pending |
 | `tower-http` | `0.6` | Prototype CORS middleware | Pending |
 | `tracing` | `0.1` | Structured operational instrumentation | Pending |
@@ -58,6 +59,56 @@ installed Xcode, Android Studio, webOS, browser, and simulator tools are
 development environment prerequisites rather than redistributed components.
 Plugins, extensions, templates, generated artifacts, or runtimes copied from
 those tools into a release still require review.
+
+### Focused Scope Approval: `serde_json` for `gp_contract_gen`
+
+- **Status and owner decision:** On 2026-08-06 the project owner approved the
+  first-party generator under ADR 0034. That approval includes the exact locked
+  `serde_json@1.0.151` graph for local and CI contract generation only. It does
+  not complete the broader retrospective review or approve a version update,
+  native-app inclusion, private or production data, external-beta use, or
+  commercial distribution.
+- **Purpose and necessity:** Parse the committed control-plane v1 JSON Schema
+  and synthetic fixture manifest into the first-party generator's closed
+  intermediate representation. Reusing the existing workspace JSON component
+  avoids a new parser or third-party generator. Handwritten parsing was
+  rejected because JSON syntax handling is not the project's differentiating
+  compiler behavior.
+- **Version, source, features, and integrity:** crates.io
+  `serde_json@1.0.151`, locked checksum
+  `c841b55ecdae098c80dcae9cf767f6f8a0c2cdb3416bbef72181df4d0fe73f14`,
+  default `std` feature only. The generator adds no new resolved package or
+  version. Its normal dependencies are the already present locked
+  `itoa@1.0.18` (`MIT OR Apache-2.0`), `memchr@2.8.3` (`Unlicense OR MIT`),
+  `serde_core@1.0.229` (`MIT OR Apache-2.0`), and `zmij@1.0.23` (`MIT`) graph.
+- **Execution and data behavior:** Elevated build-tool scope because the crate
+  and its build script execute on developer and CI machines. The reviewed build
+  script reads Cargo target environment values and emits compiler
+  configuration; it performs no network access or artifact download. The
+  generator accepts committed contract files and synthetic fixtures, writes
+  deterministic source, and has no telemetry, remote endpoint, permission,
+  credential, or user-data behavior.
+- **License and provenance evidence:** The exact package manifest identifies
+  the canonical `serde-rs/json` repository and declares `MIT OR Apache-2.0`;
+  both license texts are present in the resolved crate source. The package is
+  resolved through the crates.io index and pinned by `server/Cargo.lock`.
+- **Platform and distribution impact:** Developer and CI generation only. The
+  crate and generator are not linked into Swift or Kotlin applications and are
+  not required by ordinary Xcode or Gradle builds. Committed generated output
+  contains first-party templates and contract-derived declarations, not copied
+  `serde_json` source.
+- **Verification and controls:** Generation uses `cargo --locked --offline`,
+  rejects unsupported schema vocabulary and nonlocal references, runs only on
+  synthetic contract evidence, compiles both language outputs with warnings as
+  errors, and checks deterministic output and forbidden behavior markers. A
+  RustSec scan refreshed on 2026-08-06 found no advisory or informational
+  warning in the locked workspace graph; updates and release reviews must scan
+  again rather than treating this result as permanent.
+- **Update and removal triggers:** Any `serde_json` version, feature, source,
+  checksum, build-script, or resolved-graph change requires the normal ADR 0025
+  update review. Removal of the generator also removes this purpose approval;
+  broader existing workspace uses remain governed by their retrospective
+  review.
 
 ## Approved Contract Validation Tool
 

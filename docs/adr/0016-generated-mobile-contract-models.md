@@ -163,3 +163,10 @@ precede tool adoption.
 The current pre-adoption paper evaluation is recorded in
 [Mobile Contract Generator Evaluation](../architecture/mobile-contract-generator-evaluation.md).
 It does not approve or add a generator.
+
+## Subsequent Decision
+
+[ADR 0034](0034-first-party-mobile-contract-generator.md) adopts the bounded
+first-party `gp_contract_gen` implementation and completes the generator
+selection deferred by this ADR. This ADR's canonical-input, generation-scope,
+repository, compatibility, and verification requirements remain in force.

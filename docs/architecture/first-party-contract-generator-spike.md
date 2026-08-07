@@ -2,11 +2,12 @@
 
 ## Status
 
-Compatibility spike completed, 2026-08-06. The first-party generator satisfies
-the bounded evaluation gates and is a candidate for a separate adoption
-decision. It is not yet the accepted generator under ADR 0016. Generated Swift
-and Kotlin product sources, native build integration, and CI drift enforcement
-remain unapproved and are not added by this spike.
+Compatibility spike completed, 2026-08-06. The first-party generator satisfied
+the bounded evaluation gates and was subsequently adopted by
+[ADR 0034](../adr/0034-first-party-mobile-contract-generator.md). Generated
+Swift and Kotlin product sources, native build integration, and CI drift
+enforcement remain follow-up implementation work and are not added by this
+spike.
 
 ## Purpose and Scope
 
@@ -166,8 +167,8 @@ schema profile rather than broad JSON Schema, uses a small language-neutral
 intermediate model, needs no language-specific contract exception, and does not
 duplicate handwritten validation outside generated code.
 
-The evidence supports preparing an adoption ADR rather than falling back to
-manual DTO maintenance. Adoption still requires explicit owner review of:
+The evidence supported adoption rather than falling back to manual DTO
+maintenance. ADR 0034 records the owner's decisions on:
 
 - the maintenance cost of the first-party compiler;
 - the use of the pending-retrospective-review `serde_json` component for this
@@ -179,5 +180,7 @@ manual DTO maintenance. Adoption still requires explicit owner review of:
 - removal or supersession behavior if the canonical schema outgrows the closed
   profile.
 
-Until that decision is accepted, this crate and runner are spike evidence, not
-an approved production generation pipeline.
+The crate is now the accepted generator. The spike runner remains evaluation
+evidence; the committed outputs, regeneration command, native build references,
+and CI drift enforcement belong to the separately reviewable integration slice
+authorized by ADR 0034.

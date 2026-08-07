@@ -252,3 +252,10 @@ the spike evidence is reviewed.
 
 The completed implementation and compatibility evidence are recorded in
 [First-Party Mobile Contract Generator Spike](first-party-contract-generator-spike.md).
+
+## Subsequent Adoption
+
+[ADR 0034](../adr/0034-first-party-mobile-contract-generator.md) adopts the
+bounded first-party generator after the successful spike. The rejection of
+`quicktype-core@26.0.0` and the evidence in this evaluation remain historical
+records.
