@@ -22,6 +22,10 @@ GENERATOR = SERVER / "target" / "debug" / "gp_contract_gen"
 GENERATOR_MANIFEST = SERVER / "crates" / "gp_contract_gen" / "Cargo.toml"
 CANONICAL_SOURCE = "contracts/control-plane/v1/control-plane.schema.json"
 PROTOCOL_MAJOR = "1"
+STANDARD_KOTLIN_HOMES = (
+    Path("/opt/homebrew/opt/kotlin/libexec"),
+    Path("/usr/local/opt/kotlin/libexec"),
+)
 COMMITTED_OUTPUTS = {
     "swift": REPOSITORY
     / "contracts"
@@ -109,6 +113,7 @@ def discover_kotlin_home(explicit: Path | None) -> Path:
         executable = shutil.which("kotlinc")
         if executable:
             candidates.append(Path(executable).resolve().parent.parent)
+        candidates.extend(STANDARD_KOTLIN_HOMES)
     for candidate in candidates:
         if (candidate / "lib" / "kotlin-compiler.jar").is_file():
             return candidate.resolve()

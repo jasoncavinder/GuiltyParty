@@ -11,6 +11,24 @@ from tooling import mobile_contracts
 
 
 class MobileContractIntegrationTests(unittest.TestCase):
+    def test_discovers_homebrew_kotlin_when_it_is_not_on_path(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            kotlin_home = Path(temporary) / "kotlin" / "libexec"
+            compiler = kotlin_home / "lib" / "kotlin-compiler.jar"
+            compiler.parent.mkdir(parents=True)
+            compiler.write_bytes(b"synthetic compiler marker")
+
+            with (
+                mock.patch.object(
+                    mobile_contracts, "STANDARD_KOTLIN_HOMES", (kotlin_home,)
+                ),
+                mock.patch.object(mobile_contracts.glob, "glob", return_value=[]),
+                mock.patch.object(mobile_contracts.shutil, "which", return_value=None),
+            ):
+                discovered = mobile_contracts.discover_kotlin_home(None)
+
+            self.assertEqual(discovered, kotlin_home.resolve())
+
     def test_reproducibility_header_contains_only_stable_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "Generated.swift"

@@ -71,8 +71,8 @@ directory.
 The wrapper discovers:
 
 - `swiftc` from `PATH`, with optional `--swiftc` override;
-- Kotlin in Android Studio or through `kotlinc` on `PATH`, with optional
-  `--kotlin-home` override; and
+- Kotlin in Android Studio, standard Homebrew `libexec` locations, or through
+  `kotlinc` on `PATH`, with optional `--kotlin-home` override; and
 - the Android Studio JBR or `java` on `PATH`, with optional `--java` override.
 
 The current local compatibility evidence is Apple Swift 6.3.3 and Kotlin/JVM
@@ -87,7 +87,7 @@ workflow fails visibly when the mutable hosted image changes either compiler,
 which forces a reviewed baseline update rather than silently moving it.
 GitHub's current installed-software inventory for that image is maintained in
 the
-[`actions/runner-images` repository](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-Readme.md).
+[`actions/runner-images` repository](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md).
 
 CI hydrates the existing locked Rust crates before invoking the offline check.
 The check itself performs no package installation, schema resolution, or
