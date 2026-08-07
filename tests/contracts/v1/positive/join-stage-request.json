@@ -1,8 +1,13 @@
 {
   "protocol_version": "1.0",
   "kind": "stage",
-  "endpoint": {
-    "platform": "webos",
+    "endpoint": {
+      "platform": "webos",
+      "client_build": {
+        "application_id": "stage_webos",
+        "application_version": "0.1.0",
+        "build_number": 1
+      },
     "capabilities": ["public_display", "remote_control_input"]
   }
 }

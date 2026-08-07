@@ -176,10 +176,10 @@ Before the owner-operated development promotion:
    creates the DNS record and exact-hostname certificate for a Worker Custom
    Domain; verify both are active before smoke testing. The owner approved
    `https://host.test.guiltyparty.app` and
-   `https://stage.test.guiltyparty.app`, and the exact comma-separated
+   `https://play.test.guiltyparty.app`, and the exact comma-separated
    `ALLOWED_ORIGINS` value is committed in the reviewed configuration; do not
-   use wildcards. The fully packaged webOS Stage does not use that hosted Stage
-   cookie origin. Under ADR 0035, only its Stage pairing and realtime-ticket
+   use wildcards. There is no Stage website. Under ADR 0035, only packaged
+   Stage pairing and realtime-ticket
    paths accept the opaque file-scheme Origin value `null` with bearer
    authority.
 3. Generate an independent random `AUTHORITY_SIGNING_KEY` of at least 32 bytes.

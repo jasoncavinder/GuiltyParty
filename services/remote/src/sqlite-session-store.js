@@ -36,6 +36,10 @@ export class SqliteSessionStore {
         created_at_unix_ms INTEGER NOT NULL,
         ended_at_unix_ms INTEGER
       );
+      CREATE TABLE IF NOT EXISTS session_attributes (
+        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+        gameplay_language TEXT NOT NULL
+      );
       CREATE TABLE IF NOT EXISTS guest_participants (
         participant_id TEXT PRIMARY KEY,
         room_id TEXT NOT NULL,
@@ -103,6 +107,10 @@ export class SqliteSessionStore {
         configuration.endpoint.platform,
         JSON.stringify(configuration.endpoint.capabilities),
         configuration.sessionExpiresAtUnixMs,
+      );
+      this.sql.exec(
+        "INSERT INTO session_attributes (singleton, gameplay_language) VALUES (1, ?)",
+        configuration.gameplayLanguage,
       );
       return { ok: true };
     });
@@ -345,7 +353,7 @@ export class SqliteSessionStore {
         invitationDigest,
         expiresAtUnixMs,
       );
-      return { ok: true, expiresAtUnixMs };
+      return { ok: true, expiresAtUnixMs, gameplayLanguage: this.gameplayLanguage() };
     });
   }
 
@@ -440,6 +448,13 @@ export class SqliteSessionStore {
 
   sessionMetadata() {
     return Array.from(this.sql.exec("SELECT * FROM session_metadata WHERE singleton = 1"))[0] ?? null;
+  }
+
+  gameplayLanguage() {
+    const row = Array.from(
+      this.sql.exec("SELECT gameplay_language FROM session_attributes WHERE singleton = 1"),
+    )[0];
+    return row?.gameplay_language ?? "en";
   }
 
   currentSequence() {

@@ -46,15 +46,18 @@ commercial, production, or market-validation traffic.
 - guest aliases only; no permanent user accounts
 - one original, immutable scenario version bundled with the service
 - invitation-only admission using expiring, rotatable pairing proof
+- BCP 47 gameplay-language metadata advertised with the session
+- a packaged, sideloaded LG webOS Stage; the television browser is not the MVP
+  Stage surface
+- browser Host at `host.test.guiltyparty.app` and browser Companion fallback at
+  `play.test.guiltyparty.app`, with API authority kept at
+  `api.test.guiltyparty.app`
 - a maximum active-session duration of four hours
 - automatic deletion from active Durable Object storage no later than seven
   days after session end or expiry; earlier deletion is preferred after a
   successful rehearsal
 - Cloudflare `workers.dev` for engineering checks and the owner-approved
   `api.test.guiltyparty.app` Worker Custom Domain before named friends join
-- owner-approved browser surfaces at `host.test.guiltyparty.app` and
-  `stage.test.guiltyparty.app`; the fully packaged webOS Stage uses its opaque
-  file-scheme transport rather than cookie authority from the Stage hostname
 - owner-operated manual deployments until release automation is separately
   approved
 
@@ -116,6 +119,9 @@ identity or authority.
   for each connection under ADR 0035.
 - Raw credentials stay out of URLs, logs, application envelopes, Durable Object
   names, and browser-readable persistent storage.
+- Participant QR/copy/manual handoff uses a short-lived `GP1.` non-URL transfer
+  payload. Stage admission instead uses a Host-approved, one-time, 120-second
+  device-code transaction whose display code does not grant authority.
 - The Durable Object rechecks current endpoint generation and revocation before
   accepting commands or projecting private state.
 
@@ -174,7 +180,10 @@ the accepted permanent-account model.
    rollback, and emergency-disable behavior.
 7. Give app surfaces conformance fixtures and run automated multi-client,
    browser, iOS, webOS, hibernation, replay, and negative-authorization tests.
-8. Deploy to the test subdomain, complete a private rehearsal, and obtain
+8. Prove packaged-webOS transport behavior, add the ephemeral Stage pairing
+   coordinator, and enable supported-build admission for external-test clients.
+9. Deploy the two static browser surfaces and API to their separate test
+   subdomains, complete a private rehearsal, and obtain
    explicit owner approval before inviting named friends.
 
 Each slice should be a small Pull Request targeting `dev` when practical.
@@ -231,9 +240,9 @@ The owner must approve:
 The owner approved `api.test.guiltyparty.app` as the API test hostname and
 accepted the documented 30-day Cloudflare SQLite recovery horizon for this
 limited friends MVP on 2026-08-07. The owner approved
-`host.test.guiltyparty.app` and `stage.test.guiltyparty.app` on the same date,
-selected a fully packaged webOS Stage, and approved the corresponding
-authentication-transport redesign recorded in ADR 0035.
+`host.test.guiltyparty.app` and `play.test.guiltyparty.app` on the same date,
+selected a fully packaged webOS Stage with no Stage website, and approved the
+corresponding authentication-transport redesign recorded in ADR 0035.
 
 ### Completion Notes
 

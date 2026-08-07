@@ -22,6 +22,35 @@
       "type": "string",
       "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
     },
+    "GameplayLanguage": {
+      "type": "string",
+      "minLength": 2,
+      "maxLength": 63,
+      "pattern": "^[A-Za-z]{2,8}(?:-[A-Za-z0-9]{1,8})*$",
+      "description": "A gameplay-language tag in the supported BCP 47 structural subset. It is distinct from interface, caption, and communication languages."
+    },
+    "ClientBuild": {
+      "type": "object",
+      "required": ["application_id", "application_version", "build_number"],
+      "properties": {
+        "application_id": {
+          "$ref": "#/$defs/FeatureIdentifier",
+          "description": "A coarse first-party application identifier, not an installation or hardware identifier."
+        },
+        "application_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9.+_-]{0,63}$"
+        },
+        "build_number": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "description": "Coarse compatibility metadata used for supported-build admission. It never grants authority and must not identify a physical installation."
+    },
     "Token": {
       "type": "string",
       "minLength": 1,
@@ -44,6 +73,10 @@
             "$ref": "#/$defs/FeatureIdentifier"
           },
           "description": "Endpoint claims for server validation and routing; claims do not grant authority."
+        },
+        "client_build": {
+          "$ref": "#/$defs/ClientBuild",
+          "description": "Optional during pre-client migration. External-test environments require an approved build policy."
         }
       }
     },
@@ -136,6 +169,10 @@
         "protocol_version": {
           "$ref": "#/$defs/ProtocolVersion"
         },
+        "gameplay_language": {
+          "$ref": "#/$defs/GameplayLanguage",
+          "description": "Omission during the protocol-v1 migration means en."
+        },
         "endpoint": {
           "$ref": "#/$defs/EndpointRegistration"
         }
@@ -170,11 +207,18 @@
         "authority_transport": {
           "const": "cookie"
         },
+        "gameplay_language": {
+          "$ref": "#/$defs/GameplayLanguage",
+          "description": "New servers emit this field; compatible older senders may omit it, which means en."
+        },
         "pairing_code": {
           "type": "string",
           "minLength": 12,
           "maxLength": 128,
           "description": "Short-lived invitation proof. Never place in a URL, log, or persistent browser storage."
+        },
+        "invitation_payload": {
+          "$ref": "#/$defs/InvitationPayload"
         },
         "pairing_expires_at_unix_ms": {
           "type": "integer",
@@ -192,6 +236,47 @@
           "maximum": 8
         }
       }
+    },
+    "InvitationPayload": {
+      "type": "string",
+      "minLength": 8,
+      "maxLength": 1024,
+      "pattern": "^GP1\\.[A-Za-z0-9_-]+$",
+      "description": "A short-lived, non-URL QR/copy transfer payload containing an invitation proof. Keep only in memory and never log it."
+    },
+    "InvitationTransfer": {
+      "type": "object",
+      "required": [
+        "version",
+        "session_id",
+        "pairing_code",
+        "expires_at_unix_ms",
+        "gameplay_language"
+      ],
+      "properties": {
+        "version": {
+          "const": "1"
+        },
+        "session_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "pairing_code": {
+          "type": "string",
+          "minLength": 12,
+          "maxLength": 128,
+          "writeOnly": true
+        },
+        "expires_at_unix_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "gameplay_language": {
+          "$ref": "#/$defs/GameplayLanguage",
+          "description": "The language advertised with this invitation."
+        }
+      },
+      "description": "Decoded GP1 invitation transfer content. The encoded payload is not a URL, authority, or durable invitation record."
     },
     "RotateInvitationResponse": {
       "type": "object",
@@ -212,6 +297,9 @@
           "type": "string",
           "minLength": 12,
           "maxLength": 128
+        },
+        "invitation_payload": {
+          "$ref": "#/$defs/InvitationPayload"
         },
         "pairing_expires_at_unix_ms": {
           "type": "integer",
@@ -871,6 +959,10 @@
         },
         "scenario_title": {
           "type": "string"
+        },
+        "gameplay_language": {
+          "$ref": "#/$defs/GameplayLanguage",
+          "description": "New servers emit this field; compatible older senders may omit it, which means en."
         },
         "active_scene": {
           "oneOf": [

@@ -15,7 +15,7 @@ test("development Wrangler configuration is narrowly scoped and contains no acco
   assert.equal(configuration.vars.ENVIRONMENT_PROFILE, "friends-mvp-development");
   assert.equal(
     configuration.vars.ALLOWED_ORIGINS,
-    "https://host.test.guiltyparty.app,https://stage.test.guiltyparty.app",
+    "https://host.test.guiltyparty.app,https://play.test.guiltyparty.app",
   );
   assert.deepEqual(configuration.ratelimits, [
     {

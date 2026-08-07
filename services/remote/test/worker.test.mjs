@@ -10,6 +10,7 @@ import {
   WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
 } from "../src/constants.js";
 import { issueAuthorityToken, sha256Hex } from "../src/friends-auth.js";
+import { decodeInvitationTransfer } from "../src/invitation-transfer.js";
 import schema from "../../../contracts/control-plane/v1/control-plane.schema.json" with { type: "json" };
 import openapi from "../../../contracts/http/v1/openapi.json" with { type: "json" };
 
@@ -79,8 +80,9 @@ test("OpenAPI declares the session admission failures returned at runtime", () =
   const joinResponses = openapi.paths["/api/v1/join"].post.responses;
 
   assert.ok(createResponses["413"]);
+  assert.ok(createResponses["409"]);
   assert.ok(createResponses["429"]);
-  for (const status of ["404", "413", "429", "503"]) {
+  for (const status of ["404", "409", "413", "429", "503"]) {
     assert.ok(joinResponses[status], `missing join response ${status}`);
   }
   assert.equal(joinResponses["500"], undefined);
@@ -103,6 +105,7 @@ test("Host creates a bounded session and receives HttpOnly cookie authority", as
       },
       body: JSON.stringify({
         protocol_version: "1.0",
+        gameplay_language: "en-US",
         endpoint: { platform: "browser", capabilities: ["host_control", "private_display"] },
       }),
     }),
@@ -122,8 +125,16 @@ test("Host creates a bounded session and receives HttpOnly cookie authority", as
   assert.equal(captured.name, body.session_id);
   assert.equal(captured.path, "/internal/session/create");
   assert.equal(captured.body.host_origin, allowedOrigin);
+  assert.equal(captured.body.gameplay_language, "en-US");
   assert.equal(captured.body.invitation_digest, await sha256Hex(body.pairing_code));
   assert.equal(JSON.stringify(captured).includes(body.pairing_code), false);
+  assert.deepEqual(decodeInvitationTransfer(body.invitation_payload), {
+    version: "1",
+    session_id: body.session_id,
+    pairing_code: body.pairing_code,
+    expires_at_unix_ms: body.pairing_expires_at_unix_ms,
+    gameplay_language: "en-US",
+  });
 });
 
 test("join hashes pairing proof before Durable Object admission and issues native bearer authority", async () => {
@@ -544,6 +555,7 @@ test("Host rotates pairing proof without exposing its digest", async () => {
     return Response.json({
       ok: true,
       invitation_expires_at_unix_ms: captured.body.invitation_expires_at_unix_ms,
+      gameplay_language: "en-US",
     });
   });
   const token = await issueAuthorityToken(
@@ -569,9 +581,48 @@ test("Host rotates pairing proof without exposing its digest", async () => {
   const body = await response.json();
   assert.equal(body.action, "rotate_invitation");
   assert.ok(body.pairing_code.length >= 12);
+  assert.equal(decodeInvitationTransfer(body.invitation_payload).gameplay_language, "en-US");
   assert.equal(captured.name, "ses_0123456789abcdef");
   assert.equal(captured.body.invitation_digest, await sha256Hex(body.pairing_code));
   assert.equal(JSON.stringify(captured).includes(body.pairing_code), false);
+});
+
+test("configured client build policy rejects unsupported builds before allocation", async () => {
+  let called = false;
+  const env = await friendsEnvironment(async () => {
+    called = true;
+    return Response.json({});
+  });
+  env.CLIENT_BUILD_POLICY_JSON = JSON.stringify({
+    host_web: { minimum_build_number: 10 },
+  });
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${bootstrapProof}`,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        gameplay_language: "en",
+        endpoint: {
+          platform: "browser",
+          capabilities: ["host_control"],
+          client_build: {
+            application_id: "host_web",
+            application_version: "0.1.0",
+            build_number: 9,
+          },
+        },
+      }),
+    }),
+    env,
+  );
+  assert.equal(response.status, 409);
+  assert.equal((await response.json()).code, "client_build_unsupported");
+  assert.equal(called, false);
 });
 
 test("participant authority cannot invoke Host session controls", async () => {

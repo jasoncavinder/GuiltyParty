@@ -26,6 +26,9 @@ export const COMPATIBILITY_RESPONSE = Object.freeze({
     "browser_cookie_authority",
     "packaged_stage_websocket_ticket",
     "durable_session_hibernation",
+    "client_build_metadata",
+    "gameplay_language_metadata",
+    "gp1_invitation_transfer",
   ],
 });
 

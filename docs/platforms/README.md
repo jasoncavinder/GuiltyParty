@@ -3,6 +3,8 @@
 - [Cloudflare deployment runbook](cloudflare-deployment.md)
 - [Remote Friends MVP test readiness](remote-friends-test-readiness.md)
 - [Remote Friends MVP service contract](remote-friends-mvp.md)
+- [Remote MVP client delivery preparation](remote-client-delivery.md)
+- [webOS packaged Stage transport spike](webos-transport-spike.md)
 
 This directory will hold platform-specific constraints and integration notes.
 It does not commit the project to a framework or shared implementation strategy.

@@ -2,7 +2,7 @@
   "openapi": "3.1.1",
   "info": {
     "title": "Guilty Party Control Plane",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Protocol v1 HTTP operations. JSON Schema in contracts/control-plane/v1 is authoritative for payload shapes."
   },
   "servers": [
@@ -92,6 +92,9 @@
           "403": {
             "$ref": "#/components/responses/Problem"
           },
+          "409": {
+            "$ref": "#/components/responses/Problem"
+          },
           "413": {
             "$ref": "#/components/responses/Problem"
           },
@@ -167,10 +170,10 @@
           "410": {
             "$ref": "#/components/responses/Problem"
           },
-          "413": {
-            "$ref": "#/components/responses/Problem"
-          },
-          "429": {
+        "413": {
+          "$ref": "#/components/responses/Problem"
+        },
+        "429": {
             "$ref": "#/components/responses/Problem"
           },
           "503": {

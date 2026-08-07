@@ -20,7 +20,7 @@
   },
   "vars": {
     "ENVIRONMENT_PROFILE": "friends-mvp-development",
-    "ALLOWED_ORIGINS": "https://host.test.guiltyparty.app,https://stage.test.guiltyparty.app"
+    "ALLOWED_ORIGINS": "https://host.test.guiltyparty.app,https://play.test.guiltyparty.app"
   },
   "ratelimits": [
     {
