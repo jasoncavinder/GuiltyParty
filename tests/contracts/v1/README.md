@@ -11,7 +11,8 @@ canonical schema and expected result.
 
 The dependency-free repository checker evaluates the JSON Schema keyword subset
 used by these fixtures, verifies references and manifest coverage, and enforces
-the privacy assertions. It is not a general Draft 2020-12 implementation. A
-standards validator and native model generator still require dependency intake.
-The server's existing Rust privacy and deterministic replay tests remain
-mandatory and independent of these fixtures.
+the privacy assertions. Ajv independently validates the canonical schema and
+fixture expectations against Draft 2020-12. A native model generator still
+requires separate dependency intake. The server's Rust protocol, privacy,
+authorization, idempotency, and deterministic replay tests remain mandatory and
+independent of these fixtures.

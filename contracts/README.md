@@ -12,10 +12,9 @@ defined by [ADR 0005](../docs/adr/0005-versioned-control-plane-contract.md).
   sequencing rules that JSON Schema cannot express by itself.
 - `../tests/contracts/v1/` contains synthetic conformance and privacy fixtures.
 
-Protocol `1.0` is the target contract. The current browser prototype still
-uses the earlier unversioned routes and unenveloped WebSocket messages. No
-client should claim v1 compatibility until the server/client migration and the
-contract checks described by the fixture manifest are complete.
+Protocol `1.0` is implemented by the Rust prototype server and the browser Host
+and Stage surfaces. Native clients must still prove conformance against the
+fixture manifest before claiming v1 compatibility.
 
 Unknown optional object members are intentionally permitted within protocol
 major 1. A receiver must still reject unknown message discriminators and
