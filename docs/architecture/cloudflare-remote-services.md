@@ -134,6 +134,21 @@ the object does not broadcast acceptance.
 - Resume from the last authorized journal sequence; do not replay another
   recipient's projection.
 
+## Browser Connection Bootstrap
+
+The standard browser WebSocket API cannot attach an `Authorization` header or
+arbitrary endpoint-context headers to its opening handshake. An origin
+allowlist prevents cross-origin use but does not authenticate a browser Host or
+Stage.
+
+Before browser integration, an approved HTTPS pairing flow must exchange the
+one-time pairing proof for short-lived, server-derived authority carried by a
+WebSocket-compatible mechanism. The server—not the browser—binds that authority
+to the session, endpoint, audience, authority generation, expiry, and exact
+origin. Credentials remain out of URLs, browser storage, logs, and application
+envelopes. The shared synthetic development token is restricted to native and
+command-line smoke tests and is removed when this bootstrap exists.
+
 ## Failure and Recovery Rules
 
 On activation, the session verifies schema creation/migration, loads the pinned

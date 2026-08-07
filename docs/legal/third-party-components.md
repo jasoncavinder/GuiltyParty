@@ -345,6 +345,32 @@ Before invitation-only external beta:
 Do not infer approval from a prior informal note, a package metadata label, a
 successful build, or this pending table.
 
+## Approved CI Runtime Selector
+
+### actions/setup-node 7.0.0
+
+- **Status and scope:** Approved by the owner on 2026-08-06 for GitHub-hosted
+  CI only, to select Node.js 22 before contract, remote-service, and
+  artifact-only Wrangler checks. It receives no Cloudflare credential or
+  deployment authority and is not part of a product artifact.
+- **Canonical source and pin:** GitHub's
+  [actions/setup-node](https://github.com/actions/setup-node) repository,
+  release `v7.0.0`, pinned in the workflow to commit
+  `820762786026740c76f36085b0efc47a31fe5020` rather than a movable tag.
+- **License and execution:** MIT licensed. The JavaScript action runs on the
+  GitHub-hosted runner and selects an exact-major Node.js toolchain from the
+  runner cache or the action's documented Node distribution sources. It is not
+  copied into the Worker, server, browser, webOS, or mobile artifacts.
+- **Data and permissions:** It receives only public repository workflow
+  context and the requested Node version. The workflow retains read-only
+  repository permission, enables no npm cache through the action, and exposes
+  no gameplay, participant, scenario, account, OAuth, API-token, or payment
+  data.
+- **Review and removal:** A version, commit, source, license, download,
+  permission, telemetry, caching, or execution-scope change requires renewed
+  review. Removal deletes the setup step and this inventory entry; CI must then
+  provide another explicitly verified Node.js 22-or-later runtime.
+
 ## Remote Deployment Tool — Temporary Development Exception
 
 ### Wrangler 4.119.0
@@ -386,11 +412,12 @@ successful build, or this pending table.
   graph and notices remain unapproved.
 - **Build scripts, native code, and downloads:** `esbuild@0.28.1` and
   `workerd@1.20260801.1` declare postinstall scripts and platform-specific
-  optional native packages. This means the project's ordinary
-  `npm ci --ignore-scripts` rule cannot simply be applied while retaining a
-  working tool. The scripts, selected macOS and CI binaries, registry sources,
-  checksums, and absence of an unverified fallback download require inspection
-  before approval.
+  optional native packages. Repository adoption proved that
+  `npm ci --ignore-scripts` retains a working Wrangler dry run on the evaluated
+  macOS host and GitHub-hosted Linux runner by using the applicable locked
+  prebuilt packages. Install scripts remain disabled. Any fallback download,
+  changed native package, or platform where the locked prebuilt tool does not
+  work requires renewed review rather than enabling scripts automatically.
 - **License evidence:** Wrangler, Cloudflare's preset, and asset handler declare
   `MIT OR Apache-2.0`; `workerd` declares Apache-2.0; the other listed direct
   dependencies declare MIT. Exact copyright, patent, attribution, dual-license

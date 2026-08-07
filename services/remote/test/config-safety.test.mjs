@@ -21,3 +21,19 @@ test("development Wrangler configuration is narrowly scoped and contains no acco
   assert.equal(configuration.bucket_name, undefined);
   assert.doesNotMatch(source, /(api[_-]?token|secret|password)\s*[":=]/i);
 });
+
+test("CI gates remote-only changes with the pinned Node runtime and offline checks", async () => {
+  const workflow = await readFile(
+    new URL("../../../.github/workflows/rust.yml", import.meta.url),
+    "utf8",
+  );
+
+  assert.equal(workflow.match(/- "services\/remote\/\*\*"/g)?.length, 2);
+  assert.match(
+    workflow,
+    /actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/,
+  );
+  assert.match(workflow, /node-version: "22"/);
+  assert.match(workflow, /run: make test-remote/);
+  assert.match(workflow, /run: make check-cloudflare/);
+});

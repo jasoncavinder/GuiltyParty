@@ -125,7 +125,10 @@ The first synthetic deployment was completed on 2026-08-06 HST
 - Browser origin policy: `ALLOWED_ORIGINS` is intentionally unset, so requests
   carrying an `Origin` header fail closed until the Host and Stage development
   origins are approved; native and command-line smoke tests without an Origin
-  remain available
+  remain available. Origin approval alone will not enable browser WebSockets:
+  the browser API cannot supply the temporary authorization and endpoint
+  headers, so an approved browser-compatible pairing bootstrap is required
+  before Host or Stage integration
 - Billing guardrail: an enabled account-wide Billing Budget Alert emails the
   owner when total Cloudflare spend approaches USD 10; this dashboard alert
   type does not provide a separate forecast threshold

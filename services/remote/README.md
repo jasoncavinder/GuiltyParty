@@ -58,11 +58,21 @@ The temporary development WebSocket boundary expects:
 - `ENVIRONMENT_PROFILE=development-skeleton`
 - secret `DEVELOPMENT_ACCESS_TOKEN_SHA256`, containing a lowercase SHA-256 hex
   digest of a synthetic token
-- `ALLOWED_ORIGINS`, an exact comma-separated allowlist for browser clients;
-  native clients may omit `Origin`
+- `ALLOWED_ORIGINS`, an exact comma-separated allowlist for requests that carry
+  a browser origin; native clients may omit `Origin`
 - `Authorization: Bearer <synthetic token>`
 - `X-GP-Session-ID`, `X-GP-Endpoint-ID`, and
   `X-GP-Projection-Audience` (`host`, `stage`, or `participant`)
 
-This boundary exists only to support synthetic integration tests. It must be
-removed when production identity and pairing replace it.
+The browser WebSocket API cannot set `Authorization` or arbitrary `X-GP-*`
+handshake headers. Consequently, this temporary boundary supports only native
+or command-line synthetic clients; configuring `ALLOWED_ORIGINS` does not make
+it usable by the browser Host or webOS Stage.
+
+Before either browser surface connects remotely, an approved HTTPS pairing and
+authentication bootstrap must issue short-lived, server-derived authority
+through a WebSocket-compatible mechanism. It must bind the endpoint, audience,
+session, authority generation, expiry, and exact browser origin on the server;
+credentials must remain out of URLs, browser storage, logs, and application
+envelopes. The temporary shared development token must then be removed rather
+than adapted into browser authentication.

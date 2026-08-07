@@ -125,6 +125,7 @@ The following dependencies are approved for the MVP. All have permissive license
 | **JS: `ares-cli`** | LG webOS packaging | npm | Apache 2.0 |
 | **iOS: Foundation**| Networking & WebSockets | Apple | Proprietary (Allowed for iOS targets) |
 | **GitHub: `actions/checkout`** | Read-only CI checkout | GitHub Marketplace | MIT |
+| **GitHub: `actions/setup-node` v7.0.0** | Select the required Node.js 22 CI runtime; action pinned to commit `820762786026740c76f36085b0efc47a31fe5020` | GitHub Marketplace | MIT |
 
 *Note: Transitive Rust dependencies remain locked in `server/Cargo.lock`. Model weights and local-model runtimes are operator-supplied and must be license-reviewed separately before distribution or commercial use. No model artifact is committed. No third-party AI orchestration or frontend framework is included.*
 
