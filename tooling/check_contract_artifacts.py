@@ -287,7 +287,7 @@ def main() -> int:
     )
     print(
         "The dependency-free fixture evaluator covers the v1 keyword subset; "
-        "a standards validator still requires owner approval."
+        "Ajv independently checks full Draft 2020-12 conformance."
     )
     return 0
 

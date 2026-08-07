@@ -6,6 +6,12 @@ on:
     paths:
       - "server/**"
       - "clients/**"
+      - "contracts/**"
+      - "tests/contracts/**"
+      - "tooling/check_contract_artifacts.py"
+      - "tooling/check_contract_schema.mjs"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/rust.yml"
       - "Makefile"
   push:
@@ -13,6 +19,12 @@ on:
     paths:
       - "server/**"
       - "clients/**"
+      - "contracts/**"
+      - "tests/contracts/**"
+      - "tooling/check_contract_artifacts.py"
+      - "tooling/check_contract_schema.mjs"
+      - "package.json"
+      - "package-lock.json"
       - ".github/workflows/rust.yml"
       - "Makefile"
 
@@ -27,6 +39,12 @@ jobs:
         working-directory: server
     steps:
       - uses: actions/checkout@v7
+      - name: Install contract validation tooling
+        working-directory: .
+        run: npm ci --ignore-scripts --cache .cache/npm
+      - name: Validate control-plane contracts
+        working-directory: .
+        run: make check-contracts
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Lint

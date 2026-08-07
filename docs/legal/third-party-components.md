@@ -59,12 +59,12 @@ development environment prerequisites rather than redistributed components.
 Plugins, extensions, templates, generated artifacts, or runtimes copied from
 those tools into a release still require review.
 
-## Proposed Contract Validation Tool
+## Approved Contract Validation Tool
 
 ### Ajv
 
-- **Status:** Proposed; not installed, approved, or present in a repository
-  package manifest.
+- **Status:** Approved and installed as development-only contract validation
+  tooling.
 - **Category and risk:** Elevated development/build tool. Ajv compiles schemas
   into JavaScript validation functions, so it executes during tests even though
   it is excluded from application and release artifacts.
@@ -107,8 +107,11 @@ those tools into a release still require review.
   Draft 2020-12 class from core Ajv. Do not add format, keyword, CLI, remote-
   loading, or mutation plugins. Configure strict schema checks, no coercion,
   no default insertion, no additional-property removal, and no remote schema
-  retrieval. Treat `format` as the Draft 2020-12 annotation used by the current
-  contract. Install with `npm ci --ignore-scripts`; the five resolved packages
+  retrieval. Disable only Ajv's non-standard `strictRequired` lint because the
+  canonical envelopes declare required properties through sibling `allOf`
+  branches; JSON Schema `required` validation remains active. Treat `format` as
+  the Draft 2020-12 annotation used by the current contract. Install with
+  `npm ci --ignore-scripts`; the five resolved packages
   declare no install script and contain no native binary. Ajv generates
   validation functions in memory from reviewed first-party schemas; it makes
   no runtime network request for this use.
@@ -152,9 +155,10 @@ those tools into a release still require review.
   evidence in dependency review. Include the locked development tool in the
   development SBOM where applicable, but exclude it from product SBOMs only
   after verifying it is absent from release artifacts.
-- **Reviewer and explicit owner decision:** Pending project-owner review.
-- **Approval date, scope, review triggers, and exception expiry:** Pending. If
-  approved, scope is exact `ajv@8.20.0` as a development-only contract validator
+- **Reviewer and explicit owner decision:** Approved by the project owner in the
+  repository work session on 2026-08-06.
+- **Approval date, scope, review triggers, and exception expiry:** Approved
+  2026-08-06 for exact `ajv@8.20.0` as a development-only contract validator
   with the four listed locked transitives and no plugins or remote retrieval.
   Any version, transitive, script, license, provenance, maintainer, execution,
   network, schema-source, or distribution change requires renewed review. No

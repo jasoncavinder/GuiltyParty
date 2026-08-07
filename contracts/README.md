@@ -25,6 +25,8 @@ Identifiers for sessions, endpoints, rooms, and participants are deliberately
 separate. Endpoint platform and capability fields are coarse claims for server
 validation, never hardware identifiers or grants of authority.
 
-The proposed standards validator and its approval boundary are recorded in the
+The approved standards validator and its constrained development-only scope are
+recorded in the
 [third-party component inventory](../docs/legal/third-party-components.md#ajv).
-It is not installed or approved merely because the intake record exists.
+`make check-contracts` runs both the first-party structural/privacy checks and
+Ajv's full Draft 2020-12 meta-schema and fixture validation.
