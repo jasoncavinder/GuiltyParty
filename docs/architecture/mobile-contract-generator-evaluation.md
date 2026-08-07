@@ -208,6 +208,44 @@ reimplement the lost constraints, but doing so would duplicate the canonical
 schema and defeat the purpose of choosing this generator.
 
 No generated source, wrapper, package manifest, lockfile, or installed package
-from the spike is retained in the repository. The next owner decision is the
-already identified comparison between a narrow first-party generator and manual
-Swift/Kotlin DTO maintenance.
+from the spike is retained in the repository.
+
+## Follow-up Evaluation Decision
+
+On 2026-08-06, the project owner approved a bounded evaluation of a narrow
+first-party generator. Handwritten Swift and Kotlin DTO maintenance remains the
+fallback. This approval permits a focused design and compatibility spike; it
+does not adopt a generator, authorize generated product code, change the
+canonical contract, or approve a new dependency.
+
+The evaluation must treat the tool as a Guilty Party contract compiler rather
+than a general-purpose JSON Schema generator. It will:
+
+- accept only the committed control-plane schema and an explicitly documented
+  subset of its JSON Schema Draft 2020-12 vocabulary;
+- fail closed on unsupported keywords, ambiguous constructs, unresolved
+  references, or schema shapes outside that subset;
+- generate only namespaced, data-only Swift and Kotlin transport models and
+  serialization behavior;
+- preserve required-nullable versus optional-absent values and emit distinct,
+  exhaustive discriminated variants;
+- tolerate additive object fields while routing unknown critical variants to a
+  controlled compatibility outcome;
+- add no networking, authorization, secrecy policy, logging, persistence,
+  application state, or UI behavior;
+- generate deterministic, reviewable output suitable for committing and CI
+  drift detection; and
+- pass the existing positive, negative, additive-field, unsupported-variant,
+  and privacy fixtures in both native languages at accepted compiler baselines.
+
+The first proof should cover the complete join, envelope, command, projection,
+and error subset rather than a favorable isolated type. Existing repository
+languages and already approved components should be preferred; any new
+third-party component requires its own ADR 0025 intake and owner approval.
+
+Stop the evaluation and return to the handwritten-DTO alternative if faithful
+generation requires broad JSON Schema implementation, substantial native
+runtime machinery, language-specific contract exceptions, or duplicated
+handwritten validation that makes generation merely cosmetic. Permanent
+adoption or a decision to supersede ADR 0016 must be recorded separately after
+the spike evidence is reviewed.
