@@ -2,9 +2,12 @@
 
 ## Status
 
-The Remote Friends MVP development service was promoted on 2026-08-07 HST from
-reviewed `dev` commit `2501ff021b5a033c1357d9c9cea4f414a233fd6a` after PR
-#19 merged. The deployment remains limited to the synthetic
+The Remote Friends MVP development service was initially promoted on 2026-08-07
+HST from reviewed `dev` commit
+`2501ff021b5a033c1357d9c9cea4f414a233fd6a` after PR #19 merged. Its current
+reviewed candidate is commit `5eb8a196b09f82f9524ebce2e9a4e2cd8395c393`
+after PR #22 merged and the accepted lifecycle rehearsal passed. The deployment
+remains limited to the synthetic
 `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
 `workers.dev` endpoint, the owner-approved `api.test.guiltyparty.app` Custom
 Domain, exact browser origins, and the minimum test authority secrets described
@@ -212,16 +215,16 @@ The owner-operated development promotion followed this procedure:
 Promotion evidence:
 
 - Reviewed source commit:
-  `2501ff021b5a033c1357d9c9cea4f414a233fd6a`.
-- Current Worker version after secret cleanup and the emergency-disable
-  restoration rehearsal: `9f74107a-d613-4566-91ae-ad6f88d1dcd5`.
+  `5eb8a196b09f82f9524ebce2e9a4e2cd8395c393`.
+- Current Worker version after the accepted lifecycle promotion:
+  `01485ec2-a2b5-4472-8b3b-97de104d0b72`.
 - Provider script ETag for the final Worker version:
-  `1e6df89f84ba45a75a9a9b852a9d477dd8eec0f32be6a543d40371b7efa0055c`.
+  `643efbfa0220039ace67fe9f1738cd97df6368073f70f41cb3b1a33fb2c01b29`.
 - Reproduced Wrangler 4.119.0 dry-run runtime artifact manifest from the
   reviewed source commit:
 
   - `worker.js` SHA-256:
-    `6b7ec8358e613ae53501d3042fef14634dca44cf5cb7e09d289528f1f4371f82`.
+    `3aba82e6f3ae69ac2311f0f042e362c27d3a8b7c62ed342add9043e21c0085d5`.
   - `85b31fdbd5ef4c5f690c397f89cbbb70b9af79d5-gp_scenario_wasm.wasm`
     SHA-256:
     `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`.
@@ -271,9 +274,9 @@ packaged-Stage create/join/ticket/WebSocket/end rehearsal passed. Operators
 must therefore verify every routed hostname after a secret-only restoration
 and redeploy the reviewed bundle if a Custom Domain lags.
 
-The development-only lifecycle rehearsal proposed in ADR 0038 uses a separate
-operator-authenticated creation route with code-fixed short windows. After its
-implementation is reviewed and deployed, run `make rehearse-remote-lifecycle`
+The accepted development-only lifecycle rehearsal in ADR 0038 uses a separate
+operator-authenticated creation route with code-fixed short windows. Run
+`make rehearse-remote-lifecycle`
 with the base URL and Host bootstrap proof supplied through the protected
 operator process environment. The rehearsal must observe the documented
 10-second Cloudflare hibernation window before requesting the same Stage
@@ -281,17 +284,36 @@ projection, then observe retained expiry and active-session data deletion. It
 does not change the ordinary four-hour and seven-day defaults and does not
 claim deletion from Cloudflare's provider-controlled recovery history.
 
+The accepted lifecycle implementation was promoted from merged `dev` commit
+`5eb8a196b09f82f9524ebce2e9a4e2cd8395c393` on 2026-08-07 HST. The first
+Custom Domain probes briefly reached the previous version while the direct
+Worker hostname had the new lifecycle route; unique follow-up requests reached
+the promoted version without another deployment. The committed browser
+allowlist then accepted `host.test.guiltyparty.app` and
+`play.test.guiltyparty.app`, rejected the retired hosted-Stage origin, and kept
+the packaged Stage on its narrow opaque `null` Origin path.
+
+The protected live lifecycle rehearsal passed invitation invalidity, rotation,
+closure and expiry; connect-ticket consumption, tamper, expiry, revocation and
+stale generation; idle hibernation/reactivation; fresh-ticket reconnect with
+the same authorized Stage projection; explicit end; automatic expiry; and
+active-session data deletion. Both deletion paths transitioned from retained
+`410` to empty `404`. Both routed hostnames returned `test-gated` afterward,
+and the Worker secret inventory remained limited to `AUTHORITY_SIGNING_KEY`
+and `HOST_BOOTSTRAP_TOKEN_SHA256`.
+
 The first-party WebAssembly module and original scenario are bundled with the
 Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
 Queues, Realtime, Containers, analytics, and remote AI remain absent.
 
-Before named friends join, a separate readiness slice must complete hibernation
-and deletion evidence, app conformance, API Custom Domain DNS/certificate
-verification, packaged Stage transport evidence, tester notice, and the final
-owner go/no-go record. The
-emergency disable, invitation rotation and closure, endpoint revocation,
-explicit session end, per-session join limiting, and per-endpoint message
-limiting are implemented and still require app-level rehearsal.
+Before named friends join, the physical Host, packaged Stage, and two iOS
+Companions must complete the original scenario with recipient-secrecy and
+reconnect evidence. The named-tester notice and final owner go/no-go record also
+remain required. Server-side hibernation, lifecycle deletion, emergency
+disable, invitation rotation and closure, endpoint revocation, explicit
+session end, per-session join limiting, and per-endpoint message limiting are
+implemented and rehearsed; their physical-client behavior still requires the
+app-level test.
 
 ## Staging Gate
 

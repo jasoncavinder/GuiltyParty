@@ -88,8 +88,8 @@ The rehearsal creates synthetic state and proves first-use `101`, replay
 `401`, and tamper `401` without printing the bootstrap proof, pairing proof,
 primary bearer, or connect ticket.
 
-After the proposed development lifecycle surface in ADR 0038 is reviewed and
-deployed, exercise its fixed short-lived synthetic sessions with:
+Exercise the accepted and deployed ADR 0038 lifecycle surface with fixed
+short-lived synthetic sessions using:
 
 ```sh
 GP_REMOTE_BASE_URL='https://api.test.guiltyparty.app' \
@@ -99,8 +99,9 @@ make rehearse-remote-lifecycle
 
 This longer rehearsal verifies invitation and ticket negative paths, an idle
 hibernatable connection and projection after reactivation, fresh-ticket
-reconnect, explicit end, alarm expiry, and active-session data deletion. It never accepts
-caller-selected lifetimes and does not change ordinary session defaults.
+reconnect, explicit end, alarm expiry, and active-session data deletion. It
+never accepts caller-selected lifetimes and does not change ordinary session
+defaults.
 
 ## Configuration Safety
 
@@ -146,11 +147,10 @@ responses contain it only in the non-cacheable HTTPS response.
 
 ## Remaining External-Test Gates
 
-- reconnect acceptance across real Durable Object hibernation
-- automated alarm expiry and deletion evidence
-- physical Host, webOS Stage, and two-iOS-Companion conformance
-- the approved `api.test.guiltyparty.app` deployment, packaged Stage Origin and
-  subprotocol evidence, named-tester notice, and explicit final owner approval
+- physical Host, packaged webOS Stage, and two-iOS-Companion conformance
+- full original-scenario completion and recipient-secrecy evidence across those
+  physical surfaces
+- the named-tester notice and explicit final owner approval
 
 Until those pass, local runtime tests use synthetic aliases and the committed
 original scenario only.
