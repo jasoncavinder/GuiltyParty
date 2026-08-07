@@ -10,6 +10,8 @@ defined by [ADR 0005](../docs/adr/0005-versioned-control-plane-contract.md).
   them.
 - `realtime/v1/README.md` records WebSocket direction, negotiation, and
   sequencing rules that JSON Schema cannot express by itself.
+- `generated/control-plane/v1/` contains the committed Swift and Kotlin
+  transport models derived from the canonical schema.
 - `../tests/contracts/v1/` contains synthetic conformance and privacy fixtures.
 
 Protocol `1.0` is implemented by the Rust prototype server and the browser Host
@@ -35,3 +37,6 @@ recorded in the
 [third-party component inventory](../docs/legal/third-party-components.md#ajv).
 `make check-contracts` runs both the first-party structural/privacy checks and
 Ajv's full Draft 2020-12 meta-schema and fixture validation.
+`make generate-mobile-contracts` regenerates both committed native outputs;
+`make check-mobile-contracts` proves deterministic generation, native
+compilation, fixture compatibility, and zero worktree drift.

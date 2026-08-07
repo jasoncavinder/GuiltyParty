@@ -100,8 +100,10 @@ The generation integration slice will add these root commands:
 
 - `make generate-mobile-contracts` validates the canonical schema and fixtures,
   builds the locked first-party generator offline, generates both languages in
-  a temporary directory, verifies both outputs, and atomically replaces the two
-  committed files only after every step succeeds.
+  a temporary directory, verifies both outputs, and replaces each committed file
+  atomically only after every step succeeds. If a later replacement fails, the
+  command restores every earlier file from a staged backup before returning the
+  error.
 - `make check-mobile-contracts` performs the same offline generation into a
   temporary directory and fails when either result differs from its committed
   output. It never modifies the worktree.
@@ -170,11 +172,18 @@ runtime requires a separate ADR 0025 intake and owner approval before use.
 
 ## Toolchain Baselines and Updates
 
-The initial reproducibility baseline is:
+The integration reproducibility baseline is:
 
 - Rust 1.97.1 from `rust-toolchain.toml` for the first-party generator;
-- Swift language mode 6, initially verified with Swift 6.3.3; and
-- Kotlin/JVM 2.3, initially verified with Kotlin 2.3.10 on JRE 25.0.2.
+- Swift language mode 6, pinned in CI to Apple Swift 6.3.3 from Xcode 26.6;
+  and
+- Kotlin/JVM pinned in CI to 2.4.10 on the `macos-26` hosted runner.
+
+The adoption spike's Kotlin/JVM 2.3.10 result remains valid compatibility
+evidence. The integration baseline moves to 2.4.10 because that is the exact
+compiler supplied by the selected hosted runner at integration time. The CI job
+asserts both native semantic versions and fails when the hosted image changes
+them; it does not silently accept a moving compiler.
 
 The generation and CI integration must pin the exact native toolchain releases
 it installs or selects. Moving a baseline requires a reviewable toolchain
@@ -262,10 +271,10 @@ Positive:
 
 Negative:
 
-- Guilty Party owns and must maintain approximately 2,845 lines of generator
-  and compatibility-runner code.
-- Committed generated files add more than 5,000 lines and will enlarge contract
-  diffs once the integration slice lands.
+- Guilty Party owns and must maintain the bounded generator and integration
+  wrapper rather than delegating those semantics to a third party.
+- Committed generated files add more than 5,000 lines and enlarge future
+  contract diffs.
 - CI requires compatible Swift and Kotlin compiler environments.
 - Kotlin still needs a small handwritten raw-JSON adapter with its own parity
   and input-limit tests.
