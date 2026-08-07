@@ -1,6 +1,7 @@
 # Platform Documentation
 
 - [Cloudflare deployment runbook](cloudflare-deployment.md)
+- [Remote Friends MVP test readiness](remote-friends-test-readiness.md)
 - [Remote Friends MVP service contract](remote-friends-mvp.md)
 
 This directory will hold platform-specific constraints and integration notes.

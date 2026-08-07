@@ -7,16 +7,23 @@ import {
   PROTOCOL_VERSION,
   SESSION_ACTIVE_DURATION_MS,
   SESSION_RETENTION_MS,
+  WEBSOCKET_TICKET_DURATION_MS,
+  WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
 } from "./constants.js";
 import {
   authorityCookie,
   clearAuthorityCookie,
   issueAuthorityToken,
+  issueWebSocketTicket,
   offeredSubprotocols,
   requestOriginAllowed,
   resolveFriendsAuthority,
+  resolvePackagedStageAuthority,
   sha256Hex,
   verifyBootstrapProof,
+  verifyWebSocketTicket,
+  webSocketTicketFromSubprotocols,
+  webSocketTicketSubprotocol,
 } from "./friends-auth.js";
 import { jsonResponse, methodNotAllowed, problemResponse } from "./http.js";
 
@@ -66,6 +73,13 @@ export default {
         return withCors(methodNotAllowed("POST"), request, env);
       }
       return withCors(await joinSession(request, env), request, env);
+    }
+
+    if (url.pathname === "/api/v1/websocket-tickets") {
+      if (request.method !== "POST") {
+        return withCors(methodNotAllowed("POST"), request, env);
+      }
+      return withCors(await createWebSocketTicket(request, env), request, env);
     }
 
     if (url.pathname === "/api/v1/session/invitation") {
@@ -135,6 +149,13 @@ async function createSession(request, env) {
       retryable: false,
     });
   }
+  const edgeLimit = await consumeEdgeLimit(
+    env.SESSION_CREATE_RATE_LIMITER,
+    "authenticated-host",
+  );
+  if (!edgeLimit.ok) {
+    return edgeLimit.response;
+  }
 
   const now = Date.now();
   const sessionId = randomIdentifier("ses");
@@ -202,9 +223,6 @@ async function joinSession(request, env) {
   if (unavailable) {
     return unavailable;
   }
-  if (!requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
-    return problemResponse(403, "origin_not_allowed", "Origin not allowed", { retryable: false });
-  }
   const sessionId = request.headers.get("X-GP-Session-ID") ?? "";
   if (!SESSION_IDENTIFIER_PATTERN.test(sessionId)) {
     return problemResponse(400, "invalid_session_context", "Invalid session context", {
@@ -234,14 +252,39 @@ async function joinSession(request, env) {
     });
   }
 
-  const origin = request.headers.get("Origin");
+  const requestOrigin = request.headers.get("Origin");
+  const packagedStage = isPackagedStageJoin(parsed.value, requestOrigin);
+  const browser = requestOrigin !== null && requestOrigin !== "null";
+  if (
+    (!packagedStage && !requestOriginAllowed(request, env.ALLOWED_ORIGINS)) ||
+    (requestOrigin === "null" && !packagedStage)
+  ) {
+    return problemResponse(403, "origin_not_allowed", "Origin not allowed", { retryable: false });
+  }
+  if (requestOrigin === null && parsed.value.kind === "stage") {
+    return problemResponse(
+      400,
+      "packaged_stage_origin_required",
+      "Packaged Stage origin required",
+      { retryable: false },
+    );
+  }
+  const edgeLimit = await consumeEdgeLimit(
+    env.SESSION_JOIN_RATE_LIMITER,
+    await sha256Hex(sessionId),
+  );
+  if (!edgeLimit.ok) {
+    return edgeLimit.response;
+  }
+
+  const authorityOrigin = browser ? requestOrigin : null;
   const stub = sessionStub(env, sessionId);
   const internalResponse = await stub.fetch("https://session.internal/internal/session/join", {
     method: "POST",
     headers: internalHeaders(),
     body: JSON.stringify({
       pairing_digest: await sha256Hex(pairingCode),
-      origin,
+      origin: authorityOrigin,
       join: parsed.value,
       now_unix_ms: Date.now(),
     }),
@@ -258,11 +301,15 @@ async function joinSession(request, env) {
       participantId: admission.participant_id,
       authorityGeneration: admission.authority_generation,
       expiresAtUnixMs: admission.expires_at_unix_ms,
-      origin,
+      origin: authorityOrigin,
     },
     env.AUTHORITY_SIGNING_KEY,
   );
-  const browser = origin !== null;
+  const websocketTransport = packagedStage
+    ? "ticket_subprotocol"
+    : browser
+      ? "cookie"
+      : "authorization_header";
   return jsonResponse(
     {
       protocol_version: PROTOCOL_VERSION,
@@ -272,6 +319,10 @@ async function joinSession(request, env) {
       room_id: admission.room_id,
       participant_id: admission.participant_id,
       authority_transport: browser ? "cookie" : "bearer",
+      websocket_transport: websocketTransport,
+      ...(packagedStage
+        ? { websocket_ticket_endpoint: "/api/v1/websocket-tickets" }
+        : {}),
       authority_expires_at_unix_ms: admission.expires_at_unix_ms,
       primary_authority_generation: admission.authority_generation,
     },
@@ -284,6 +335,66 @@ async function joinSession(request, env) {
   );
 }
 
+async function createWebSocketTicket(request, env) {
+  const unavailable = friendsServiceUnavailable(env);
+  if (unavailable) {
+    return unavailable;
+  }
+  const resolved = await resolvePackagedStageAuthority(request, env);
+  if (!resolved.ok) {
+    const title = resolved.status === 401 ? "Invalid authority" : "Packaged Stage unavailable";
+    return problemResponse(resolved.status, resolved.code, title, { retryable: false });
+  }
+
+  const now = Date.now();
+  const authority = resolved.authority;
+  const ticketExpiresAtUnixMs = Math.min(
+    now + WEBSOCKET_TICKET_DURATION_MS,
+    authority.expiresAtUnixMs,
+  );
+  if (ticketExpiresAtUnixMs <= now) {
+    return problemResponse(401, "authority_expired", "Invalid authority", { retryable: false });
+  }
+  const ticket = await issueWebSocketTicket(
+    {
+      ticketId: randomIdentifier("wst"),
+      sessionId: authority.sessionId,
+      endpointId: authority.endpointId,
+      audience: authority.audience,
+      participantId: authority.participantId,
+      authorityGeneration: authority.authorityGeneration,
+      authorityExpiresAtUnixMs: authority.expiresAtUnixMs,
+      ticketExpiresAtUnixMs,
+    },
+    env.AUTHORITY_SIGNING_KEY,
+  );
+  const stub = sessionStub(env, authority.sessionId);
+  const registration = await stub.fetch(
+    "https://session.internal/internal/session/websocket-ticket",
+    {
+      method: "POST",
+      headers: internalAuthorityHeaders(authority),
+      body: JSON.stringify({
+        ticket_digest: await sha256Hex(ticket),
+        ticket_expires_at_unix_ms: ticketExpiresAtUnixMs,
+        now_unix_ms: now,
+      }),
+    },
+  );
+  if (!registration.ok) {
+    return safeInternalFailure(
+      registration,
+      "websocket_ticket_failed",
+      "WebSocket ticket unavailable",
+    );
+  }
+  return jsonResponse({
+    protocol_version: PROTOCOL_VERSION,
+    websocket_subprotocol: webSocketTicketSubprotocol(ticket),
+    ticket_expires_at_unix_ms: ticketExpiresAtUnixMs,
+  });
+}
+
 async function handleWebSocket(request, env) {
   if (request.method !== "GET") {
     return methodNotAllowed("GET");
@@ -291,28 +402,62 @@ async function handleWebSocket(request, env) {
   if (request.headers.get("Upgrade")?.toLowerCase() !== "websocket") {
     return problemResponse(426, "websocket_upgrade_required", "WebSocket upgrade required");
   }
-  if (!offeredSubprotocols(request.headers.get("Sec-WebSocket-Protocol")).includes(CONTROL_SUBPROTOCOL)) {
+  const protocols = offeredSubprotocols(request.headers.get("Sec-WebSocket-Protocol"));
+  if (!protocols.includes(CONTROL_SUBPROTOCOL)) {
     return problemResponse(426, "websocket_subprotocol_required", "Control subprotocol required", {
       detail: `Offer ${CONTROL_SUBPROTOCOL} in Sec-WebSocket-Protocol.`,
     });
   }
-  if (!requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
+  const offeredTicket = webSocketTicketFromSubprotocols(protocols);
+  const hasTicketProtocol = protocols.some((protocol) =>
+    protocol.startsWith(WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX),
+  );
+  if (!hasTicketProtocol && !requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
     return problemResponse(403, "origin_not_allowed", "Origin not allowed", { retryable: false });
   }
-  if (env.EMERGENCY_DISABLED === "true") {
-    return problemResponse(503, "service_emergency_disabled", "Remote friends MVP disabled");
+  if (
+    hasTicketProtocol &&
+    (
+      offeredTicket === null ||
+      request.headers.get("Origin") !== "null" ||
+      request.headers.has("Authorization") ||
+      request.headers.has("Cookie")
+    )
+  ) {
+    return problemResponse(401, "invalid_websocket_ticket", "Invalid WebSocket ticket", {
+      retryable: false,
+    });
+  }
+  const unavailable = friendsServiceUnavailable(env);
+  if (unavailable) {
+    return unavailable;
   }
 
-  const resolved = await resolveFriendsAuthority(request, env);
-  if (!resolved.ok) {
-    const title = resolved.status === 401 ? "Invalid authority" : "Remote gameplay unavailable";
-    return problemResponse(resolved.status, resolved.code, title, { retryable: false });
+  let authority;
+  let ticketDigest = null;
+  if (hasTicketProtocol) {
+    const verified = await verifyWebSocketTicket(offeredTicket, env.AUTHORITY_SIGNING_KEY);
+    if (!verified.ok) {
+      return problemResponse(401, verified.code, "Invalid WebSocket ticket", { retryable: false });
+    }
+    authority = {
+      sessionId: verified.claims.sessionId,
+      endpointId: verified.claims.endpointId,
+      audience: verified.claims.audience,
+      participantId: verified.claims.participantId,
+      authorityGeneration: verified.claims.authorityGeneration,
+      expiresAtUnixMs: verified.claims.authorityExpiresAtUnixMs,
+      origin: null,
+    };
+    ticketDigest = await sha256Hex(offeredTicket);
+  } else {
+    const resolved = await resolveFriendsAuthority(request, env);
+    if (!resolved.ok) {
+      const title = resolved.status === 401 ? "Invalid authority" : "Remote gameplay unavailable";
+      return problemResponse(resolved.status, resolved.code, title, { retryable: false });
+    }
+    authority = resolved.authority;
   }
-  if (!env.GAME_SESSIONS) {
-    return problemResponse(503, "session_binding_unavailable", "Session service unavailable");
-  }
-
-  const authority = resolved.authority;
   const session = sessionStub(env, authority.sessionId);
   const forwardedHeaders = internalHeaders({
     Upgrade: "websocket",
@@ -328,6 +473,9 @@ async function handleWebSocket(request, env) {
   }
   if (authority.origin) {
     forwardedHeaders.set("X-GP-Authority-Origin", authority.origin);
+  }
+  if (ticketDigest !== null) {
+    forwardedHeaders.set("X-GP-WebSocket-Ticket-Digest", ticketDigest);
   }
 
   return session.fetch("https://session.internal/internal/session/ws", {
@@ -407,13 +555,51 @@ function friendsServiceUnavailable(env) {
     return problemResponse(503, "remote_profile_unavailable", "Remote friends MVP unavailable");
   }
   if (
-    !env.GAME_SESSIONS ||
     typeof env.AUTHORITY_SIGNING_KEY !== "string" ||
     env.AUTHORITY_SIGNING_KEY.length < 32
   ) {
-    return problemResponse(503, "friends_service_unconfigured", "Remote friends MVP unavailable");
+    return problemResponse(503, "friends_auth_unconfigured", "Remote friends MVP unavailable");
+  }
+  if (!env.GAME_SESSIONS) {
+    return problemResponse(503, "session_binding_unavailable", "Remote friends MVP unavailable");
   }
   return null;
+}
+
+async function consumeEdgeLimit(binding, key) {
+  if (!binding || typeof binding.limit !== "function") {
+    return {
+      ok: false,
+      response: problemResponse(
+        503,
+        "edge_rate_limit_unavailable",
+        "Admission protection unavailable",
+        { retryable: true },
+      ),
+    };
+  }
+  try {
+    const result = await binding.limit({ key });
+    if (!result || result.success !== true) {
+      return {
+        ok: false,
+        response: problemResponse(429, "edge_rate_limited", "Too many requests", {
+          retryable: true,
+        }),
+      };
+    }
+    return { ok: true };
+  } catch {
+    return {
+      ok: false,
+      response: problemResponse(
+        503,
+        "edge_rate_limit_unavailable",
+        "Admission protection unavailable",
+        { retryable: true },
+      ),
+    };
+  }
 }
 
 function sessionStub(env, sessionId) {
@@ -447,17 +633,24 @@ function isCredentialedApiPath(pathname) {
   return (
     pathname === "/api/v1/sessions" ||
     pathname === "/api/v1/join" ||
+    pathname === "/api/v1/websocket-tickets" ||
     pathname === "/api/v1/session/invitation" ||
     pathname === "/api/v1/session/end" ||
     /^\/api\/v1\/session\/endpoints\/[^/]+\/revoke$/u.test(pathname)
   );
 }
 
+function isPackagedStageCorsPath(pathname) {
+  return pathname === "/api/v1/join" || pathname === "/api/v1/websocket-tickets";
+}
+
 function corsPreflight(request, env) {
-  if (!requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
+  const url = new URL(request.url);
+  const origin = request.headers.get("Origin");
+  const packagedStage = origin === "null" && isPackagedStageCorsPath(url.pathname);
+  if (!packagedStage && !requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
     return problemResponse(403, "origin_not_allowed", "Origin not allowed", { retryable: false });
   }
-  const origin = request.headers.get("Origin");
   if (origin === null) {
     return problemResponse(400, "browser_origin_required", "Browser origin required");
   }
@@ -467,17 +660,21 @@ function corsPreflight(request, env) {
       "Access-Control-Allow-Headers": "Authorization, Content-Type, X-GP-Session-ID",
       "Access-Control-Allow-Methods": "POST, PUT, DELETE, OPTIONS",
       "Access-Control-Max-Age": "600",
-    }),
+    }, !packagedStage),
   });
 }
 
 function withCors(response, request, env) {
   const origin = request.headers.get("Origin");
-  if (origin === null || !requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
+  const packagedStage = origin === "null" && isPackagedStageCorsPath(new URL(request.url).pathname);
+  if (
+    origin === null ||
+    (!packagedStage && !requestOriginAllowed(request, env.ALLOWED_ORIGINS))
+  ) {
     return response;
   }
   const headers = new Headers(response.headers);
-  for (const [name, value] of corsHeaders(origin)) {
+  for (const [name, value] of corsHeaders(origin, {}, !packagedStage)) {
     headers.set(name, value);
   }
   return new Response(response.body, {
@@ -487,10 +684,10 @@ function withCors(response, request, env) {
   });
 }
 
-function corsHeaders(origin, additional = {}) {
+function corsHeaders(origin, additional = {}, allowCredentials = true) {
   return new Headers({
     "Access-Control-Allow-Origin": origin,
-    "Access-Control-Allow-Credentials": "true",
+    ...(allowCredentials ? { "Access-Control-Allow-Credentials": "true" } : {}),
     Vary: "Origin",
     ...additional,
   });
@@ -539,6 +736,10 @@ function validJoinRequest(value) {
     return value.display_name === undefined || value.display_name === null;
   }
   return value.kind === "participant" && validDisplayName(value.display_name);
+}
+
+function isPackagedStageJoin(value, origin) {
+  return value.kind === "stage" && value.endpoint.platform === "webos" && origin === "null";
 }
 
 function validEndpoint(value) {

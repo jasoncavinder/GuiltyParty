@@ -5,7 +5,10 @@ import test from "node:test";
 import Ajv2020 from "ajv/dist/2020.js";
 
 import worker from "../src/gateway.js";
-import { CONTROL_SUBPROTOCOL } from "../src/constants.js";
+import {
+  CONTROL_SUBPROTOCOL,
+  WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
+} from "../src/constants.js";
 import { issueAuthorityToken, sha256Hex } from "../src/friends-auth.js";
 import schema from "../../../contracts/control-plane/v1/control-plane.schema.json" with { type: "json" };
 import openapi from "../../../contracts/http/v1/openapi.json" with { type: "json" };
@@ -27,6 +30,15 @@ function binding(handler) {
   };
 }
 
+function rateLimiter(success = true, consumedKeys = null) {
+  return {
+    async limit({ key }) {
+      consumedKeys?.push(key);
+      return { success };
+    },
+  };
+}
+
 async function friendsEnvironment(handler) {
   return {
     ENVIRONMENT_PROFILE: "friends-mvp-development",
@@ -34,6 +46,8 @@ async function friendsEnvironment(handler) {
     HOST_BOOTSTRAP_TOKEN_SHA256: await sha256Hex(bootstrapProof),
     ALLOWED_ORIGINS: allowedOrigin,
     GAME_SESSIONS: binding(handler),
+    SESSION_CREATE_RATE_LIMITER: rateLimiter(),
+    SESSION_JOIN_RATE_LIMITER: rateLimiter(),
   };
 }
 
@@ -65,10 +79,12 @@ test("OpenAPI declares the session admission failures returned at runtime", () =
   const joinResponses = openapi.paths["/api/v1/join"].post.responses;
 
   assert.ok(createResponses["413"]);
+  assert.ok(createResponses["429"]);
   for (const status of ["404", "413", "429", "503"]) {
     assert.ok(joinResponses[status], `missing join response ${status}`);
   }
   assert.equal(joinResponses["500"], undefined);
+  assert.ok(openapi.paths["/api/v1/websocket-tickets"].post.responses["200"]);
 });
 
 test("Host creates a bounded session and receives HttpOnly cookie authority", async () => {
@@ -146,6 +162,7 @@ test("join hashes pairing proof before Durable Object admission and issues nativ
   assert.equal(response.status, 200);
   const body = await response.json();
   assert.equal(body.authority_transport, "bearer");
+  assert.equal(body.websocket_transport, "authorization_header");
   assert.equal(body.participant_id, "par_0123456789abcdef");
   assert.ok(body.token.startsWith("gp1."));
   const ajv = new Ajv2020({ strict: true, strictRequired: false });
@@ -187,12 +204,120 @@ test("browser Stage join keeps authority out of the response body", async () => 
   assert.match(response.headers.get("Set-Cookie"), /^__Host-gp_authority=/);
   const body = await response.json();
   assert.equal(body.authority_transport, "cookie");
+  assert.equal(body.websocket_transport, "cookie");
   assert.equal("token" in body, false);
 
   const ajv = new Ajv2020({ strict: true, strictRequired: false });
   ajv.addSchema(schema);
   const validate = ajv.getSchema(`${schema.$id}#/$defs/RemoteFriendsJoinResponse`);
   assert.equal(validate(body), true, JSON.stringify(validate.errors));
+});
+
+test("packaged webOS Stage uses bearer authority and a registered WebSocket ticket", async () => {
+  const expiresAt = Date.now() + 60_000;
+  let ticketRegistration;
+  let websocketForward;
+  const env = await friendsEnvironment(async (_name, request) => {
+    const path = new URL(request.url).pathname;
+    if (path === "/internal/session/join") {
+      return Response.json({
+        audience: "stage",
+        endpoint_id: "end_0123456789abcdef",
+        participant_id: null,
+        room_id: "room_0123456789abcdef",
+        authority_generation: 1,
+        expires_at_unix_ms: expiresAt,
+      });
+    }
+    if (path === "/internal/session/websocket-ticket") {
+      ticketRegistration = {
+        body: await request.json(),
+        endpointId: request.headers.get("X-GP-Endpoint-ID"),
+        authorityOrigin: request.headers.get("X-GP-Authority-Origin"),
+      };
+      return Response.json({ registered: true }, { status: 201 });
+    }
+    if (path === "/internal/session/ws") {
+      websocketForward = {
+        ticketDigest: request.headers.get("X-GP-WebSocket-Ticket-Digest"),
+        endpointId: request.headers.get("X-GP-Endpoint-ID"),
+        authorityOrigin: request.headers.get("X-GP-Authority-Origin"),
+      };
+      return Response.json({ forwarded: true });
+    }
+    return Response.json({}, { status: 404 });
+  });
+
+  const join = await worker.fetch(
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-proof",
+        "X-GP-Session-ID": "ses_0123456789abcdef",
+        Origin: "null",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        kind: "stage",
+        endpoint: { platform: "webos", capabilities: ["public_display"] },
+      }),
+    }),
+    env,
+  );
+  assert.equal(join.status, 200);
+  assert.equal(join.headers.get("Access-Control-Allow-Origin"), "null");
+  assert.equal(join.headers.get("Access-Control-Allow-Credentials"), null);
+  assert.equal(join.headers.get("Set-Cookie"), null);
+  const admission = await join.json();
+  assert.equal(admission.authority_transport, "bearer");
+  assert.equal(admission.websocket_transport, "ticket_subprotocol");
+  assert.equal(admission.websocket_ticket_endpoint, "/api/v1/websocket-tickets");
+  assert.ok(admission.token.startsWith("gp1."));
+
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  ajv.addSchema(schema);
+  const validateJoin = ajv.getSchema(`${schema.$id}#/$defs/RemoteFriendsJoinResponse`);
+  assert.equal(validateJoin(admission), true, JSON.stringify(validateJoin.errors));
+
+  const ticketResponse = await worker.fetch(
+    new Request("https://example.test/api/v1/websocket-tickets", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${admission.token}`, Origin: "null" },
+    }),
+    env,
+  );
+  assert.equal(ticketResponse.status, 200);
+  assert.equal(ticketResponse.headers.get("Access-Control-Allow-Origin"), "null");
+  assert.equal(ticketResponse.headers.get("Access-Control-Allow-Credentials"), null);
+  const ticketBody = await ticketResponse.json();
+  const validateTicket = ajv.getSchema(`${schema.$id}#/$defs/RealtimeConnectTicketResponse`);
+  assert.equal(validateTicket(ticketBody), true, JSON.stringify(validateTicket.errors));
+  assert.ok(ticketBody.websocket_subprotocol.startsWith(WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX));
+  assert.equal(ticketRegistration.endpointId, admission.endpoint_id);
+  assert.equal(ticketRegistration.authorityOrigin, null);
+
+  const signedTicket = ticketBody.websocket_subprotocol.slice(
+    WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX.length,
+  );
+  assert.equal(ticketRegistration.body.ticket_digest, await sha256Hex(signedTicket));
+  assert.equal(JSON.stringify(ticketRegistration).includes(signedTicket), false);
+
+  const forwarded = await worker.fetch(
+    new Request("https://example.test/ws/v1", {
+      headers: {
+        Origin: "null",
+        Upgrade: "websocket",
+        "Sec-WebSocket-Protocol": `${CONTROL_SUBPROTOCOL}, ${ticketBody.websocket_subprotocol}`,
+      },
+    }),
+    env,
+  );
+  assert.equal(forwarded.status, 200);
+  assert.deepEqual(await forwarded.json(), { forwarded: true });
+  assert.equal(websocketForward.endpointId, admission.endpoint_id);
+  assert.equal(websocketForward.authorityOrigin, null);
+  assert.equal(websocketForward.ticketDigest, await sha256Hex(signedTicket));
 });
 
 test("websocket route requires the exact v1 subprotocol before authority", async () => {
@@ -260,10 +385,12 @@ test("credentialed browser API preflight is exact-origin and narrowly scoped", a
 
 test("session creation rejects missing bootstrap proof before allocating an object", async () => {
   let called = false;
+  const consumedKeys = [];
   const env = await friendsEnvironment(async () => {
     called = true;
     return Response.json({});
   });
+  env.SESSION_CREATE_RATE_LIMITER = rateLimiter(true, consumedKeys);
   const response = await worker.fetch(
     new Request("https://example.test/api/v1/sessions", {
       method: "POST",
@@ -277,6 +404,137 @@ test("session creation rejects missing bootstrap proof before allocating an obje
   );
   assert.equal(response.status, 401);
   assert.equal(called, false);
+  assert.deepEqual(consumedKeys, []);
+});
+
+test("invalid join traffic cannot consume a session-scoped Cloudflare budget", async () => {
+  const consumedKeys = [];
+  const env = await friendsEnvironment(async () => {
+    assert.fail("invalid join traffic must not address a Durable Object");
+  });
+  env.SESSION_JOIN_RATE_LIMITER = rateLimiter(true, consumedKeys);
+  const sessionId = "ses_0123456789abcdef";
+  const validBody = JSON.stringify({
+    protocol_version: "1.0",
+    kind: "participant",
+    display_name: "Synthetic Player",
+    endpoint: { platform: "browser", capabilities: ["private_display"] },
+  });
+  const requests = [
+    new Request("https://example.test/api/v1/join", { method: "POST" }),
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: { "X-GP-Session-ID": sessionId },
+    }),
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-code",
+        "X-GP-Session-ID": sessionId,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    }),
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-code",
+        "X-GP-Session-ID": sessionId,
+        Origin: "https://untrusted.example.test",
+        "Content-Type": "application/json",
+      },
+      body: validBody,
+    }),
+  ];
+
+  for (const request of requests) {
+    const response = await worker.fetch(request, env);
+    assert.ok(response.status >= 400 && response.status < 500);
+  }
+  assert.deepEqual(consumedKeys, []);
+});
+
+test("Cloudflare edge limits use validated actor and resource scopes before object lookup", async () => {
+  let called = false;
+  const createKeys = [];
+  const joinKeys = [];
+  const env = await friendsEnvironment(async () => {
+    called = true;
+    return Response.json({});
+  });
+  env.SESSION_CREATE_RATE_LIMITER = rateLimiter(false, createKeys);
+  const create = await worker.fetch(
+    new Request("https://example.test/api/v1/sessions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${bootstrapProof}`,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        endpoint: { platform: "browser", capabilities: ["host_control"] },
+      }),
+    }),
+    env,
+  );
+  assert.equal(create.status, 429);
+  assert.equal((await create.json()).code, "edge_rate_limited");
+  assert.deepEqual(createKeys, ["authenticated-host"]);
+  assert.equal(called, false);
+
+  env.SESSION_CREATE_RATE_LIMITER = rateLimiter();
+  env.SESSION_JOIN_RATE_LIMITER = rateLimiter(false, joinKeys);
+  const sessionId = "ses_0123456789abcdef";
+  const join = await worker.fetch(
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-code",
+        "X-GP-Session-ID": sessionId,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        kind: "participant",
+        display_name: "Synthetic Player",
+        endpoint: { platform: "browser", capabilities: ["private_display"] },
+      }),
+    }),
+    env,
+  );
+  assert.equal(join.status, 429);
+  assert.equal((await join.json()).code, "edge_rate_limited");
+  assert.deepEqual(joinKeys, [await sha256Hex(sessionId)]);
+  assert.equal(called, false);
+});
+
+test("admission fails closed when the Cloudflare edge limiter is unavailable", async () => {
+  const env = await friendsEnvironment(async () => Response.json({}));
+  delete env.SESSION_JOIN_RATE_LIMITER;
+  const sessionId = "ses_0123456789abcdef";
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-code",
+        "X-GP-Session-ID": sessionId,
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        kind: "participant",
+        display_name: "Synthetic Player",
+        endpoint: { platform: "browser", capabilities: ["private_display"] },
+      }),
+    }),
+    env,
+  );
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).code, "edge_rate_limit_unavailable");
 });
 
 test("Host rotates pairing proof without exposing its digest", async () => {

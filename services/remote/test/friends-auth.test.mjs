@@ -6,10 +6,15 @@ import {
   AUTHORITY_COOKIE_NAME,
   authorityCookie,
   issueAuthorityToken,
+  issueWebSocketTicket,
   resolveFriendsAuthority,
+  resolvePackagedStageAuthority,
   sha256Hex,
   verifyAuthorityToken,
   verifyBootstrapProof,
+  verifyWebSocketTicket,
+  webSocketTicketFromSubprotocols,
+  webSocketTicketSubprotocol,
 } from "../src/friends-auth.js";
 
 globalThis.crypto ??= webcrypto;
@@ -40,7 +45,9 @@ test("signed authority round-trips without exposing signing material", async () 
 
 test("tampered and expired authorities fail closed", async () => {
   const token = await issueAuthorityToken(claims(), signingKey);
-  const tampered = `${token.slice(0, -1)}${token.endsWith("a") ? "b" : "a"}`;
+  const authorityParts = token.split(".");
+  authorityParts[2] = `${authorityParts[2][0] === "a" ? "b" : "a"}${authorityParts[2].slice(1)}`;
+  const tampered = authorityParts.join(".");
   assert.deepEqual(await verifyAuthorityToken(tampered, signingKey), {
     ok: false,
     code: "invalid_authority",
@@ -110,6 +117,85 @@ test("native bearer authority remains valid without an Origin", async () => {
 
   assert.equal(accepted.ok, true);
   assert.equal(accepted.authority.origin, null);
+});
+
+test("packaged Stage authority is accepted only through the null-origin bearer flow", async () => {
+  const token = await issueAuthorityToken(
+    claims({
+      audience: "stage",
+      participantId: null,
+      authorityGeneration: 1,
+    }),
+    signingKey,
+  );
+  const env = {
+    ENVIRONMENT_PROFILE: "friends-mvp-development",
+    AUTHORITY_SIGNING_KEY: signingKey,
+  };
+  const accepted = await resolvePackagedStageAuthority(
+    new Request("https://api.example.test/api/v1/websocket-tickets", {
+      headers: { Authorization: `Bearer ${token}`, Origin: "null" },
+    }),
+    env,
+  );
+  assert.equal(accepted.ok, true);
+
+  const missingOrigin = await resolvePackagedStageAuthority(
+    new Request("https://api.example.test/api/v1/websocket-tickets", {
+      headers: { Authorization: `Bearer ${token}` },
+    }),
+    env,
+  );
+  assert.equal(missingOrigin.ok, false);
+  assert.equal(missingOrigin.code, "packaged_stage_transport_required");
+
+  const participant = await issueAuthorityToken(claims(), signingKey);
+  const wrongAudience = await resolvePackagedStageAuthority(
+    new Request("https://api.example.test/api/v1/websocket-tickets", {
+      headers: { Authorization: `Bearer ${participant}`, Origin: "null" },
+    }),
+    env,
+  );
+  assert.equal(wrongAudience.ok, false);
+  assert.equal(wrongAudience.code, "packaged_stage_authority_required");
+});
+
+test("WebSocket tickets are separately signed, short-lived subprotocol credentials", async () => {
+  const now = Date.now();
+  const ticket = await issueWebSocketTicket(
+    {
+      ticketId: "wst_0123456789abcdef",
+      sessionId: "ses_0123456789abcdef",
+      endpointId: "end_0123456789abcdef",
+      audience: "stage",
+      participantId: null,
+      authorityGeneration: 1,
+      authorityExpiresAtUnixMs: now + 60_000,
+      ticketExpiresAtUnixMs: now + 30_000,
+    },
+    signingKey,
+  );
+  assert.ok(ticket.startsWith("gpt1."));
+  assert.equal(ticket.includes(signingKey), false);
+  const subprotocol = webSocketTicketSubprotocol(ticket);
+  assert.equal(
+    webSocketTicketFromSubprotocols(["guiltyparty.control.v1", subprotocol]),
+    ticket,
+  );
+  assert.equal((await verifyWebSocketTicket(ticket, signingKey, now)).ok, true);
+  assert.deepEqual(await verifyWebSocketTicket(ticket, signingKey, now + 30_000), {
+    ok: false,
+    code: "websocket_ticket_expired",
+  });
+
+  const ticketParts = ticket.split(".");
+  ticketParts[2] = `${ticketParts[2][0] === "a" ? "b" : "a"}${ticketParts[2].slice(1)}`;
+  const tampered = ticketParts.join(".");
+  assert.deepEqual(await verifyWebSocketTicket(tampered, signingKey, now), {
+    ok: false,
+    code: "invalid_websocket_ticket",
+  });
+  assert.equal(webSocketTicketFromSubprotocols([subprotocol, subprotocol]), null);
 });
 
 test("Host bootstrap compares the configured digest instead of storing raw proof", async () => {

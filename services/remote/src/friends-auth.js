@@ -1,8 +1,12 @@
-import { FRIENDS_MVP_PROFILE } from "./constants.js";
+import {
+  FRIENDS_MVP_PROFILE,
+  WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
+} from "./constants.js";
 
 export const AUTHORITY_COOKIE_NAME = "__Host-gp_authority";
 
 const TOKEN_PREFIX = "gp1";
+const WEBSOCKET_TICKET_PREFIX = "gpt1";
 const TOKEN_MAXIMUM_LENGTH = 4096;
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{16,128}$/;
 const AUDIENCES = new Set(["host", "stage", "participant"]);
@@ -65,6 +69,66 @@ export async function verifyAuthorityToken(token, signingKey, nowUnixMs = Date.n
   }
 }
 
+export async function issueWebSocketTicket(claims, signingKey) {
+  validateSigningKey(signingKey);
+  validateWebSocketTicketClaims(claims, { allowExpired: false });
+  const encodedPayload = encodeBase64Url(
+    new TextEncoder().encode(JSON.stringify({
+      v: 1,
+      jti: claims.ticketId,
+      sid: claims.sessionId,
+      eid: claims.endpointId,
+      aud: claims.audience,
+      pid: claims.participantId ?? null,
+      gen: claims.authorityGeneration,
+      aexp: claims.authorityExpiresAtUnixMs,
+      texp: claims.ticketExpiresAtUnixMs,
+    })),
+  );
+  const signingInput = `${WEBSOCKET_TICKET_PREFIX}.${encodedPayload}`;
+  const signature = await sign(signingInput, signingKey);
+  return `${signingInput}.${encodeBase64Url(signature)}`;
+}
+
+export async function verifyWebSocketTicket(ticket, signingKey, nowUnixMs = Date.now()) {
+  try {
+    validateSigningKey(signingKey);
+    if (typeof ticket !== "string" || ticket.length < 32 || ticket.length > TOKEN_MAXIMUM_LENGTH) {
+      return { ok: false, code: "invalid_websocket_ticket" };
+    }
+    const parts = ticket.split(".");
+    if (parts.length !== 3 || parts[0] !== WEBSOCKET_TICKET_PREFIX) {
+      return { ok: false, code: "invalid_websocket_ticket" };
+    }
+    const signingInput = `${parts[0]}.${parts[1]}`;
+    const validSignature = await verify(signingInput, decodeBase64Url(parts[2]), signingKey);
+    if (!validSignature) {
+      return { ok: false, code: "invalid_websocket_ticket" };
+    }
+    const raw = JSON.parse(new TextDecoder().decode(decodeBase64Url(parts[1])));
+    const claims = {
+      ticketId: raw.jti,
+      sessionId: raw.sid,
+      endpointId: raw.eid,
+      audience: raw.aud,
+      participantId: raw.pid ?? null,
+      authorityGeneration: raw.gen,
+      authorityExpiresAtUnixMs: raw.aexp,
+      ticketExpiresAtUnixMs: raw.texp,
+    };
+    if (raw.v !== 1) {
+      return { ok: false, code: "invalid_websocket_ticket" };
+    }
+    validateWebSocketTicketClaims(claims, { allowExpired: true });
+    if (claims.ticketExpiresAtUnixMs <= nowUnixMs) {
+      return { ok: false, code: "websocket_ticket_expired" };
+    }
+    return { ok: true, claims };
+  } catch {
+    return { ok: false, code: "invalid_websocket_ticket" };
+  }
+}
+
 export async function resolveFriendsAuthority(request, env, nowUnixMs = Date.now()) {
   if (env.ENVIRONMENT_PROFILE !== FRIENDS_MVP_PROFILE) {
     return { ok: false, status: 503, code: "remote_profile_unavailable" };
@@ -103,6 +167,34 @@ export async function resolveFriendsAuthority(request, env, nowUnixMs = Date.now
     return { ok: false, status: 403, code: "browser_origin_required" };
   }
 
+  return verified;
+}
+
+export async function resolvePackagedStageAuthority(request, env, nowUnixMs = Date.now()) {
+  if (env.ENVIRONMENT_PROFILE !== FRIENDS_MVP_PROFILE) {
+    return { ok: false, status: 503, code: "remote_profile_unavailable" };
+  }
+  if (!validSigningKey(env.AUTHORITY_SIGNING_KEY)) {
+    return { ok: false, status: 503, code: "friends_auth_unconfigured" };
+  }
+  if (request.headers.get("Origin") !== "null" || request.headers.get("Cookie") !== null) {
+    return { ok: false, status: 403, code: "packaged_stage_transport_required" };
+  }
+  const authorization = request.headers.get("Authorization") ?? "";
+  if (!authorization.startsWith("Bearer ")) {
+    return { ok: false, status: 401, code: "invalid_authority" };
+  }
+  const verified = await verifyAuthorityToken(
+    authorization.slice("Bearer ".length),
+    env.AUTHORITY_SIGNING_KEY,
+    nowUnixMs,
+  );
+  if (!verified.ok) {
+    return { ok: false, status: 401, code: verified.code };
+  }
+  if (verified.authority.audience !== "stage" || verified.authority.origin !== null) {
+    return { ok: false, status: 403, code: "packaged_stage_authority_required" };
+  }
   return verified;
 }
 
@@ -162,6 +254,21 @@ export function offeredSubprotocols(header) {
   return header.split(",").map((value) => value.trim()).filter(Boolean);
 }
 
+export function webSocketTicketSubprotocol(ticket) {
+  return `${WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX}${ticket}`;
+}
+
+export function webSocketTicketFromSubprotocols(protocols) {
+  const offered = protocols.filter((protocol) =>
+    protocol.startsWith(WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX),
+  );
+  if (offered.length !== 1) {
+    return null;
+  }
+  const ticket = offered[0].slice(WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX.length);
+  return ticket.length > 0 ? ticket : null;
+}
+
 export async function sha256Hex(value) {
   const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
@@ -182,6 +289,25 @@ function validateClaims(claims, { allowExpired }) {
     (claims.origin !== null && !validOrigin(claims.origin))
   ) {
     throw new Error("Invalid authority claims");
+  }
+}
+
+function validateWebSocketTicketClaims(claims, { allowExpired }) {
+  if (
+    !claims ||
+    !IDENTIFIER_PATTERN.test(claims.ticketId) ||
+    !IDENTIFIER_PATTERN.test(claims.sessionId) ||
+    !IDENTIFIER_PATTERN.test(claims.endpointId) ||
+    claims.audience !== "stage" ||
+    claims.participantId !== null ||
+    !Number.isSafeInteger(claims.authorityGeneration) ||
+    claims.authorityGeneration < 1 ||
+    !Number.isSafeInteger(claims.authorityExpiresAtUnixMs) ||
+    !Number.isSafeInteger(claims.ticketExpiresAtUnixMs) ||
+    claims.ticketExpiresAtUnixMs > claims.authorityExpiresAtUnixMs ||
+    (!allowExpired && claims.ticketExpiresAtUnixMs <= Date.now())
+  ) {
+    throw new Error("Invalid WebSocket ticket claims");
   }
 }
 
