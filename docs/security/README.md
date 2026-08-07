@@ -20,6 +20,10 @@ Security and privacy are product requirements, not later implementation tasks.
 - [Mobile notifications](mobile-notifications.md) records the public-safe
   content, action, expiry, choice, and verification boundary required by
   [ADR 0031](../adr/0031-mobile-notifications-and-live-session-status.md).
+- [Mobile store release evidence](../platforms/mobile-store-release.md) records
+  the privacy, deletion, review, rating, rights, and owner-approval evidence
+  required by
+  [ADR 0032](../adr/0032-mobile-store-privacy-and-review-readiness.md).
 - [ADR 0025](../adr/0025-third-party-dependency-governance.md) defines the
   security, privacy, provenance, update, and removal gate for dependencies,
   SDKs, services, models, and external assets.

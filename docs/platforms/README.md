@@ -43,10 +43,13 @@ Browser display, casting, and screen mirroring are fallback paths.
 - [Mobile diagnostics policy checklist](../security/mobile-diagnostics.md)
 - [Mobile notification and Live Session Status policy](../adr/0031-mobile-notifications-and-live-session-status.md)
 - [Mobile notification and live-status checklist](../security/mobile-notifications.md)
-- [Open and deliberately deferred mobile decision register](mobile-decision-register.md)
+- [Mobile store privacy and review-readiness policy](../adr/0032-mobile-store-privacy-and-review-readiness.md)
+- [Mobile store release evidence checklist](mobile-store-release.md)
+- [Completed mobile decision register](mobile-decision-register.md)
 
-The decision register identifies exactly one active discussion at a time and
-preserves the remaining queue across conversations and handoffs.
+The decision register identifies exactly one active discussion while tracked
+questions remain and preserves the accepted history across conversations and
+handoffs. The initial mobile decision queue is now complete.
 
 ## Deferred Targets
 

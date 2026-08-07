@@ -32,7 +32,7 @@ Use this process in this or any future conversation:
    that stable ID.
 4. Update the authoritative product document or ADR when appropriate.
 5. Mark the item accepted, deferred, blocked, or superseded.
-6. Promote exactly one unblocked item from the ordered queue to **Active**.
+6. If an unblocked **Open** item remains, promote exactly one to **Active**.
 
 If a conversation is lost, the next collaborator can resume by naming the
 active ID. New questions receive new IDs and are added to the queue; existing
@@ -40,25 +40,59 @@ IDs are never renumbered or silently removed.
 
 ## Current Discussion
 
-### MC-DEL-004: Mobile Store Privacy and Review Preparation
-
-**Status:** Active
-
-**Why next:** Every mobile product, architecture, networking, privacy, media,
-delivery, and ownership question in this register is now accepted. This final
-item turns those decisions into a truthful App Store and Google Play disclosure,
-account-deletion, capture-claim, and review-preparation policy.
-
-**Decision question:** What evidence and owner approvals are required for store
-privacy declarations, account and data deletion, privacy-policy presentation,
-screen-capture claims, authentication-provider obligations, review notes and
-accounts, age and content ratings, export compliance, and release-by-release
-recertification?
-
-No answer or recommendation is recorded yet. The next discussion should address
-only this question.
+No item is active. All 53 questions in the initial Mobile Companion decision
+queue are accepted, with no open or deliberately deferred items. New questions
+receive stable IDs and enter the ordered queue under the resume protocol above.
 
 ## Accepted Decision History
+
+### MC-DEL-004: Mobile Store Privacy and Review Preparation
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-06
+
+**Decision:** Every external beta promotion and supported mobile release uses a
+versioned evidence pack tied to the exact binary, services, store track, and
+territories. It reconciles data flows, observed network behavior, permissions,
+entitlements, privacy manifests, third-party code, SBOM and rights evidence,
+retention and deletion, store declarations, privacy policies, ratings, product
+claims, and review instructions. The human owner approves each release; store
+approval and agent review are evidence, not delegated accountability. A stable
+privacy policy and privacy-choices page are public and linked in-app. Both
+native apps provide self-service account deletion, and a public authenticated
+web path supports deletion without reinstalling. Fresh authentication and
+explicit confirmation immediately revoke access, with project-controlled
+deletion completed within 30 days by default or sooner when required. Account,
+recovery, authentication binding, provider token, endpoint, push, preference,
+and user-controlled history data is deleted or irreversibly disassociated;
+narrow retention exceptions require separate approved purpose, fields, access,
+duration, deletion, legal basis, and disclosure. Sign in with Apple and other
+provider access is revoked. Store claims describe capture protection honestly
+and distinguish the private Companion from public Stage casting. Reviewers
+receive maintained synthetic accounts, original test content, reachable review
+services, sample invitations, and complete instructions without production
+access. Initial distribution is not child-directed and does not enter Kids or
+Families programs; ratings and eligible scenarios match the actual catalog.
+Encryption, export, provider, AI, permission, content-rights, and territorial
+answers are reviewed from the exact release facts. Any disagreement or
+unresolved server-side lifecycle blocks external distribution.
+
+**Rationale:** Release-specific evidence and self-service controls provide a
+truthful, maintainable store posture for a privacy-first product and a solo
+business without pretending that a prior approval, generic questionnaire, or
+support-dependent process guarantees compliance.
+
+**Consequences:** Public mobile distribution requires ongoing owner review,
+maintained synthetic reviewer infrastructure, accurate rights and rating
+evidence, and completion of every server-side data lifecycle used by the build.
+The policy must be revisited when platform requirements, territories,
+providers, content categories, child-directed distribution, or material data
+practices change. Qualified legal advice remains necessary for legal or
+jurisdictional conclusions.
+
+**Recorded in:** [ADR 0032](../adr/0032-mobile-store-privacy-and-review-readiness.md)
+and [Mobile Store Release Evidence Checklist](mobile-store-release.md)
 
 ### MC-PRIV-001: Lock-Screen Notification Content
 
@@ -1756,7 +1790,7 @@ No open items. Accepted decisions remain in the history above.
 
 ### Delivery, Compliance, and Maintenance
 
-No open items. MC-DEL-004 is the current discussion above.
+No open items. Accepted decisions remain in the history above.
 
 ### Team Ownership
 
