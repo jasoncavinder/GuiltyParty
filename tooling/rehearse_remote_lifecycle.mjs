@@ -10,6 +10,7 @@ const bootstrapProof = requiredValue("GP_HOST_BOOTSTRAP_PROOF");
 const hostOrigin = process.env.GP_HOST_ORIGIN ?? "https://host.test.guiltyparty.app";
 const hibernationIdleMs = 15_000;
 const pollIntervalMs = 5_000;
+const lifecycleRetentionMs = 30_000;
 
 if (baseUrl.pathname !== "/" || baseUrl.search || baseUrl.hash) {
   throw new Error("GP_REMOTE_BASE_URL must be an HTTP(S) origin without a path, query, or fragment");
@@ -96,7 +97,19 @@ async function rehearseExpiryAndDeletion() {
   await delayUntil(host.sessionExpiresAtUnixMs + 1_000);
   await expectJoinStatus(host, host.pairingCode, 410);
 
-  const deletionDeadline = host.sessionExpiresAtUnixMs + 120_000;
+  await waitForDeletion(host, host.sessionExpiresAtUnixMs + 120_000);
+
+  const endedHost = await createSession("/api/v1/rehearsals/lifecycle/sessions");
+  const beforeEnd = Date.now();
+  const ended = await hostControl(endedHost.cookie, "/api/v1/session/end", "POST", 200);
+  const afterEnd = Date.now();
+  assert.ok(ended.body.delete_at_unix_ms >= beforeEnd + lifecycleRetentionMs);
+  assert.ok(ended.body.delete_at_unix_ms <= afterEnd + lifecycleRetentionMs);
+  await expectJoinStatus(endedHost, endedHost.pairingCode, 410);
+  await waitForDeletion(endedHost, ended.body.delete_at_unix_ms + 90_000);
+}
+
+async function waitForDeletion(host, deletionDeadline) {
   while (Date.now() < deletionDeadline) {
     const response = await joinResponse(host, host.pairingCode, "stage");
     if (response.status === 404) {
@@ -447,5 +460,5 @@ await rehearseExpiryAndDeletion();
 
 console.log(
   "Remote lifecycle rehearsal passed: invitation boundaries, ticket boundaries, " +
-  "hibernation/reactivation, reconnect, expiry, and active-storage deletion.",
+  "hibernation/reactivation, reconnect, end/expiry, and active-storage deletion.",
 );

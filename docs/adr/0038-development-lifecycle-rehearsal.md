@@ -37,7 +37,7 @@ The route uses code-fixed rehearsal windows:
 
 - pairing invitation: 15 seconds
 - active session: 45 seconds
-- post-expiry active-storage retention: 30 seconds
+- post-end or post-expiry active-storage retention: 30 seconds
 
 Callers cannot choose or extend those values. Ordinary `/api/v1/sessions`
 continues to use its 15-minute invitation, four-hour active duration, and
@@ -50,8 +50,8 @@ The first-party `rehearse-remote-lifecycle` tool uses synthetic state and only
 Node built-ins. It verifies invitation rotation, closure and expiry; WebSocket
 ticket consumption, tamper, expiry and revocation; an idle hibernatable
 connection and journal-derived projection after reactivation; a fresh-ticket
-reconnect; session expiry; and eventual transition from `410` retained state
-to `404` after the deployed alarm deletes session data. The final `404` probe
+reconnect; session end and expiry; and eventual transition from `410` retained
+state to `404` after each deployed alarm deletes session data. Each final `404` probe
 may reactivate an empty Durable Object and recreate its schema, but no session,
 authority, participant, ticket, journal, or idempotency row is recreated.
 

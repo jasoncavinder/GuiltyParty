@@ -99,7 +99,7 @@ make rehearse-remote-lifecycle
 
 This longer rehearsal verifies invitation and ticket negative paths, an idle
 hibernatable connection and projection after reactivation, fresh-ticket
-reconnect, alarm expiry, and active-session data deletion. It never accepts
+reconnect, explicit end, alarm expiry, and active-session data deletion. It never accepts
 caller-selected lifetimes and does not change ordinary session defaults.
 
 ## Configuration Safety

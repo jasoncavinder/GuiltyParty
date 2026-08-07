@@ -401,12 +401,17 @@ export class SqliteSessionStore {
     });
   }
 
-  endSession(authority, nowUnixMs, retentionMs) {
+  endSession(authority, nowUnixMs) {
     return this.storage.transactionSync(() => {
       const validation = this.validateAuthority(authority, nowUnixMs);
       if (!validation.ok || authority.audience !== "host") {
         return { ok: false, status: 403, code: "host_authority_required", title: "Host authority required" };
       }
+      const metadata = this.sessionMetadata();
+      const retentionMs = Math.max(
+        0,
+        Number(metadata.delete_at_unix_ms) - Number(metadata.session_expires_at_unix_ms),
+      );
       const deleteAtUnixMs = nowUnixMs + retentionMs;
       this.sql.exec(
         `UPDATE session_metadata
