@@ -1,5 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
+import { StagePairingStore } from "./stage-pairing-store.js";
+
 const INTERNAL_PREFIX = "/internal/stage-pairing/";
 const MAX_REDEMPTION_ATTEMPTS = 120;
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{16,128}$/u;
@@ -7,13 +9,10 @@ const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{16,128}$/u;
 export class StagePairing extends DurableObject {
   constructor(ctx, env) {
     super(ctx, env);
-    this.ready = this.ctx.blockConcurrencyWhile(async () => {
-      this.initializeSchema();
-    });
+    this.store = new StagePairingStore(this.ctx.storage);
   }
 
   async fetch(request) {
-    await this.ready;
     const url = new URL(request.url);
     if (!url.pathname.startsWith(INTERNAL_PREFIX) || request.headers.get("X-GP-Internal-Route") !== "1") {
       return internalProblem(404, "not_found", "Not found");
@@ -39,7 +38,8 @@ export class StagePairing extends DurableObject {
       return internalProblem(400, "invalid_stage_pairing", "Invalid Stage pairing");
     }
     const result = this.ctx.storage.transactionSync(() => {
-      const current = this.current();
+      this.store.initializeSchema();
+      const current = this.store.current();
       if (current && Number(current.expires_at_unix_ms) > value.created_at_unix_ms) {
         return { ok: false, status: 409, code: "stage_pairing_code_collision", title: "Stage pairing unavailable" };
       }
@@ -73,7 +73,7 @@ export class StagePairing extends DurableObject {
       return internalProblem(400, "invalid_stage_pairing_approval", "Invalid Stage pairing approval");
     }
     const result = this.ctx.storage.transactionSync(() => {
-      const current = this.current();
+      const current = this.store.current();
       if (!current) {
         return { ok: false, status: 404, code: "stage_pairing_not_found", title: "Stage pairing not found" };
       }
@@ -117,7 +117,7 @@ export class StagePairing extends DurableObject {
       return internalProblem(400, "invalid_stage_pairing_redemption", "Invalid Stage pairing redemption");
     }
     const result = this.ctx.storage.transactionSync(() => {
-      const current = this.current();
+      const current = this.store.current();
       if (!current) {
         return { ok: false, status: 404, code: "stage_pairing_not_found", title: "Stage pairing not found" };
       }
@@ -168,32 +168,7 @@ export class StagePairing extends DurableObject {
   }
 
   async alarm() {
-    await this.ready;
-    await this.ctx.storage.deleteAll();
-    this.initializeSchema();
-  }
-
-  initializeSchema() {
-    this.ctx.storage.sql.exec(`
-      CREATE TABLE IF NOT EXISTS stage_pairing (
-        singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
-        transaction_id TEXT NOT NULL UNIQUE,
-        polling_digest TEXT NOT NULL,
-        endpoint_json TEXT NOT NULL,
-        created_at_unix_ms INTEGER NOT NULL,
-        expires_at_unix_ms INTEGER NOT NULL,
-        attempt_count INTEGER NOT NULL DEFAULT 0,
-        approved_session_id TEXT,
-        approved_host_endpoint_id TEXT,
-        approved_at_unix_ms INTEGER
-      )
-    `);
-  }
-
-  current() {
-    return Array.from(
-      this.ctx.storage.sql.exec("SELECT * FROM stage_pairing WHERE singleton = 1"),
-    )[0] ?? null;
+    await this.store.deleteAll();
   }
 }
 
