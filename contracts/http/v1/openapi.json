@@ -33,11 +33,86 @@
         }
       }
     },
+    "/api/v1/sessions": {
+      "post": {
+        "operationId": "createRemoteFriendsSession",
+        "summary": "Create an invitation-only Remote Friends MVP session",
+        "description": "Requires the operator-controlled Host bootstrap proof in Authorization. Browser authority is returned as a Secure, HttpOnly, SameSite=Strict cookie.",
+        "parameters": [
+          {
+            "name": "Origin",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/CreateSessionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Session, Host authority, and a short-lived pairing invitation were created",
+            "headers": {
+              "Cache-Control": {
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              },
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/CreateSessionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "401": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "503": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
     "/api/v1/join": {
       "post": {
-        "operationId": "joinLocalSession",
-        "summary": "Issue a process-local authority for a synthetic participant or Stage",
-        "description": "This MVP operation is account-free and LAN-only. It does not represent the target account-backed pairing flow.",
+        "operationId": "joinRemoteFriendsSession",
+        "summary": "Pair a guest participant or Stage to a Remote Friends MVP session",
+        "description": "Requires an opaque session identifier in X-GP-Session-ID and the short-lived invitation proof as Authorization: Pairing. This account-free test flow does not replace target account-backed pairing.",
+        "parameters": [
+          {
+            "name": "X-GP-Session-ID",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/Identifier"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -71,9 +146,113 @@
           "400": {
             "$ref": "#/components/responses/Problem"
           },
+          "401": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "403": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "409": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "410": {
+            "$ref": "#/components/responses/Problem"
+          },
           "500": {
             "$ref": "#/components/responses/Problem"
           }
+        }
+      }
+    },
+    "/api/v1/session/invitation": {
+      "put": {
+        "operationId": "rotateRemoteFriendsInvitation",
+        "summary": "Rotate and reopen the current session pairing invitation",
+        "responses": {
+          "200": {
+            "description": "A new short-lived pairing proof was issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/RotateInvitationResponse"
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "503": { "$ref": "#/components/responses/Problem" }
+        }
+      },
+      "delete": {
+        "operationId": "closeRemoteFriendsInvitation",
+        "summary": "Close pairing for the current session",
+        "responses": {
+          "200": {
+            "description": "Pairing was closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/SessionControlResponse"
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "503": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/v1/session/end": {
+      "post": {
+        "operationId": "endRemoteFriendsSession",
+        "summary": "End the current session and revoke all gameplay authority",
+        "responses": {
+          "200": {
+            "description": "Session ended and deletion was scheduled",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/SessionControlResponse"
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "503": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/v1/session/endpoints/{endpoint_id}/revoke": {
+      "post": {
+        "operationId": "revokeRemoteFriendsEndpoint",
+        "summary": "Revoke one non-Host session endpoint",
+        "parameters": [
+          {
+            "name": "endpoint_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/Identifier"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Endpoint was revoked or was already revoked",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/SessionControlResponse"
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "404": { "$ref": "#/components/responses/Problem" },
+          "409": { "$ref": "#/components/responses/Problem" },
+          "503": { "$ref": "#/components/responses/Problem" }
         }
       }
     }

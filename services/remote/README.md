@@ -1,27 +1,39 @@
 # Guilty Party Remote Service
 
-This directory contains the development-only Cloudflare remote-service slice
-described by [ADR 0033](../../docs/adr/0033-cloudflare-remote-services.md).
+This directory contains the test-gated Remote Friends MVP Cloudflare service
+described by [ADR 0033](../../docs/adr/0033-cloudflare-remote-services.md) and
+[PLANS.md](../../PLANS.md).
 
-It is not ready for real players, private or licensed scenario content,
-production identity, or external testing. The public surface fails closed until
-the shared Rust scenario engine, account authority, data lifecycle, provider
-intakes, and deployment gates are complete.
+It is not yet ready for named friends, private or licensed scenario content,
+production identity, or public traffic. The pairing, authority, deterministic
+gameplay, journal, and recipient-projection loop is implemented; external use
+remains blocked by the operational and client acceptance gates below.
 
 ## Current Surface
 
 - `GET /health` returns non-private service status.
-- `GET /api/protocol` returns protocol v1 compatibility and labels the remote
-  implementation as a development skeleton.
-- `POST /api/v1/join` returns a safe `501` Problem Details response because the
-  local prototype's synthetic join authority must not become production auth.
-- `/ws/v1` validates the WebSocket upgrade and exact control subprotocol, then
-  requires an explicitly configured synthetic-development credential before it
-  can route to a session Durable Object.
-- `GameSession` initializes SQLite journal and idempotency tables and uses the
-  Durable Object WebSocket hibernation API. Until the shared engine is wired,
-  application messages receive a safe `remote_engine_unavailable` error and do
-  not mutate state.
+- `GET /api/protocol` returns protocol v1 compatibility and Remote Friends MVP
+  feature identifiers.
+- `POST /api/v1/sessions` requires an operator bootstrap proof, creates a
+  four-hour session, sets browser Host authority in a Secure, HttpOnly,
+  SameSite=Strict cookie, and returns a fifteen-minute pairing invitation.
+- `POST /api/v1/join` admits one Stage and up to eight guest participants using
+  the pairing proof. Browser authority uses the cookie; iOS authority uses the
+  returned bearer token.
+- `/ws/v1` validates the exact control subprotocol, origin, signed authority,
+  endpoint generation, expiry, and current Durable Object authority record.
+- Credentialed browser API preflight and responses echo only an exact allowed
+  origin. Wildcard CORS is never used.
+- `GameSession` journals participant admission and every accepted gameplay
+  transition, schedules expiry and seven-day maximum active-storage deletion
+  through an alarm, and uses the Durable Object WebSocket hibernation API.
+- The first-party Rust WebAssembly engine replays and validates every proposed
+  transition and builds Host, Stage, and participant projections. JavaScript
+  maps authorized protocol commands to proposed events but does not implement
+  scenario rules.
+- The implemented loop covers character assignment, scene advancement, public
+  and private clues, voting, deterministic outcome, bounded idempotency, full
+  projection refresh, and broadcast updates.
 
 ## Dependency Boundary
 
@@ -31,8 +43,10 @@ already-approved Ajv development tool. The owner-approved temporary tooling
 exception pins `wrangler@4.119.0` with an exact `undici@7.29.0` override for
 internal development, the first synthetic deployment, and credential-free CI
 validation. It is excluded from the Worker bundle and is not approved for
-production deployment authority or product redistribution. No WebAssembly
-build dependency is approved or added by this slice.
+production deployment authority or product redistribution. The owner approved
+installation of Rust's official `wasm32-unknown-unknown` standard-library
+target; the adapter adds no third-party crate and the Worker bundles only the
+project-built first-party module.
 
 Install the locked tooling with scripts disabled through `make setup`. Do not
 use an unpinned `npx` command as a development, release, or CI path. See the
@@ -44,7 +58,9 @@ for the exact exception and review triggers.
 From the repository root:
 
 ```sh
-npm run test:remote
+make test-remote
+make check-scenario-wasm
+make check-cloudflare
 ```
 
 The test suite does not contact Cloudflare or require an account.
@@ -58,26 +74,32 @@ Worker observability, and includes no account ID, resource ID, token, database,
 bucket, custom domain, or secret. It is not a staging or production
 configuration.
 
-The temporary development WebSocket boundary expects:
+The Remote Friends MVP boundary expects:
 
-- `ENVIRONMENT_PROFILE=development-skeleton`
-- secret `DEVELOPMENT_ACCESS_TOKEN_SHA256`, containing a lowercase SHA-256 hex
-  digest of a synthetic token
-- `ALLOWED_ORIGINS`, an exact comma-separated allowlist for requests that carry
-  a browser origin; native clients may omit `Origin`
-- `Authorization: Bearer <synthetic token>`
-- `X-GP-Session-ID`, `X-GP-Endpoint-ID`, and
-  `X-GP-Projection-Audience` (`host`, `stage`, or `participant`)
+- `ENVIRONMENT_PROFILE=friends-mvp-development`
+- secret `AUTHORITY_SIGNING_KEY`, a random value of at least 32 bytes used only
+  for HMAC signing of short-lived endpoint authority
+- secret `HOST_BOOTSTRAP_TOKEN_SHA256`, the lowercase SHA-256 digest of the
+  operator-controlled Host creation proof
+- `ALLOWED_ORIGINS`, an exact comma-separated HTTPS allowlist for the browser
+  Host and Stage origins
+- optional secret `EMERGENCY_DISABLED=true`, which keeps health and protocol
+  discovery available while returning `503` from every stateful entry point
 
-The browser WebSocket API cannot set `Authorization` or arbitrary `X-GP-*`
-handshake headers. Consequently, this temporary boundary supports only native
-or command-line synthetic clients; configuring `ALLOWED_ORIGINS` does not make
-it usable by the browser Host or webOS Stage.
+Secrets are configured with Wrangler and never placed in `wrangler.jsonc`, a
+request URL, application envelope, log, or committed file. The raw Host proof
+is supplied only when starting a session. Pairing proof is supplied only to the
+HTTPS join operation. Browser join responses omit the bearer token; native join
+responses contain it only in the non-cacheable HTTPS response.
 
-Before either browser surface connects remotely, an approved HTTPS pairing and
-authentication bootstrap must issue short-lived, server-derived authority
-through a WebSocket-compatible mechanism. It must bind the endpoint, audience,
-session, authority generation, expiry, and exact browser origin on the server;
-credentials must remain out of URLs, browser storage, logs, and application
-envelopes. The temporary shared development token must then be removed rather
-than adapted into browser authentication.
+## Remaining External-Test Gates
+
+- an edge guard for invalid Host-create traffic
+- reconnect acceptance across real Durable Object hibernation
+- automated alarm expiry and deletion evidence
+- physical Host, webOS Stage, and two-iOS-Companion conformance
+- reviewed test hostname, exact deployed origins, named-tester notice, and
+  explicit owner approval
+
+Until those pass, local runtime tests use synthetic aliases and the committed
+original scenario only.

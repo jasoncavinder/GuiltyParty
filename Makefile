@@ -1,4 +1,4 @@
-.PHONY: setup run-server run-host run-stage build-stage check-contracts test-remote check-cloudflare test
+.PHONY: setup run-server run-host run-stage build-stage check-contracts test-remote check-scenario-wasm check-cloudflare test
 
 setup:
 	@echo "Checking dependencies..."
@@ -35,10 +35,14 @@ check-contracts:
 test-remote:
 	@npm run --silent test:remote
 
+check-scenario-wasm:
+	@node tooling/check_scenario_wasm.mjs
+
 check-cloudflare:
 	@WRANGLER_LOG_PATH=.tmp/wrangler-check.log WRANGLER_LOG_SANITIZE=true npm run --silent cloudflare:check
 
 test:
 	@$(MAKE) check-contracts
 	@$(MAKE) test-remote
+	@$(MAKE) check-scenario-wasm
 	cd server && cargo test --locked

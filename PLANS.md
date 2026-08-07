@@ -20,330 +20,213 @@ Product direction belongs in:
 
 # Active Plans
 
-## Local Multi-Surface MVP Prototype
+## Remote Friends MVP
 
 ### Status
 
-Approved; implementation in progress.
+Approved; implementation in progress. This plan replaces the original Local
+Multi-Surface MVP Prototype as the primary prototype direction.
 
-The product scope in this plan is approved. The original technology gate was
-satisfied by accepted [ADR 0004](docs/adr/0004-mvp-technology-stack.md).
-Subsequent architectural and dependency changes remain subject to their own
-documented approval gates.
+[ADR 0004](docs/adr/0004-mvp-technology-stack.md) still documents the local
+prototype foundation. [ADR 0033](docs/adr/0033-cloudflare-remote-services.md)
+governs the accepted Cloudflare service shape. External use remains blocked
+until the owner approves the named-friend test gate described below.
 
 ### Objective
 
-Build a private, local-area-network prototype that exercises Guilty Party's
-defining experience and architecture with the smallest useful vertical slice.
+Let one host run one short, original Guilty Party scenario for invited friends
+through the browser Host, LG webOS Stage, iOS Companions, and the Cloudflare
+remote control plane. The purpose is hands-on product learning, not public,
+commercial, production, or market-validation traffic.
 
-The prototype should let one host run one original scenario for a small group
-using:
+### Approved Test Defaults
 
-- an LG webOS Stage
-- an iOS Companion app
-- a browser-based Host Console
-- a locally running server that simulates a future remote service
-- a user-supplied, locally running medium-sized AI model
+- one active game per operator during the initial rehearsal
+- one Host, one Stage, and up to eight participants
+- guest aliases only; no permanent user accounts
+- one original, immutable scenario version bundled with the service
+- invitation-only admission using expiring, rotatable pairing proof
+- a maximum active-session duration of four hours
+- automatic deletion from active Durable Object storage no later than seven
+  days after session end or expiry; earlier deletion is preferred after a
+  successful rehearsal
+- Cloudflare `workers.dev` for engineering checks and a project test subdomain
+  before named friends join
+- owner-operated manual deployments until release automation is separately
+  approved
 
-The purpose is hands-on product exploration and brainstorming, not production
-deployment or market validation.
+Changing a limit is a configuration decision. It does not relax authorization,
+secrecy, retention, or external-test gates.
 
-### Experience Definition
+### Required Experience
 
-The prototype contains one original, synthetic scenario designed solely for
-testing. It should be compact enough to complete in one short session and must
-exercise:
+1. The Host creates a session and receives private Host authority plus a pairing
+   invitation that can be displayed without exposing reusable endpoint
+   credentials.
+2. One Stage and at least two distinct iOS participant endpoints join remotely.
+3. Participants and endpoints remain separate even when a room or device is
+   shared.
+4. The Host assigns characters, advances scenes, reveals public and private
+   clues, opens voting, and closes voting.
+5. Each Companion receives only its participant projection; the Stage receives
+   only public projection data.
+6. Every eligible participant votes at most once and the canonical engine
+   resolves a deterministic outcome.
+7. A disconnected client resumes from its last authorized server sequence, and
+   a hibernated Durable Object reconstructs the same state from its journal.
+8. Session end or expiry revokes gameplay authority and schedules deletion.
 
-1. Starting a session from one immutable scenario version.
-2. Joining from the Stage and multiple Companions over the LAN.
-3. Assigning one character to each participant.
-4. Showing public information on the Stage and private character information
-   only on the authorized Companion.
-5. Advancing through scenes from the Host Console.
-6. Revealing public and private clues.
-7. Collecting one vote from each eligible participant.
-8. Resolving and displaying a deterministic outcome.
-9. Replaying the final state from the same scenario version and ordered journal.
-10. Showing host-only, advisory AI Stage Manager suggestions without allowing AI
-    output to alter canonical state.
+### Service Scope
 
-The scenario fixture should support a small group and automated simulation. The
-exact supported player range and fixture cast size may be proposed in the
-technology ADR or implementation plan, but the acceptance run must involve at
-least two distinct participant identities and Companions.
+The first remote service uses the smallest accepted Cloudflare shape:
 
-### Scope
+- one Worker for HTTPS/WSS transport, compatibility, authentication, coarse
+  validation, rate limits, and opaque session routing
+- one SQLite-backed Durable Object per game for authority, canonical journal
+  ordering, replay, recipient projections, and WebSocket fan-out
+- the existing Rust `gp_scenario` engine through a versioned WebAssembly
+  boundary with native/WebAssembly parity evidence
+- the canonical control-plane v1 contracts under `contracts/`
+- one embedded original scenario fixture; D1, R2, Queues, Containers, and
+  Cloudflare Realtime are not required for this test
 
-#### LG webOS Stage
+The Worker service does not host or own app UI implementation. It supplies the
+Host, Stage, and Companion agent with a versioned contract, test fixtures, safe
+error behavior, and an integration endpoint.
 
-The Stage is a web-technology application suitable for running on LG webOS in a
-development environment. It provides the shared public experience:
+### Guest Authority and Pairing
 
-- session join or pairing information
-- scene titles and public narrative
-- public evidence and clues
-- session progress
-- voting status without exposing individual votes
-- final outcome
+The friends MVP does not treat a guest alias, session identifier, pairing code,
+device capability, network address, browser origin, or physical proximity as
+identity or authority.
 
-It must not receive private character secrets, objectives, hidden evidence, or
-individual votes in its API payloads.
+- Host creation requires an operator-controlled bootstrap proof.
+- Pairing proofs are one-time or narrowly bounded, expire, rotate, and can be
+  revoked when joining closes.
+- Successful pairing issues short-lived endpoint authority bound to session,
+  endpoint, audience, authority generation, expiry, and exact browser origin
+  where applicable.
+- Browser authority uses a Secure, HttpOnly, SameSite cookie. Native authority
+  uses a bearer credential kept in the approved protected client boundary.
+- Raw credentials stay out of URLs, logs, application envelopes, Durable Object
+  names, and browser-readable persistent storage.
+- The Durable Object rechecks current endpoint generation and revocation before
+  accepting commands or projecting private state.
 
-#### iOS Companion
+This guest mechanism is limited to the named-friend MVP and does not replace
+the accepted permanent-account model.
 
-The Companion is the single native-client exception for this prototype. It may
-be a development build and does not require App Store distribution.
+### Privacy and Data Lifecycle
 
-Longer-term product decisions for the player-only mobile Companion are recorded
-in [docs/product/mobile-companion.md](docs/product/mobile-companion.md). The
-completed initial decision history is preserved in
-[docs/platforms/mobile-decision-register.md](docs/platforms/mobile-decision-register.md).
-Those target-product decisions do not expand this account-free, iOS-only MVP.
-
-It provides:
-
-- LAN server discovery or explicit connection setup
-- session join and participant identity
-- character assignment
-- private character information and objectives
-- authorized private clues
-- vote submission
-
-Each participant identity remains separate even if devices or physical rooms
-are shared.
-
-#### Browser Host Console
-
-The Host Console is served by the local server and provides:
-
-- session creation and start
-- participant and endpoint status
-- character assignment controls
-- scene advancement
-- reveal controls
-- vote opening and closing
-- outcome display
-- host-only AI Stage Manager suggestions
-- journal export or replay controls needed for acceptance testing
-
-Host controls still use server-authorized commands and cannot directly mutate
-client state.
-
-#### Local Server and LAN Site
-
-The server runs locally and is reachable by authorized devices on the same LAN.
-It simulates the control-plane responsibilities of a future hosted service:
-
-- session and guest identity
-- endpoint registration and capability declaration
-- pairing or joining
-- room and participant association
-- scenario state and authorization
-- realtime state updates
-- journal ordering and replay
-- AI Stage Manager integration
-
-The server may serve the Host Console and Stage web assets. LAN addressing,
-transport security, discovery, pairing credentials, and realtime transport must
-be proposed in the technology ADR.
-
-#### Local AI Stage Manager
-
-The prototype integrates with a user-supplied medium-sized model running locally
-beside the server. Model weights must not be committed or distributed with the
-repository.
-
-The integration must:
-
-- use a replaceable adapter boundary
-- send only an authorized, minimized structured projection
-- exclude private communications and unnecessary personal data
-- return host-only suggestions
-- remain advisory and non-canonical
-- fail without preventing deterministic gameplay
-- avoid retaining prompts or outputs beyond the active prototype session unless
-  the user explicitly exports synthetic diagnostic data
-
-The model runtime, interface, and model license requirements must be covered by
-the proposed technology ADR.
-
-#### Scenario and Journal
-
-The scenario is original placeholder content stored as a fixed published
-version. Scenario truth, reveal eligibility, voting, and outcomes are
-deterministic and server-authoritative.
-
-The journal records the minimum accepted state transitions required for replay.
-It is not a recording or transcript and contains no raw private communications.
-
-### Privacy and Data Limits
-
-- Use synthetic names, identities, scenario content, and session data only.
-- Do not implement accounts, payments, analytics, advertising, or behavioral
-  tracking.
-- Do not capture or store voice, video, recordings, captions, or transcripts.
-- Do not implement private messaging or whispers in this prototype.
-- Do not send gameplay data to a remote AI or analytics service.
-- Do not log private payloads unless a synthetic, local diagnostic export is
-  explicitly requested by the operator.
-- Clear or replace local prototype state through a documented reset procedure.
-
-Private gameplay information needed for the deterministic scenario remains
-protected by server-side authorization even though all test data is synthetic.
+- Testers use aliases; email addresses, phone numbers, advertising identifiers,
+  and stable hardware identifiers are not collected.
+- The canonical journal stores accepted deterministic transitions, not private
+  communications, raw request payloads, media, transcripts, or recordings.
+- No voice, video, private messaging, remote AI, analytics, advertising, crash
+  SDK, or behavioral tracking is enabled.
+- Authenticated gameplay responses use `Cache-Control: no-store`.
+- Operational diagnostics contain safe correlation identifiers and error codes,
+  never pairing proofs, credentials, private objectives, clues, votes, or
+  scenario payloads.
+- Expired and ended sessions reject mutation, revoke authority, and are deleted
+  from active storage within the approved seven-day maximum.
+- Cloudflare documents a provider-controlled SQLite point-in-time recovery
+  history covering the preceding 30 days. Named-friend testing remains blocked
+  until the owner accepts that recovery horizon and it appears in the tester
+  notice, or selects a different storage design.
+- Named testers receive a concise notice that this is a private development
+  test using aliases and automatically expiring gameplay state.
 
 ### Explicit Exclusions
 
-- user accounts and account recovery
-- payments and commerce
-- creator marketplace and creator monetization
-- professional hosting workflows
-- production audio, video, whispers, captions, and media routing
-- Android, tvOS, desktop, and other native clients
-- App Store or television-store distribution
-- internet-facing hosting or commercial deployment
-- production identity, moderation, support, and safety systems
-- scenario authoring tools beyond the fixed original fixture
-- remote AI providers or bundled model weights
-- production observability, analytics, and scaling infrastructure
+- permanent accounts, recovery, production identity, or public registration
+- payments, commerce, creator marketplace, or professional hosting workflows
+- public events, uninvited traffic, App Store, or television-store distribution
+- media-plane audio, video, whispers, captions, recording, or transcription
+- remote AI providers or AI-dependent gameplay
+- Android, tvOS, and other additional native clients
+- multiple downloadable scenarios, creator authoring, R2 catalog delivery, D1
+  account data, queues, or containers
+- production analytics, behavioral data, support tooling, or general moderation
+- automatic GitHub-to-Cloudflare deployment or production release promotion
 
-The native iOS Companion development build and LG webOS Stage development app
-are explicitly in scope despite the broader native and production-app
-exclusions.
+### Implementation Slices
 
-### Architecture Impact
+1. Replace the local-only plan, document the friends-test lifecycle, and keep
+   the external-test gate explicit.
+2. Prove a first-party Rust/WebAssembly engine boundary and deterministic native
+   parity without a second JavaScript rules engine.
+3. Implement Host session creation, invitation lifecycle, Stage and participant
+   joining, browser cookie authority, and native bearer authority.
+4. Route authenticated control-plane v1 WebSockets to the session Durable
+   Object and enforce endpoint generation, origin, message size, and protocol
+   rules.
+5. Wire engine commands, atomic journal/idempotency commits, projections, fanout,
+   and sequence-based reconnect.
+6. Add session end, expiry, deletion, bounded resource use, safe diagnostics,
+   rollback, and emergency-disable behavior.
+7. Give app surfaces conformance fixtures and run automated multi-client,
+   browser, iOS, webOS, hibernation, replay, and negative-authorization tests.
+8. Deploy to the test subdomain, complete a private rehearsal, and obtain
+   explicit owner approval before inviting named friends.
 
-The prototype touches these documented boundaries:
-
-- modular-monolith server modules
-- scenario schema and deterministic engine
-- session journal and replay
-- server-side authorization
-- endpoint capabilities and device pairing
-- Stage, Companion, and Host Console contracts
-- realtime control-plane updates
-- AI Stage Manager input and output projections
-
-It does not implement the production media plane. Any temporary interface used
-to represent media-related capabilities must remain separate from scenario
-truth.
-
-### Required Technology ADR (Satisfied)
-
-Before implementation, the assigned agent must propose an ADR covering:
-
-- server language, runtime, and modular structure
-- scenario-engine placement and representation
-- journal persistence and replay approach
-- HTTP and realtime transport
-- API and contract representation
-- Host Console web approach
-- LG webOS packaging and development workflow
-- iOS application architecture and LAN networking
-- local AI runtime adapter and configuration
-- test strategy and deterministic simulation
-- repository layout and developer commands
-- every proposed dependency, its purpose, and verified license
-
-The ADR must compare reasonable alternatives, explain prototype tradeoffs, and
-remain `Proposed` until the project owner accepts it. No framework, dependency,
-or production code may be added before that approval.
-
-### Implementation Steps
-
-1. Read all required repository, product, architecture, security, legal, and ADR
-   documentation.
-2. Inspect the available macOS, Xcode, LG webOS, Rust, JavaScript, and local-model
-   development environment without changing the repository.
-3. Draft the technology ADR and any necessary contract sketches; request human
-   approval and stop before implementation.
-4. After approval, create the smallest server and shared contract skeleton.
-5. Add the original immutable scenario fixture and deterministic validation.
-6. Implement ordered commands, journal events, state reconstruction, and replay
-   tests.
-7. Implement guest session creation, joining, endpoint capability registration,
-   and character assignment.
-8. Implement server-authorized scene advancement, public and private reveals,
-   voting, and deterministic outcome resolution.
-9. Implement the browser Host Console.
-10. Implement and test the LG webOS Stage development app.
-11. Implement and test the iOS Companion development app.
-12. Integrate the local AI adapter and host-only suggestion flow.
-13. Add privacy and authorization tests, LAN setup instructions, reset steps,
-    and a reproducible demonstration runbook.
-14. Run the complete acceptance session and deterministic replay from a clean
-    checkout.
-
-Implementation should proceed as small, reviewable vertical slices rather than
-building all server internals before a surface can connect.
+Each slice should be a small Pull Request targeting `dev` when practical.
 
 ### Acceptance Criteria
 
-The MVP is complete when:
+The Remote Friends MVP is ready for owner approval when:
 
-- a clean checkout can be configured using documented commands
-- the local server and Host Console are reachable on the LAN
-- an LG webOS Stage and at least two distinct iOS Companion identities can join
-  the same session
-- endpoints advertise capabilities and remain distinct from participants and
-  physical rooms
-- the host can assign characters, advance scenes, and trigger authorized
-  reveals
-- each Companion receives only its authorized private information
-- the Stage receives only public information
-- eligible participants can vote exactly as allowed by the fixed scenario
-- the same scenario version, initial state, and ordered journal reproduce the
-  same final state and outcome
-- automated negative tests demonstrate that public or incorrect participant
-  contexts cannot access private secrets, objectives, clues, or votes
-- the local AI produces at least one host-only suggestion from minimized state,
-  cannot mutate scenario truth, and may be unavailable without blocking play
-- the original scenario and all visuals are project-owned placeholders or have
-  documented, compatible licenses
-- no accounts, payments, recording, transcription, analytics, private
-  communications, or remote production services are present
-- setup, operation, reset, replay, and known limitations are documented
+- a clean checkout passes the Rust, contract, remote-service, and Cloudflare
+  bundle checks
+- native and WebAssembly engines accept and reject the same fixture journal and
+  produce byte-equivalent canonical projections or an explicitly normalized
+  equivalent
+- one Host, one Stage, and at least two distinct participant Companions complete
+  the full scenario through the remote endpoint
+- session, room, participant, endpoint, and character identifiers remain
+  separate and server-authoritative
+- invalid, expired, revoked, wrong-origin, stale-generation, Stage, and
+  cross-participant authority cannot obtain secrets or perform forbidden actions
+- retries are idempotent and reconnect resumes only the caller's authorized
+  projection from a journal-derived sequence
+- Durable Object hibernation/reactivation and replay preserve canonical state
+- the Stage never receives private objectives, private clues, individual votes,
+  or endpoint credentials
+- ending or expiring a session closes joining, revokes authority, and passes an
+  automated deletion verification within the approved lifecycle
+- resource limits, rate limits, spending alert, safe diagnostics, deployment,
+  rollback, and emergency-disable procedures are rehearsed
+- test content is original/project-owned and no excluded data or service is
+  enabled
+- the owner reviews the readiness record and explicitly approves named-friend
+  external testing
 
 ### Testing Strategy
 
-- deterministic unit tests for commands, events, outcomes, and replay
-- scenario validation tests for references, audience rules, and immutable
-  version identity
-- server authorization tests for every private payload and command
-- contract tests for Stage, Companion, and Host Console projections
-- multi-client simulation for joining, assignment, reveals, voting, and outcome
-- AI adapter tests using deterministic fixtures or a test double
-- AI failure and malformed-output tests
-- LAN smoke tests with the Host Console, LG webOS target, and iOS target
-- clean-checkout demonstration using the documented runbook
+- deterministic Rust unit, journal replay, and native/WebAssembly parity tests
+- schema and generated-client conformance fixtures
+- Worker unit tests for authentication, cookies, origins, limits, and safe errors
+- Durable Object tests for invitation, authority, idempotency, replay, expiry,
+  deletion, and recipient projection boundaries
+- an automated Host + Stage + multi-participant full-game simulation
+- browser Host and webOS Stage checks plus a physical iOS Companion rehearsal
+- deployment, hibernation, reconnect, rollback, and emergency-disable smoke tests
 
-### Risks
+### Remaining Human Gates
 
-- LG webOS and iOS development tooling may impose signing, device, networking,
-  or transport-security constraints.
-- LAN discovery and local certificates can consume disproportionate prototype
-  effort.
-- Supporting three surfaces may encourage duplicated state or authorization
-  logic.
-- A local model may have incompatible licensing, resource requirements, API
-  behavior, or nondeterministic output.
-- AI integration may distract from validating the deterministic gameplay loop.
-- Prototype shortcuts may be mistaken for production architecture.
-- Synthetic privacy boundaries may appear correct while negative authorization
-  cases remain untested.
+The owner must approve:
 
-Mitigate these risks by documenting environment prerequisites early, keeping AI
-off the critical path, centralizing canonical state and authorization, using
-adapter contracts, and labeling all prototype-only choices.
+- any new third-party dependency or WebAssembly build tool after ADR 0025 intake
+- the exact test hostname and DNS change
+- the documented 30-day Cloudflare SQLite recovery horizon after the service's
+  seven-day active-storage deletion, or an alternative storage decision
+- the named-tester notice and external-test readiness record
+- the first invitation sent to a friend
 
 ### Completion Notes
 
-To be completed after implementation with:
-
-- accepted ADR references
-- final supported development environments
-- test and demonstration results
-- known limitations and deferred work
-- links to the implementation pull requests
+To be completed with PR links, test evidence, deployment version, test hostname,
+known limitations, deletion evidence, and the explicit external-test decision.
 
 ---
 

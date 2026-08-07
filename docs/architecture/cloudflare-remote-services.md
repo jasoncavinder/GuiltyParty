@@ -4,7 +4,9 @@
 
 The target architecture is accepted in
 [ADR 0033](../adr/0033-cloudflare-remote-services.md). The repository service
-slice remains **development-only** until its production gates are complete.
+slice is now the **test-gated Remote Friends MVP**. Pairing and short-lived
+guest authority are implemented, but named-friend traffic remains blocked
+until the shared engine and the explicit acceptance gates in `PLANS.md` pass.
 
 ## Runtime Map
 
@@ -50,12 +52,14 @@ from the native Axum server under `server/`:
 
 The native and remote implementations share the canonical files in
 `contracts/`. Neither service may invent a second transport schema. The Rust
-`gp_scenario` crate remains the canonical scenario engine and will be exposed
-through a separately reviewed WebAssembly adapter.
+`gp_scenario` crate remains the canonical scenario engine. Its first-party
+`gp_scenario_wasm` adapter exposes a versioned raw WebAssembly ABI without
+adding a bindgen or Cloudflare Rust dependency. CI compares native and
+WebAssembly output before bundling the module into the Worker.
 
-## First Development Slice
+## Implemented Remote Friends Slice
 
-The first slice intentionally proves only infrastructure-neutral behavior:
+The current slice proves:
 
 - safe `/health` and `/api/protocol` responses
 - strict WebSocket subprotocol negotiation at `/ws/v1`
@@ -65,11 +69,22 @@ The first slice intentionally proves only infrastructure-neutral behavior:
 - bounded command idempotency
 - WebSocket hibernation attachments containing only routing metadata
 - replay validation before accepting mutation
+- operator-gated Host session creation and short-lived pairing
+- Secure, HttpOnly browser authority and native bearer authority
+- current endpoint-generation and origin checks before every message
+- shared Rust/WebAssembly replay and recipient projections
+- character assignment, scenes, clues, votes, deterministic outcome, and
+  private-projection filtering
+- four-hour session expiry and seven-day maximum active-storage deletion
+  scheduling; Cloudflare's separate 30-day SQLite recovery history remains an
+  explicit owner gate before named-friend traffic
 - no account system, licensed scenario, private player content, remote media,
   analytics, AI provider, or production deployment
 
-Any route that could appear production-capable must fail closed while the
-environment profile is `development-skeleton`.
+The remaining friend-test gate includes real hibernation/deletion evidence, app
+conformance, an edge guard for invalid Host-create traffic, and the
+owner-approved test hostname. Any uncertainty in authority, storage, replay,
+or projection continues to fail closed.
 
 ## Data Ownership
 
@@ -141,13 +156,15 @@ arbitrary endpoint-context headers to its opening handshake. An origin
 allowlist prevents cross-origin use but does not authenticate a browser Host or
 Stage.
 
-Before browser integration, an approved HTTPS pairing flow must exchange the
-one-time pairing proof for short-lived, server-derived authority carried by a
-WebSocket-compatible mechanism. The server—not the browser—binds that authority
-to the session, endpoint, audience, authority generation, expiry, and exact
-origin. Credentials remain out of URLs, browser storage, logs, and application
-envelopes. The shared synthetic development token is restricted to native and
-command-line smoke tests and is removed when this bootstrap exists.
+The Remote Friends MVP HTTPS pairing flow exchanges the bounded pairing proof
+for signed, short-lived authority. Browser Host and Stage authority is carried
+in a Secure, HttpOnly, SameSite=Strict cookie; the iOS Companion uses a bearer
+credential. The server binds authority to the session, endpoint, audience,
+participant where applicable, authority generation, expiry, and exact browser
+origin. The session Durable Object verifies the current stored authority again
+before accepting the WebSocket and every message. Credentials remain out of
+URLs, logs, application envelopes, Durable Object names, and browser-readable
+persistent storage.
 
 ## Failure and Recovery Rules
 

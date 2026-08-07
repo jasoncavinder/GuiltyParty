@@ -2,11 +2,14 @@
 
 ## Status
 
-Development deployment approved. The first deployment is limited to the
-synthetic `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
-`workers.dev` endpoint, and one development access-token digest. No custom
-domain, D1 database, R2 bucket, Queue, media resource, production resource, or
-CI credential is approved.
+The original development skeleton is deployed. Promotion of the Remote Friends
+MVP code in the current implementation branch has not yet occurred. That next
+development deployment remains limited to the synthetic
+`guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
+`workers.dev` endpoint, exact browser origins, and the minimum test authority
+secrets described below. No named-friend traffic, custom domain, D1 database,
+R2 bucket, Queue, media resource, production resource, or CI credential is
+approved.
 
 The architecture is accepted in
 [ADR 0033](../adr/0033-cloudflare-remote-services.md). The owner approved the
@@ -24,12 +27,12 @@ resources manually:
 - [ ] Enable phishing-resistant two-factor authentication where available.
 - [ ] Store recovery codes outside the development machine.
 - [ ] Confirm the account name and ownership are appropriate for Guilty Party.
-- [ ] Add the intended billing method and select the approved Workers plan.
+- [x] Add the intended billing method and select the approved Workers plan.
 - [x] Create a conservative account-level budget alert. Cloudflare currently
       exposes the selected alert as a total-spend threshold rather than separate
       actual and forecast thresholds; the development account threshold is
       USD 10.
-- [ ] Reserve the intended `workers.dev` subdomain for development.
+- [x] Reserve the intended `workers.dev` subdomain for development.
 - [ ] Review the current Self-Serve Subscription Agreement, Developer Platform
       terms, Data Processing Addendum, Security Exhibit, and subprocessor list
       with qualified advice where needed.
@@ -154,6 +157,60 @@ No D1 database, R2 bucket, Queue, Realtime or media resource, custom domain,
 DNS route, production resource, or CI credential was created. No production
 identity, private participant information, or licensed scenario content was
 sent to Cloudflare.
+
+## Remote Friends MVP Development Promotion (Not Yet Run)
+
+The local runtime now passes Host creation, browser cookie pairing, native
+bearer pairing, two-participant deterministic gameplay, private clue filtering,
+voting, outcome, identical idempotent retry, forbidden participant command,
+native/WebAssembly parity, and Worker bundle checks. This evidence does not
+authorize deployment or named-friend traffic by itself.
+
+Before the owner-operated development promotion:
+
+1. Merge the implementation PR into `dev` after review and deploy the reviewed
+   commit, not an uncommitted worktree.
+2. Choose same-site HTTPS Host, Stage, and API test subdomains under
+   `guiltyparty.app`. Store the exact Host and Stage origins as the
+   comma-separated `ALLOWED_ORIGINS` value; do not use wildcards. The
+   SameSite=Strict browser authority cookie will not support an unrelated
+   application site.
+3. Generate an independent random `AUTHORITY_SIGNING_KEY` of at least 32 bytes.
+   Store the raw value only in the Worker secret and the owner's protected
+   credential store.
+4. Generate a distinct strong Host bootstrap proof. Store only its lowercase
+   SHA-256 digest as `HOST_BOOTSTRAP_TOKEN_SHA256` in the Worker secret and keep
+   the raw proof only in the owner's protected credential store.
+5. Install the approved official Rust `wasm32-unknown-unknown` target and run
+   `make test`, `make check-scenario-wasm`, and `make check-cloudflare`.
+6. Use pinned local Wrangler and interactive standard input to set the three
+   values. Never place a raw value on a command line, in shell history, an
+   issue, task, screenshot, or committed file.
+7. Deploy manually and verify `/health` reports
+   `friends-mvp-development` with status `test-gated`.
+8. Rehearse Host creation, invalid bootstrap, invalid/expired pairing, one
+   Stage, two native participants, exact-origin rejection, the full game loop,
+   private projections, idempotent retry, forbidden command, reconnect, and
+   rollback using synthetic aliases only.
+9. After the replacement is proven, remove the obsolete
+   `DEVELOPMENT_ACCESS_TOKEN_SHA256` secret. Its old raw synthetic token is no
+   longer an accepted authority path.
+
+Setting the Worker secret `EMERGENCY_DISABLED` to the exact string `true`
+keeps `/health` and `/api/protocol` available while every session creation,
+join, WebSocket, and Host-control path returns `503`. Removing or changing that
+secret restores the ordinary test gate after a reviewed smoke check.
+
+The first-party WebAssembly module and original scenario are bundled with the
+Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
+Queues, Realtime, Containers, analytics, and remote AI remain absent.
+
+Before named friends join, a separate PR must complete hibernation and deletion
+evidence, app conformance, edge protection for invalid Host creation,
+test-hostname DNS, tester notice, and the final owner go/no-go record. The
+emergency disable, invitation rotation and closure, endpoint revocation,
+explicit session end, per-session join limiting, and per-endpoint message
+limiting are implemented and still require app-level rehearsal.
 
 ## Staging Gate
 

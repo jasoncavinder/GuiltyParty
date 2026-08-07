@@ -12,6 +12,7 @@ test("development Wrangler configuration is narrowly scoped and contains no acco
   assert.equal(configuration.send_metrics, false);
   assert.equal(configuration.dependencies_instrumentation.enabled, false);
   assert.equal(configuration.observability.enabled, false);
+  assert.equal(configuration.vars.ENVIRONMENT_PROFILE, "friends-mvp-development");
   assert.equal(configuration.exports.GameSession.type, "durable-object");
   assert.equal(configuration.exports.GameSession.storage, "sqlite");
   assert.equal(configuration.account_id, undefined);
@@ -19,6 +20,8 @@ test("development Wrangler configuration is narrowly scoped and contains no acco
   assert.equal(configuration.routes, undefined);
   assert.equal(configuration.database_id, undefined);
   assert.equal(configuration.bucket_name, undefined);
+  assert.equal(configuration.vars.AUTHORITY_SIGNING_KEY, undefined);
+  assert.equal(configuration.vars.HOST_BOOTSTRAP_TOKEN_SHA256, undefined);
   assert.doesNotMatch(source, /(api[_-]?token|secret|password)\s*[":=]/i);
 });
 

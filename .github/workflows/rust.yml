@@ -11,6 +11,7 @@ on:
       - "tests/contracts/**"
       - "tooling/check_contract_artifacts.py"
       - "tooling/check_contract_schema.mjs"
+      - "tooling/check_scenario_wasm.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/rust.yml"
@@ -25,6 +26,7 @@ on:
       - "tests/contracts/**"
       - "tooling/check_contract_artifacts.py"
       - "tooling/check_contract_schema.mjs"
+      - "tooling/check_scenario_wasm.mjs"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/rust.yml"
@@ -54,6 +56,11 @@ jobs:
       - name: Test Cloudflare remote service
         working-directory: .
         run: make test-remote
+      - name: Install Rust WebAssembly target
+        run: rustup target add wasm32-unknown-unknown
+      - name: Check native and WebAssembly scenario parity
+        working-directory: .
+        run: make check-scenario-wasm
       - name: Validate Cloudflare deployment bundle
         working-directory: .
         run: make check-cloudflare

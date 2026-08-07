@@ -13,7 +13,7 @@
     "enabled": false
   },
   "vars": {
-    "ENVIRONMENT_PROFILE": "development-skeleton"
+    "ENVIRONMENT_PROFILE": "friends-mvp-development"
   },
   "durable_objects": {
     "bindings": [
