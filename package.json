@@ -1,11 +1,13 @@
 {
   "name": "guilty-party-tooling",
   "private": true,
+  "type": "module",
   "engines": {
     "node": ">=20"
   },
   "scripts": {
-    "check:contracts:standard": "node tooling/check_contract_schema.mjs"
+    "check:contracts:standard": "node tooling/check_contract_schema.mjs",
+    "test:remote": "node --test services/remote/test/*.test.mjs"
   },
   "devDependencies": {
     "ajv": "8.20.0"

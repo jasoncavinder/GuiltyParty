@@ -1,0 +1,30 @@
+{
+  "name": "guilty-party-remote-development",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-08-06",
+  "workers_dev": false,
+  "send_metrics": false,
+  "dependencies_instrumentation": {
+    "enabled": false
+  },
+  "observability": {
+    "enabled": false
+  },
+  "vars": {
+    "ENVIRONMENT_PROFILE": "development-skeleton"
+  },
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "GAME_SESSIONS",
+        "class_name": "GameSession"
+      }
+    ]
+  },
+  "exports": {
+    "GameSession": {
+      "type": "durable-object",
+      "storage": "sqlite"
+    }
+  }
+}

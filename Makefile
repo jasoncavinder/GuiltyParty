@@ -1,4 +1,4 @@
-.PHONY: setup run-server run-host run-stage build-stage check-contracts test
+.PHONY: setup run-server run-host run-stage build-stage check-contracts test-remote test
 
 setup:
 	@echo "Checking dependencies..."
@@ -32,6 +32,10 @@ check-contracts:
 	@python3 tooling/check_contract_artifacts.py
 	@npm run --silent check:contracts:standard
 
+test-remote:
+	@npm run --silent test:remote
+
 test:
 	@$(MAKE) check-contracts
+	@$(MAKE) test-remote
 	cd server && cargo test --locked
