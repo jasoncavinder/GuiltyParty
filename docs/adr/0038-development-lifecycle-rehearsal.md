@@ -2,11 +2,13 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
 2026-08-07
+
+Accepted by the project owner after review of PR #22 on 2026-08-07.
 
 ---
 
