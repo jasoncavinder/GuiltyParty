@@ -179,6 +179,8 @@ Users should understand when information is captured and why.
 - [AI Stage Manager boundaries](ai-stage-manager.md)
 - [Creator tool boundaries](creator-tools.md)
 - [Control-plane v1 migration](control-plane-v1-migration.md)
+- [Cloudflare remote services](cloudflare-remote-services.md)
+- [Cloudflare tooling evaluation](cloudflare-tooling-evaluation.md)
 - [Mobile contract generator evaluation](mobile-contract-generator-evaluation.md)
 
 Related documentation:

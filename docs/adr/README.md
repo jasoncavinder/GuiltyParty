@@ -40,6 +40,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0030](0030-mobile-crash-reporting-and-diagnostics.md) | Accepted | Begin with platform crash evidence and voluntary allowlisted diagnostic bundles, without automatic collection or a third-party SDK. |
 | [0031](0031-mobile-notifications-and-live-session-status.md) | Accepted | Use fixed public-safe notifications and an optional per-device live session status that starts after intentional joins. |
 | [0032](0032-mobile-store-privacy-and-review-readiness.md) | Accepted | Tie mobile store disclosures, account deletion, review access, ratings, and release approval to evidence from the exact distributed build. |
+| [0033](0033-cloudflare-remote-services.md) | Accepted | Use a Worker gateway and one Durable Object per live session, with the shared Rust engine compiled to WebAssembly and separate global data, content, and media adapters. |
 
 ## Adding an ADR
 
