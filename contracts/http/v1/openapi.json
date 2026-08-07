@@ -141,7 +141,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/JoinResponse"
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/RemoteFriendsJoinResponse"
                 }
               }
             }

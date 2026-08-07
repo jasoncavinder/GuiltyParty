@@ -737,10 +737,12 @@ policy into a tool-controlled layer.
 
 **Consequences:** The repository carries generated source and a pinned
 generation pipeline, contract changes produce larger diffs, and both apps need
-explicit mapping code. Generator selection and implementation remain future
-work and do not expand the MVP.
+explicit mapping code. ADR 0034 selects the bounded first-party generator;
+generated-source and native-build integration remain a separate implementation
+slice and do not expand the MVP.
 
 **Recorded in:** [ADR 0016](../adr/0016-generated-mobile-contract-models.md)
+and [ADR 0034](../adr/0034-first-party-mobile-contract-generator.md)
 
 ### MC-ARCH-001: Long-Term Mobile Implementation Strategy
 

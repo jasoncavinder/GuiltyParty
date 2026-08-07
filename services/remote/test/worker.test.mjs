@@ -148,6 +148,10 @@ test("join hashes pairing proof before Durable Object admission and issues nativ
   assert.equal(body.authority_transport, "bearer");
   assert.equal(body.participant_id, "par_0123456789abcdef");
   assert.ok(body.token.startsWith("gp1."));
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  ajv.addSchema(schema);
+  const validate = ajv.getSchema(`${schema.$id}#/$defs/RemoteFriendsJoinResponse`);
+  assert.equal(validate(body), true, JSON.stringify(validate.errors));
   assert.equal(captured.name, "ses_0123456789abcdef");
   assert.equal(captured.body.pairing_digest, await sha256Hex(pairingProof));
   assert.equal(JSON.stringify(captured).includes(pairingProof), false);
@@ -187,7 +191,7 @@ test("browser Stage join keeps authority out of the response body", async () => 
 
   const ajv = new Ajv2020({ strict: true, strictRequired: false });
   ajv.addSchema(schema);
-  const validate = ajv.getSchema(`${schema.$id}#/$defs/JoinResponse`);
+  const validate = ajv.getSchema(`${schema.$id}#/$defs/RemoteFriendsJoinResponse`);
   assert.equal(validate(body), true, JSON.stringify(validate.errors));
 });
 

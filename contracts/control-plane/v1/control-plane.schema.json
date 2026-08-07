@@ -62,7 +62,8 @@
           "uniqueItems": true,
           "items": {
             "type": "integer",
-            "minimum": 1
+            "minimum": 1,
+            "maximum": 255
           }
         },
         "preferred_protocol_version": {
@@ -177,11 +178,13 @@
         },
         "pairing_expires_at_unix_ms": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "maximum": 9007199254740991
         },
         "session_expires_at_unix_ms": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "maximum": 9007199254740991
         },
         "maximum_participants": {
           "type": "integer",
@@ -212,34 +215,94 @@
         },
         "pairing_expires_at_unix_ms": {
           "type": "integer",
-          "minimum": 1
+          "minimum": 1,
+          "maximum": 9007199254740991
         }
       }
     },
-    "SessionControlResponse": {
+    "SessionControlResponseBase": {
       "type": "object",
-      "required": ["protocol_version", "action"],
+      "required": ["protocol_version"],
       "properties": {
         "protocol_version": {
           "$ref": "#/$defs/ProtocolVersion"
-        },
-        "action": {
-          "type": "string",
-          "enum": ["close_invitation", "revoke_endpoint", "end_session"]
-        },
-        "duplicate": {
-          "type": "boolean"
-        },
-        "delete_at_unix_ms": {
-          "type": "integer",
-          "minimum": 1
         }
       }
+    },
+    "CloseInvitationResponse": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/SessionControlResponseBase"
+        },
+        {
+          "type": "object",
+          "required": ["action"],
+          "properties": {
+            "action": {
+              "const": "close_invitation"
+            }
+          }
+        }
+      ]
+    },
+    "RevokeEndpointResponse": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/SessionControlResponseBase"
+        },
+        {
+          "type": "object",
+          "required": ["action", "duplicate"],
+          "properties": {
+            "action": {
+              "const": "revoke_endpoint"
+            },
+            "duplicate": {
+              "type": "boolean"
+            }
+          }
+        }
+      ]
+    },
+    "EndSessionResponse": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/SessionControlResponseBase"
+        },
+        {
+          "type": "object",
+          "required": ["action", "delete_at_unix_ms"],
+          "properties": {
+            "action": {
+              "const": "end_session"
+            },
+            "delete_at_unix_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            }
+          }
+        }
+      ]
+    },
+    "SessionControlResponse": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/CloseInvitationResponse"
+        },
+        {
+          "$ref": "#/$defs/RevokeEndpointResponse"
+        },
+        {
+          "$ref": "#/$defs/EndSessionResponse"
+        }
+      ]
     },
     "JoinResponse": {
       "type": "object",
       "required": [
         "protocol_version",
+        "token",
         "session_id",
         "endpoint_id",
         "room_id",
@@ -271,40 +334,98 @@
             }
           ],
           "description": "Null for a Stage join; an opaque participant identifier for a participant join."
-        },
-        "authority_transport": {
-          "type": "string",
-          "enum": ["bearer", "cookie"],
-          "description": "Cookie authority is also delivered as Secure, HttpOnly, SameSite=Strict for browser clients."
-        },
-        "authority_expires_at_unix_ms": {
-          "type": "integer",
-          "minimum": 1
-        },
-        "primary_authority_generation": {
-          "type": "integer",
-          "minimum": 1
         }
-      },
-      "oneOf": [
+      }
+    },
+    "RemoteNativeJoinResponse": {
+      "allOf": [
         {
-          "required": ["token"],
+          "$ref": "#/$defs/JoinResponse"
+        },
+        {
+          "type": "object",
+          "required": [
+            "authority_transport",
+            "authority_expires_at_unix_ms",
+            "primary_authority_generation"
+          ],
           "properties": {
             "authority_transport": {
               "const": "bearer"
+            },
+            "authority_expires_at_unix_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "primary_authority_generation": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
             }
           }
+        }
+      ]
+    },
+    "RemoteBrowserJoinResponse": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "session_id",
+        "endpoint_id",
+        "room_id",
+        "participant_id",
+        "authority_transport",
+        "authority_expires_at_unix_ms",
+        "primary_authority_generation"
+      ],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "session_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "endpoint_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "room_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "participant_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Null for a Stage join; an opaque participant identifier for a participant join."
+        },
+        "authority_transport": {
+          "const": "cookie",
+          "description": "Browser authority is delivered as Secure, HttpOnly, SameSite=Strict."
+        },
+        "authority_expires_at_unix_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "primary_authority_generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "RemoteFriendsJoinResponse": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/RemoteNativeJoinResponse"
         },
         {
-          "required": ["authority_transport"],
-          "properties": {
-            "authority_transport": {
-              "const": "cookie"
-            }
-          },
-          "not": {
-            "required": ["token"]
-          }
+          "$ref": "#/$defs/RemoteBrowserJoinResponse"
         }
       ]
     },
@@ -498,11 +619,13 @@
         },
         "primary_authority_generation": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
         "server_sequence": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
         "payload": {
           "type": "object"
@@ -709,7 +832,8 @@
         },
         "votes_cast": {
           "type": "integer",
-          "minimum": 0
+          "minimum": 0,
+          "maximum": 9007199254740991
         },
         "outcome": {
           "oneOf": [
@@ -793,7 +917,8 @@
             },
             "primary_authority_generation": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 9007199254740991
             }
           }
         },
@@ -815,7 +940,8 @@
             },
             "primary_authority_generation": {
               "type": "integer",
-              "minimum": 0
+              "minimum": 0,
+              "maximum": 9007199254740991
             },
             "code": {
               "type": "string",
