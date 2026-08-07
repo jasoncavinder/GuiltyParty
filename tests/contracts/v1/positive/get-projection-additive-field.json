@@ -1,0 +1,11 @@
+{
+  "protocol_version": "1.0",
+  "type": "get_projection",
+  "message_id": "message-client-001",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-001",
+  "payload": {
+    "future_optional_hint": "ignored"
+  },
+  "future_optional_context": true
+}

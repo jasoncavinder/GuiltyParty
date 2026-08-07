@@ -1,0 +1,42 @@
+{
+  "protocol_version": "1.0",
+  "type": "projection",
+  "message_id": "message-server-stage-001",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-stage-001",
+  "server_sequence": 7,
+  "payload": {
+    "projection": {
+      "scenario_id": "scenario-synthetic-001",
+      "scenario_version": 1,
+      "scenario_title": "The Synthetic Artifact",
+      "active_scene": {
+        "id": "scene-synthetic-001",
+        "name": "The Gallery",
+        "public_narrative": "The display case is empty."
+      },
+      "revealed_clues": [
+        {
+          "id": "clue-public-001",
+          "name": "Open Window",
+          "description": "Everyone can see an open window."
+        }
+      ],
+      "participants": [
+        {
+          "participant_id": "participant-synthetic-001",
+          "name": "Synthetic ʻIolana",
+          "character_name": "Curator"
+        },
+        {
+          "participant_id": "participant-synthetic-002",
+          "name": "Synthetic Ren",
+          "character_name": null
+        }
+      ],
+      "voting_open": false,
+      "votes_cast": 0,
+      "outcome": null
+    }
+  }
+}

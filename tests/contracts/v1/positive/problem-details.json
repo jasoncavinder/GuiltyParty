@@ -1,0 +1,10 @@
+{
+  "protocol_version": "1.0",
+  "type": "https://guiltyparty.example/problems/invalid-display-name",
+  "title": "Display name is invalid",
+  "status": 400,
+  "detail": "Use 1 to 80 visible characters.",
+  "code": "invalid_display_name",
+  "correlation_id": "http-request-synthetic-001",
+  "retryable": false
+}

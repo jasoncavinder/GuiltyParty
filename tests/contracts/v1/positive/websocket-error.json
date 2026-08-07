@@ -1,0 +1,14 @@
+{
+  "protocol_version": "1.0",
+  "type": "error",
+  "message_id": "message-server-error-001",
+  "correlation_id": "message-client-003",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-001",
+  "payload": {
+    "code": "forbidden",
+    "title": "Command not authorized",
+    "detail": "This endpoint cannot perform that command.",
+    "retryable": false
+  }
+}

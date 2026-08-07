@@ -1,0 +1,6 @@
+{
+  "protocol_version": "2.0",
+  "type": "get_projection",
+  "message_id": "message-client-invalid-001",
+  "payload": {}
+}

@@ -1,0 +1,751 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://guiltyparty.example/contracts/control-plane/v1/control-plane.schema.json",
+  "title": "Guilty Party control plane protocol 1.0",
+  "description": "Canonical payload and WebSocket envelope schemas. Unknown optional object members are allowed for additive compatibility within major version 1.",
+  "$defs": {
+    "ProtocolVersion": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "Identifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "MessageIdentifier": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "FeatureIdentifier": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_.-]{0,127}$"
+    },
+    "Token": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096,
+      "writeOnly": true,
+      "description": "Opaque authority credential. Never log or place in WebSocket application envelopes."
+    },
+    "EndpointRegistration": {
+      "type": "object",
+      "required": ["platform", "capabilities"],
+      "properties": {
+        "platform": {
+          "$ref": "#/$defs/FeatureIdentifier",
+          "description": "A coarse client platform identifier, not a hardware or tracking identifier."
+        },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/FeatureIdentifier"
+          },
+          "description": "Endpoint claims for server validation and routing; claims do not grant authority."
+        }
+      }
+    },
+    "CompatibilityResponse": {
+      "type": "object",
+      "required": [
+        "supported_protocol_majors",
+        "preferred_protocol_version",
+        "required_upgrade",
+        "features"
+      ],
+      "properties": {
+        "supported_protocol_majors": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "integer",
+            "minimum": 1
+          }
+        },
+        "preferred_protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "required_upgrade": {
+          "type": "boolean"
+        },
+        "features": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/FeatureIdentifier"
+          }
+        }
+      }
+    },
+    "JoinRequest": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "protocol_version",
+            "kind",
+            "display_name",
+            "endpoint"
+          ],
+          "properties": {
+            "protocol_version": {
+              "$ref": "#/$defs/ProtocolVersion"
+            },
+            "kind": {
+              "const": "participant"
+            },
+            "display_name": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$"
+            },
+            "endpoint": {
+              "$ref": "#/$defs/EndpointRegistration"
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["protocol_version", "kind", "endpoint"],
+          "properties": {
+            "protocol_version": {
+              "$ref": "#/$defs/ProtocolVersion"
+            },
+            "kind": {
+              "const": "stage"
+            },
+            "display_name": {
+              "type": "null"
+            },
+            "endpoint": {
+              "$ref": "#/$defs/EndpointRegistration"
+            }
+          }
+        }
+      ]
+    },
+    "JoinResponse": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "token",
+        "session_id",
+        "endpoint_id",
+        "room_id",
+        "participant_id"
+      ],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "token": {
+          "$ref": "#/$defs/Token"
+        },
+        "session_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "endpoint_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "room_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "participant_id": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/Identifier"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "description": "Null for a Stage join; an opaque participant identifier for a participant join."
+        }
+      }
+    },
+    "ErrorBody": {
+      "type": "object",
+      "required": ["code", "title"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "ProblemDetails": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "type",
+        "title",
+        "status",
+        "code",
+        "correlation_id"
+      ],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "type": {
+          "type": "string",
+          "format": "uri-reference"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "status": {
+          "type": "integer",
+          "minimum": 400,
+          "maximum": 599
+        },
+        "detail": {
+          "type": "string",
+          "maxLength": 1000
+        },
+        "instance": {
+          "type": "string",
+          "format": "uri-reference"
+        },
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_]{0,63}$"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/MessageIdentifier"
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      }
+    },
+    "AssignCharacterCommand": {
+      "type": "object",
+      "required": ["type", "participant_id", "character_id"],
+      "properties": {
+        "type": {
+          "const": "assign_character"
+        },
+        "participant_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "character_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      }
+    },
+    "AdvanceSceneCommand": {
+      "type": "object",
+      "required": ["type", "scene_id"],
+      "properties": {
+        "type": {
+          "const": "advance_scene"
+        },
+        "scene_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      }
+    },
+    "RevealClueCommand": {
+      "type": "object",
+      "required": ["type", "clue_id"],
+      "properties": {
+        "type": {
+          "const": "reveal_clue"
+        },
+        "clue_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      }
+    },
+    "OpenVotingCommand": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "const": "open_voting"
+        }
+      }
+    },
+    "CastVoteCommand": {
+      "type": "object",
+      "required": ["type", "target_character_id"],
+      "properties": {
+        "type": {
+          "const": "cast_vote"
+        },
+        "target_character_id": {
+          "$ref": "#/$defs/Identifier"
+        }
+      }
+    },
+    "CloseVotingCommand": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "const": "close_voting"
+        }
+      }
+    },
+    "ClientCommand": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/AssignCharacterCommand"
+        },
+        {
+          "$ref": "#/$defs/AdvanceSceneCommand"
+        },
+        {
+          "$ref": "#/$defs/RevealClueCommand"
+        },
+        {
+          "$ref": "#/$defs/OpenVotingCommand"
+        },
+        {
+          "$ref": "#/$defs/CastVoteCommand"
+        },
+        {
+          "$ref": "#/$defs/CloseVotingCommand"
+        }
+      ]
+    },
+    "EnvelopeContext": {
+      "type": "object",
+      "required": ["protocol_version", "type", "message_id", "payload"],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "type": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "message_id": {
+          "$ref": "#/$defs/MessageIdentifier"
+        },
+        "correlation_id": {
+          "$ref": "#/$defs/MessageIdentifier"
+        },
+        "session_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "endpoint_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "idempotency_id": {
+          "$ref": "#/$defs/MessageIdentifier"
+        },
+        "primary_authority_generation": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "server_sequence": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "payload": {
+          "type": "object"
+        }
+      }
+    },
+    "GetProjectionEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EnvelopeContext"
+        },
+        {
+          "type": "object",
+          "required": ["session_id", "endpoint_id"],
+          "properties": {
+            "type": {
+              "const": "get_projection"
+            },
+            "payload": {
+              "type": "object"
+            }
+          }
+        }
+      ]
+    },
+    "RequestAiSuggestionEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EnvelopeContext"
+        },
+        {
+          "type": "object",
+          "required": ["session_id", "endpoint_id"],
+          "properties": {
+            "type": {
+              "const": "request_ai_suggestion"
+            },
+            "payload": {
+              "type": "object"
+            }
+          }
+        }
+      ]
+    },
+    "SubmitCommandEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EnvelopeContext"
+        },
+        {
+          "type": "object",
+          "required": [
+            "session_id",
+            "endpoint_id",
+            "idempotency_id",
+            "primary_authority_generation"
+          ],
+          "properties": {
+            "type": {
+              "const": "submit_command"
+            },
+            "payload": {
+              "type": "object",
+              "required": ["command"],
+              "properties": {
+                "command": {
+                  "$ref": "#/$defs/ClientCommand"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "ClientEnvelope": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/GetProjectionEnvelope"
+        },
+        {
+          "$ref": "#/$defs/RequestAiSuggestionEnvelope"
+        },
+        {
+          "$ref": "#/$defs/SubmitCommandEnvelope"
+        }
+      ]
+    },
+    "ProjectedScene": {
+      "type": "object",
+      "required": ["id", "name", "public_narrative"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "name": {
+          "type": "string"
+        },
+        "public_narrative": {
+          "type": "string"
+        }
+      }
+    },
+    "ProjectedClue": {
+      "type": "object",
+      "required": ["id", "name", "description"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        }
+      }
+    },
+    "ProjectedParticipant": {
+      "type": "object",
+      "required": ["participant_id", "name", "character_name"],
+      "properties": {
+        "participant_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "character_name": {
+          "type": ["string", "null"]
+        },
+        "private_objective": {
+          "type": "string",
+          "description": "Absent unless authorized for this recipient. Never represented as null."
+        },
+        "has_voted": {
+          "type": "boolean",
+          "description": "Absent unless authorized for this recipient."
+        }
+      }
+    },
+    "ProjectedOutcome": {
+      "type": "object",
+      "required": ["id", "public_resolution"],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "public_resolution": {
+          "type": "string"
+        }
+      }
+    },
+    "AuthorizedProjection": {
+      "type": "object",
+      "required": [
+        "scenario_id",
+        "scenario_version",
+        "scenario_title",
+        "active_scene",
+        "revealed_clues",
+        "participants",
+        "voting_open",
+        "votes_cast",
+        "outcome"
+      ],
+      "properties": {
+        "scenario_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "scenario_version": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4294967295
+        },
+        "scenario_title": {
+          "type": "string"
+        },
+        "active_scene": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ProjectedScene"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "revealed_clues": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProjectedClue"
+          }
+        },
+        "participants": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ProjectedParticipant"
+          }
+        },
+        "voting_open": {
+          "type": "boolean"
+        },
+        "votes_cast": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outcome": {
+          "oneOf": [
+            {
+              "$ref": "#/$defs/ProjectedOutcome"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "ProjectionEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EnvelopeContext"
+        },
+        {
+          "type": "object",
+          "required": ["session_id", "endpoint_id", "server_sequence"],
+          "properties": {
+            "type": {
+              "const": "projection"
+            },
+            "payload": {
+              "type": "object",
+              "required": ["projection"],
+              "properties": {
+                "projection": {
+                  "$ref": "#/$defs/AuthorizedProjection"
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "AiSuggestionEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EnvelopeContext"
+        },
+        {
+          "type": "object",
+          "required": ["correlation_id", "session_id", "endpoint_id"],
+          "properties": {
+            "type": {
+              "const": "ai_suggestion"
+            },
+            "payload": {
+              "type": "object",
+              "required": ["suggestion"],
+              "properties": {
+                "suggestion": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 2000
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "CommandResultBody": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "idempotency_id",
+            "status",
+            "primary_authority_generation"
+          ],
+          "properties": {
+            "idempotency_id": {
+              "$ref": "#/$defs/MessageIdentifier"
+            },
+            "status": {
+              "const": "accepted"
+            },
+            "primary_authority_generation": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "idempotency_id",
+            "status",
+            "primary_authority_generation",
+            "code",
+            "title"
+          ],
+          "properties": {
+            "idempotency_id": {
+              "$ref": "#/$defs/MessageIdentifier"
+            },
+            "status": {
+              "const": "rejected"
+            },
+            "primary_authority_generation": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "code": {
+              "type": "string",
+              "pattern": "^[a-z][a-z0-9_]{0,63}$"
+            },
+            "title": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          }
+        }
+      ]
+    },
+    "CommandResultEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EnvelopeContext"
+        },
+        {
+          "type": "object",
+          "required": [
+            "correlation_id",
+            "session_id",
+            "endpoint_id",
+            "server_sequence"
+          ],
+          "properties": {
+            "type": {
+              "const": "command_result"
+            },
+            "payload": {
+              "$ref": "#/$defs/CommandResultBody"
+            }
+          }
+        }
+      ]
+    },
+    "ErrorEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EnvelopeContext"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "const": "error"
+            },
+            "payload": {
+              "$ref": "#/$defs/ErrorBody"
+            }
+          }
+        }
+      ]
+    },
+    "ServerEnvelope": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ProjectionEnvelope"
+        },
+        {
+          "$ref": "#/$defs/AiSuggestionEnvelope"
+        },
+        {
+          "$ref": "#/$defs/CommandResultEnvelope"
+        },
+        {
+          "$ref": "#/$defs/ErrorEnvelope"
+        }
+      ]
+    }
+  }
+}

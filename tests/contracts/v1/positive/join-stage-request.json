@@ -1,0 +1,8 @@
+{
+  "protocol_version": "1.0",
+  "kind": "stage",
+  "endpoint": {
+    "platform": "webos",
+    "capabilities": ["public_display", "remote_control_input"]
+  }
+}

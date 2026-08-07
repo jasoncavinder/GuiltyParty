@@ -1,0 +1,40 @@
+{
+  "protocol_version": "1.0",
+  "type": "projection",
+  "message_id": "message-server-participant-001",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-player-001",
+  "server_sequence": 8,
+  "payload": {
+    "projection": {
+      "scenario_id": "scenario-synthetic-001",
+      "scenario_version": 1,
+      "scenario_title": "The Synthetic Artifact",
+      "active_scene": null,
+      "revealed_clues": [
+        {
+          "id": "clue-private-001",
+          "name": "Folded Note",
+          "description": "SYNTHETIC_OWN_PRIVATE_CLUE"
+        }
+      ],
+      "participants": [
+        {
+          "participant_id": "participant-synthetic-001",
+          "name": "Synthetic ʻIolana",
+          "character_name": "Curator",
+          "private_objective": "SYNTHETIC_OWN_PRIVATE_OBJECTIVE",
+          "has_voted": true
+        },
+        {
+          "participant_id": "participant-synthetic-002",
+          "name": "Synthetic Ren",
+          "character_name": "Collector"
+        }
+      ],
+      "voting_open": true,
+      "votes_cast": 1,
+      "outcome": null
+    }
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "protocol_version": "1.0",
+  "type": "command_result",
+  "message_id": "message-server-command-001",
+  "correlation_id": "message-client-002",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-player-001",
+  "server_sequence": 9,
+  "payload": {
+    "idempotency_id": "command-synthetic-vote-001",
+    "status": "accepted",
+    "primary_authority_generation": 3
+  }
+}

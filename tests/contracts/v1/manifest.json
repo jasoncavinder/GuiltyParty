@@ -1,0 +1,127 @@
+{
+  "schema": "../../../contracts/control-plane/v1/control-plane.schema.json",
+  "cases": [
+    {
+      "file": "positive/compatibility-response.json",
+      "definition": "CompatibilityResponse",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/join-participant-request.json",
+      "definition": "JoinRequest",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/join-participant-response.json",
+      "definition": "JoinResponse",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/join-stage-request.json",
+      "definition": "JoinRequest",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/join-stage-response.json",
+      "definition": "JoinResponse",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/get-projection-additive-field.json",
+      "definition": "ClientEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/submit-cast-vote.json",
+      "definition": "ClientEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/problem-details.json",
+      "definition": "ProblemDetails",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/websocket-error.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/command-result-accepted.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "privacy/stage-projection.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "privacy/participant-projection.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "negative/missing-message-id.json",
+      "definition": "ClientEnvelope",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/unsupported-protocol-version.json",
+      "definition": "ClientEnvelope",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/command-missing-idempotency-id.json",
+      "definition": "ClientEnvelope",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/unknown-message-type.json",
+      "definition": "ClientEnvelope",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/stage-with-display-name.json",
+      "definition": "JoinRequest",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/private-objective-null.json",
+      "definition": "ProjectedParticipant",
+      "expected_valid": false
+    }
+  ],
+  "privacy_assertions": [
+    {
+      "file": "privacy/stage-projection.json",
+      "forbidden_member_names": [
+        "private_objective",
+        "has_voted",
+        "authorized_characters",
+        "is_public"
+      ],
+      "forbidden_values": [
+        "SYNTHETIC_OWN_PRIVATE_CLUE",
+        "SYNTHETIC_OTHER_PRIVATE_CLUE",
+        "SYNTHETIC_OWN_PRIVATE_OBJECTIVE",
+        "SYNTHETIC_OTHER_PRIVATE_OBJECTIVE"
+      ]
+    },
+    {
+      "file": "privacy/participant-projection.json",
+      "forbidden_values": [
+        "SYNTHETIC_OTHER_PRIVATE_CLUE",
+        "SYNTHETIC_OTHER_PRIVATE_OBJECTIVE"
+      ],
+      "member_scope": {
+        "private_objective": [
+          "/payload/projection/participants/0"
+        ],
+        "has_voted": [
+          "/payload/projection/participants/0"
+        ]
+      }
+    }
+  ]
+}

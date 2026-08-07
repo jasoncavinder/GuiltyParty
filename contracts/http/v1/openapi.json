@@ -1,0 +1,103 @@
+{
+  "openapi": "3.1.1",
+  "info": {
+    "title": "Guilty Party Control Plane",
+    "version": "1.0.0",
+    "description": "Protocol v1 HTTP operations. JSON Schema in contracts/control-plane/v1 is authoritative for payload shapes."
+  },
+  "servers": [
+    {
+      "url": "http://127.0.0.1:3000",
+      "description": "Synthetic local prototype example only"
+    }
+  ],
+  "paths": {
+    "/api/protocol": {
+      "get": {
+        "operationId": "getProtocolCompatibility",
+        "summary": "Read non-private protocol compatibility information",
+        "responses": {
+          "200": {
+            "description": "Supported protocol majors and features",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/CompatibilityResponse"
+                }
+              }
+            }
+          },
+          "500": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    },
+    "/api/v1/join": {
+      "post": {
+        "operationId": "joinLocalSession",
+        "summary": "Issue a process-local authority for a synthetic participant or Stage",
+        "description": "This MVP operation is account-free and LAN-only. It does not represent the target account-backed pairing flow.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/JoinRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "A short-lived authority was issued",
+            "headers": {
+              "Cache-Control": {
+                "description": "Credential-bearing responses must not be cached.",
+                "schema": {
+                  "type": "string",
+                  "const": "no-store"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/JoinResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/Problem"
+          },
+          "500": {
+            "$ref": "#/components/responses/Problem"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "responses": {
+      "Problem": {
+        "description": "Safe RFC 9457 Problem Details response",
+        "headers": {
+          "Cache-Control": {
+            "schema": {
+              "type": "string",
+              "const": "no-store"
+            }
+          }
+        },
+        "content": {
+          "application/problem+json": {
+            "schema": {
+              "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/ProblemDetails"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -159,3 +159,7 @@ offline app builds should not require a separate generation step.
 Deferred. Tool quality varies across the schema features the project requires.
 A small compatibility evaluation and the normal dependency intake process must
 precede tool adoption.
+
+The current pre-adoption paper evaluation is recorded in
+[Mobile Contract Generator Evaluation](../architecture/mobile-contract-generator-evaluation.md).
+It does not approve or add a generator.

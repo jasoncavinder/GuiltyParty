@@ -1,0 +1,6 @@
+{
+  "protocol_version": "1.0",
+  "type": "silently_change_story_truth",
+  "message_id": "message-client-invalid-003",
+  "payload": {}
+}
