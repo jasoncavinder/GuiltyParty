@@ -345,6 +345,133 @@ Before invitation-only external beta:
 Do not infer approval from a prior informal note, a package metadata label, a
 successful build, or this pending table.
 
+## Approved CI Runtime Selector
+
+### actions/setup-node 7.0.0
+
+- **Status and scope:** Approved by the owner on 2026-08-06 for GitHub-hosted
+  CI only, to select Node.js 22 before contract, remote-service, and
+  artifact-only Wrangler checks. It receives no Cloudflare credential or
+  deployment authority and is not part of a product artifact.
+- **Canonical source and pin:** GitHub's
+  [actions/setup-node](https://github.com/actions/setup-node) repository,
+  release `v7.0.0`, pinned in the workflow to commit
+  `820762786026740c76f36085b0efc47a31fe5020` rather than a movable tag.
+- **License and execution:** MIT licensed. The JavaScript action runs on the
+  GitHub-hosted runner and selects an exact-major Node.js toolchain from the
+  runner cache or the action's documented Node distribution sources. It is not
+  copied into the Worker, server, browser, webOS, or mobile artifacts.
+- **Data and permissions:** It receives only public repository workflow
+  context and the requested Node version. The workflow retains read-only
+  repository permission, enables no npm cache through the action, and exposes
+  no gameplay, participant, scenario, account, OAuth, API-token, or payment
+  data.
+- **Review and removal:** A version, commit, source, license, download,
+  permission, telemetry, caching, or execution-scope change requires renewed
+  review. Removal deletes the setup step and this inventory entry; CI must then
+  provide another explicitly verified Node.js 22-or-later runtime.
+
+## Remote Deployment Tool — Temporary Development Exception
+
+### Wrangler 4.119.0
+
+- **Status:** Exact `wrangler@4.119.0` plus exact `undici@7.29.0` override
+  approved by the owner on 2026-08-06 for internal development builds and the
+  first synthetic development deployment only. Production deployment,
+  product bundling, redistribution, and Cloudflare CI credentials are not
+  approved.
+- **Category and risk:** Elevated development, deployment, credential, remote-
+  configuration, build-execution, and native-binary tool.
+- **Purpose and alternatives:** Build and locally emulate the first-party Worker
+  and Durable Object, validate `wrangler.jsonc`, authenticate a human operator,
+  and deploy reviewed versions to Cloudflare. Cloudflare recommends a locally
+  installed, project-pinned Wrangler. An unpinned `npx wrangler`, a global
+  install, manual dashboard drift, and handwritten REST deployment are rejected
+  for reproducibility and authority reasons. A future patched Wrangler release
+  or an explicitly reviewed dependency override remains possible.
+- **Canonical source and publisher:** npm package `wrangler`, published by
+  Cloudflare from
+  [cloudflare/workers-sdk](https://github.com/cloudflare/workers-sdk). Official
+  installation and configuration guidance is in the
+  [Cloudflare Wrangler documentation](https://developers.cloudflare.com/workers/wrangler/install-and-update/).
+- **Package coordinates and exact approved exception:** `wrangler@4.119.0`,
+  published 2026-08-05, requiring Node.js 22 or later, with root npm override
+  `undici@7.29.0`. Both are pinned in `package.json` and `package-lock.json`.
+- **Provenance and integrity evidence:** npm registry integrity
+  `sha512-ookClf+zly4DTc8pBMNrwGQzZKH8IpIYTXkjDw3XS7ZvBQ5mLYH6eOvfD5BEpk3U63zTbv91WRlo1UeRSKXa0g==`;
+  registry tarball `wrangler-4.119.0.tgz`; canonical repository is the public
+  Cloudflare Workers SDK repository. Release-tag and package-signature evidence
+  still requires reconciliation before approval.
+- **Direct and material transitive components:** The registry declares
+  `unenv@2.0.0-rc.24`, `esbuild@0.28.1`, `workerd@1.20260801.1`,
+  `miniflare@5.20260801.0-alpha`, `blake3-wasm@2.1.5`,
+  `path-to-regexp@6.3.0`, `@cloudflare/unenv-preset@2.16.1`, and
+  `@cloudflare/kv-asset-handler@0.5.0` as direct dependencies, plus
+  `fsevents@2.3.3` as optional. An isolated lock resolution contained 91 total
+  development dependencies including optional platform packages; the complete
+  graph and notices remain unapproved.
+- **Build scripts, native code, and downloads:** `esbuild@0.28.1` and
+  `workerd@1.20260801.1` declare postinstall scripts and platform-specific
+  optional native packages. Repository adoption proved that
+  `npm ci --ignore-scripts` retains a working Wrangler dry run on the evaluated
+  macOS host and GitHub-hosted Linux runner by using the applicable locked
+  prebuilt packages. Install scripts remain disabled. Any fallback download,
+  changed native package, or platform where the locked prebuilt tool does not
+  work requires renewed review rather than enabling scripts automatically.
+- **License evidence:** Wrangler, Cloudflare's preset, and asset handler declare
+  `MIT OR Apache-2.0`; `workerd` declares Apache-2.0; the other listed direct
+  dependencies declare MIT. Exact copyright, patent, attribution, dual-license
+  selection, native-package, and full transitive notice obligations remain to
+  be reconciled. These labels do not yet approve proprietary use or
+  redistribution.
+- **Data and remote endpoints:** Wrangler can authenticate to and mutate a
+  Cloudflare account, deploy source and configuration, manage bindings and
+  secrets, and run a local emulator. Its usage metrics default to enabled and
+  package dependency instrumentation defaults to enabled. The committed
+  development configuration explicitly sets `send_metrics: false`, disables
+  dependency instrumentation, and disables persisted Worker observability.
+  Authentication material must remain in Wrangler's approved credential store
+  or environment-specific CI secret store, never source control or logs.
+- **Current security gate:** An isolated exact lock resolution on 2026-08-06
+  resolved `miniflare@5.20260801.0-alpha` to `undici@7.28.0`. `npm audit`
+  reported three affected dependency records—two moderate and one high—covering
+  response desynchronization, cache-related information disclosure and crash,
+  CRLF injection, and cookie attribute injection advisories for versions before
+  `7.29.0`. The registry's suggested downgrade is not accepted as a safe fix.
+  The separately reviewed exact override passed source, audit, bundle, and local
+  runtime checks and is temporarily admitted for the narrow development scope.
+  It must be removed or re-reviewed when Cloudflare publishes a suitable patched
+  graph; production deployment and rollback approval remain closed.
+- **Privacy and store impact:** Development/CI only; it must not be bundled into
+  the Worker, browser, webOS, iOS, Android, or other product artifact. No
+  gameplay, participant, private scenario, or production database content may
+  be used in local-tool tests. Mobile privacy-manifest, SDK Index, and store
+  declaration impact is therefore not applicable unless the tool is later
+  bundled, which is outside the proposed scope.
+- **Test, rollback, and removal:** Approval requires a lockfile-only graph and
+  audit review, install-script and binary provenance inspection, Wrangler
+  configuration validation, offline unit tests, local Durable Object SQLite and
+  hibernating-WebSocket tests, a dry-run artifact inspection, a synthetic
+  development deployment, rollback and export rehearsal, and confirmation that
+  no dependency enters the Worker bundle. Removal deletes the package and
+  lockfile graph, scripts, local caches and credentials, CI token, deployment
+  workflow, and Wrangler-specific configuration after exporting or migrating
+  provider state.
+- **Required notices and SBOM:** Pending full graph reconciliation. Include the
+  tool graph in the development/CI SBOM and prove it absent from the product
+  runtime SBOM.
+- **Reviewer and explicit owner decision:** Technical intake prepared by Codex
+  on 2026-08-06. The owner approved only the documented local, time-bounded
+  `undici@7.29.0` override spike on 2026-08-06 and subsequently approved the
+  exact locked combination for repository adoption, owner browser
+  authentication, and the first synthetic development deployment. Production,
+  product redistribution, version changes, and CI Cloudflare authority remain
+  unapproved.
+- **Review triggers and exception:** Any release, transitive, native package,
+  install script, advisory, telemetry, credential, endpoint, config-schema, or
+  deployment-authority change requires renewed review. No exception is
+  requested.
+
 ## Intake Record Template
 
 Copy this section for each approved component or coherent SDK/provider bundle:

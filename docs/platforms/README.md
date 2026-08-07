@@ -1,5 +1,7 @@
 # Platform Documentation
 
+- [Cloudflare deployment runbook](cloudflare-deployment.md)
+
 This directory will hold platform-specific constraints and integration notes.
 It does not commit the project to a framework or shared implementation strategy.
 

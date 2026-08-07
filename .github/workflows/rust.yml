@@ -6,6 +6,7 @@ on:
     paths:
       - "server/**"
       - "clients/**"
+      - "services/remote/**"
       - "contracts/**"
       - "tests/contracts/**"
       - "tooling/check_contract_artifacts.py"
@@ -19,6 +20,7 @@ on:
     paths:
       - "server/**"
       - "clients/**"
+      - "services/remote/**"
       - "contracts/**"
       - "tests/contracts/**"
       - "tooling/check_contract_artifacts.py"
@@ -39,12 +41,22 @@ jobs:
         working-directory: server
     steps:
       - uses: actions/checkout@v7
+      - name: Use Node.js 22
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
       - name: Install contract validation tooling
         working-directory: .
         run: npm ci --ignore-scripts --cache .cache/npm
       - name: Validate control-plane contracts
         working-directory: .
         run: make check-contracts
+      - name: Test Cloudflare remote service
+        working-directory: .
+        run: make test-remote
+      - name: Validate Cloudflare deployment bundle
+        working-directory: .
+        run: make check-cloudflare
       - name: Check formatting
         run: cargo fmt --all -- --check
       - name: Lint

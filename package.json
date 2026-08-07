@@ -1,13 +1,21 @@
 {
   "name": "guilty-party-tooling",
   "private": true,
+  "type": "module",
   "engines": {
-    "node": ">=20"
+    "node": ">=22"
   },
   "scripts": {
-    "check:contracts:standard": "node tooling/check_contract_schema.mjs"
+    "check:contracts:standard": "node tooling/check_contract_schema.mjs",
+    "test:remote": "node --test services/remote/test/*.test.mjs",
+    "cloudflare:check": "wrangler deploy --dry-run --config services/remote/wrangler.jsonc --outdir .tmp/cloudflare-bundle",
+    "cloudflare:dev": "wrangler dev --config services/remote/wrangler.jsonc"
   },
   "devDependencies": {
-    "ajv": "8.20.0"
+    "ajv": "8.20.0",
+    "wrangler": "4.119.0"
+  },
+  "overrides": {
+    "undici": "7.29.0"
   }
 }
