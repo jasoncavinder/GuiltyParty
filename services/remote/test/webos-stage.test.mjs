@@ -1,0 +1,238 @@
+import assert from "node:assert/strict";
+import { execFile } from "node:child_process";
+import { readFile, readdir } from "node:fs/promises";
+import path from "node:path";
+import test from "node:test";
+import { promisify } from "node:util";
+import vm from "node:vm";
+import { fileURLToPath } from "node:url";
+
+const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const stageDirectory = path.join(repository, "clients/stage");
+const packagedStageDirectory = path.join(repository, ".tmp/webos-stage-app");
+const execFileAsync = promisify(execFile);
+const coreSource = await readFile(path.join(stageDirectory, "stage-core.js"), "utf8");
+const context = vm.createContext({});
+vm.runInContext(coreSource, context, { filename: "stage-core.js" });
+const core = context.GuiltyPartyStageCore;
+const publicEnvelope = JSON.parse(
+  await readFile(path.join(repository, "tests/contracts/v1/privacy/stage-projection.json"), "utf8"),
+);
+
+function plain(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+test("packaged Stage metadata is pinned to the approved development build", async () => {
+  const appinfo = JSON.parse(await readFile(path.join(stageDirectory, "appinfo.json"), "utf8"));
+  assert.equal(appinfo.id, "com.guiltyparty.stage");
+  assert.equal(appinfo.version, "0.1.0");
+  assert.equal(appinfo.type, "web");
+  assert.equal(appinfo.main, "index.html");
+  assert.equal(appinfo.icon, "icon.png");
+  assert.deepEqual(plain(core.STAGE_BUILD), {
+    application_id: "stage_webos",
+    application_version: "0.1.0",
+    build_number: 1,
+  });
+  assert.equal(core.API_ORIGIN, "https://api.test.guiltyparty.app");
+  assert.equal(core.CONTROL_SUBPROTOCOL, "guiltyparty.control.v1");
+});
+
+test("packaged shell deliberately creates a null-Origin sandbox boundary", async () => {
+  const shell = await readFile(path.join(stageDirectory, "index.html"), "utf8");
+  const shellScript = await readFile(path.join(stageDirectory, "shell.js"), "utf8");
+  const stage = await readFile(path.join(stageDirectory, "stage.html"), "utf8");
+  assert.match(shell, /sandbox="allow-scripts"/u);
+  assert.doesNotMatch(shell, /allow-same-origin/u);
+  assert.match(shellScript, /event\.source === frame\.contentWindow/u);
+  assert.match(shellScript, /event\.data === "guiltyparty\.stage\.exit"/u);
+  assert.match(stage, /connect-src https:\/\/api\.test\.guiltyparty\.app wss:\/\/api\.test\.guiltyparty\.app/u);
+});
+
+test("physical-compatible package inlines only first-party runtime assets", async () => {
+  await execFileAsync(process.execPath, [path.join(repository, "tooling/build_webos_stage.mjs")], {
+    cwd: repository,
+  });
+  const packagedFiles = (await readdir(packagedStageDirectory)).sort();
+  const packagedShell = await readFile(path.join(packagedStageDirectory, "index.html"), "utf8");
+  const packagedStage = await readFile(path.join(packagedStageDirectory, "stage.html"), "utf8");
+
+  assert.deepEqual(packagedFiles, ["appinfo.json", "icon.png", "index.html", "stage.html"]);
+  assert.match(packagedShell, /sandbox="allow-scripts"/u);
+  assert.doesNotMatch(packagedShell, /allow-same-origin/u);
+  assert.doesNotMatch(packagedShell, /<(?:link|script)[^>]+(?:href|src)=/u);
+  assert.match(packagedStage, /default-src 'none'/u);
+  assert.match(packagedStage, /connect-src https:\/\/api\.test\.guiltyparty\.app wss:\/\/api\.test\.guiltyparty\.app/u);
+  assert.doesNotMatch(packagedStage, /<(?:link|script)[^>]+(?:href|src)=/u);
+  assert.doesNotMatch(packagedShell + packagedStage, /(?:localStorage|sessionStorage|indexedDB|XMLHttpRequest)/u);
+});
+
+test("pending pairing accepts only context-free response state", () => {
+  const now = 1_999_999_990_000;
+  const pending = {
+    protocol_version: "1.0",
+    status: "pending",
+    expires_at_unix_ms: 2_000_000_000_000,
+    retry_after_ms: 1500,
+  };
+  assert.equal(core.validatePending(pending, now).status, "pending");
+  for (const field of [
+    "session_id",
+    "endpoint_id",
+    "participant_id",
+    "scenario_title",
+    "authority_transport",
+    "token",
+  ]) {
+    assert.throws(() => core.validatePending({ ...pending, [field]: "forbidden" }, now));
+  }
+  assert.throws(() => core.validatePending({ ...pending, expires_at_unix_ms: now }, now));
+});
+
+test("pairing creation enforces the 120-second transaction and matching redeem route", () => {
+  const now = 2_000_000_000_000;
+  const response = {
+    protocol_version: "1.0",
+    pairing_code: "ABCD-EFGH",
+    polling_secret: "synthetic-polling-secret-0123456789",
+    redeem_path: "/api/v1/stage-pairings/ABCD-EFGH/redeem",
+    expires_at_unix_ms: now + 120_000,
+    poll_after_ms: 1500,
+  };
+  assert.equal(core.validatePairingCreate(response, now).pairing_code, "ABCD-EFGH");
+  assert.throws(() => core.validatePairingCreate({ ...response, expires_at_unix_ms: now + 126_000 }, now));
+  assert.throws(() => core.validatePairingCreate({ ...response, redeem_path: "/api/v1/join" }, now));
+});
+
+test("deallocated and expired pairing responses render as code expiry", async () => {
+  const stageScript = await readFile(path.join(stageDirectory, "stage.js"), "utf8");
+  assert.match(stageScript, /error\.status === 404 \|\| error\.status === 410/u);
+  assert.match(stageScript, /expirePairing\(\)/u);
+});
+
+test("Stage projection is copied into a public-only retained shape", () => {
+  const projection = core.sanitizeProjection(publicEnvelope.payload.projection);
+  assert.deepEqual(Object.keys(plain(projection)).sort(), [
+    "active_scene",
+    "gameplay_language",
+    "outcome",
+    "participants",
+    "revealed_clues",
+    "scenario_id",
+    "scenario_title",
+    "scenario_version",
+    "votes_cast",
+    "voting_open",
+  ]);
+  assert.deepEqual(Object.keys(plain(projection.participants[0])).sort(), [
+    "character_name",
+    "name",
+    "participant_id",
+  ]);
+
+  const additive = structuredClone(publicEnvelope.payload.projection);
+  additive.future_public_field = "ignored";
+  assert.equal("future_public_field" in core.sanitizeProjection(additive), false);
+});
+
+test("projection filtering fails closed on every forbidden private category", () => {
+  const privateCases = [
+    ["participants", 0, "private_objective", "Synthetic private objective"],
+    ["participants", 0, "has_voted", true],
+    ["private_clues", null, null, []],
+    ["individual_votes", null, null, []],
+    ["participant_credentials", null, null, ["synthetic-credential"]],
+    ["private_messages", null, null, []],
+    ["token", null, null, "synthetic-authority"],
+  ];
+  for (const [field, index, nestedField, value] of privateCases) {
+    const projection = structuredClone(publicEnvelope.payload.projection);
+    if (index === null) projection[field] = value;
+    else projection[field][index][nestedField] = value;
+    assert.throws(() => core.sanitizeProjection(projection), /forbidden private fields/u);
+  }
+});
+
+test("envelope validation binds projection to the Stage context", () => {
+  const result = core.validateEnvelope(publicEnvelope, {
+    session_id: publicEnvelope.session_id,
+    endpoint_id: publicEnvelope.endpoint_id,
+  });
+  assert.equal(result.type, "projection");
+  assert.equal(result.sequence, 7);
+  assert.throws(() => core.validateEnvelope({ ...publicEnvelope, endpoint_id: "another-endpoint" }, {
+    session_id: publicEnvelope.session_id,
+    endpoint_id: publicEnvelope.endpoint_id,
+  }));
+  assert.throws(() => core.validateEnvelope({ ...publicEnvelope, type: "command_result" }, {
+    session_id: publicEnvelope.session_id,
+    endpoint_id: publicEnvelope.endpoint_id,
+  }), /Unsupported critical/u);
+});
+
+test("sequence tracker accepts continuity and reconnect refresh but resyncs gaps", () => {
+  const tracker = new core.SequenceTracker();
+  assert.equal(tracker.accept(7), "apply");
+  assert.equal(tracker.accept(7), "duplicate");
+  assert.equal(tracker.accept(8), "apply");
+  assert.equal(tracker.accept(10), "resync");
+  tracker.startConnection();
+  assert.equal(tracker.accept(10), "apply");
+  tracker.startConnection();
+  assert.equal(tracker.accept(9), "resync");
+});
+
+test("lifecycle reset overwrites every in-memory authority category", () => {
+  const tracker = new core.SequenceTracker();
+  tracker.accept(9);
+  const state = {
+    pairing: { polling_secret: "synthetic-polling-secret" },
+    authority: { token: "synthetic-bearer" },
+    ticket: { websocket_subprotocol: "synthetic-ticket" },
+    projection: { scenario_title: "Synthetic public title" },
+    sequence: tracker,
+  };
+  core.clearSensitiveState(state);
+  assert.equal(state.pairing, null);
+  assert.equal(state.authority, null);
+  assert.equal(state.ticket, null);
+  assert.equal(state.projection, null);
+  assert.equal(tracker.last, -1);
+});
+
+test("reconnect delay uses full jitter and remains capped at 30 seconds", () => {
+  assert.equal(core.reconnectDelayMs(0, 0), 0);
+  assert.equal(core.reconnectDelayMs(0, 1), 1000);
+  assert.equal(core.reconnectDelayMs(1, 1), 2000);
+  assert.equal(core.reconnectDelayMs(5, 1), 30000);
+  assert.equal(core.reconnectDelayMs(50, 1), 30000);
+  assert.equal(core.terminalSocketClose(1008), true);
+  assert.equal(core.terminalSocketClose(1006), false);
+  assert.equal(core.terminalHttpStatus(403), true);
+  assert.equal(core.terminalHttpStatus(503), false);
+});
+
+test("packaged Stage sources contain no obsolete or persistent authority transport", async () => {
+  const files = ["index.html", "shell.js", "stage.html", "stage-core.js", "stage.js", "styles.css", "shell.css", "appinfo.json"];
+  const sources = await Promise.all(files.map((file) => readFile(path.join(stageDirectory, file), "utf8")));
+  const combined = sources.join("\n");
+  for (const forbidden of [
+    "localStorage",
+    "sessionStorage",
+    "indexedDB",
+    "?token=",
+    "searchParams.set",
+    "browser_stage",
+    '"/api/v1/join"',
+    "console.log",
+    "console.error",
+    "XMLHttpRequest",
+  ]) {
+    assert.equal(combined.includes(forbidden), false, `found forbidden packaged Stage pattern ${forbidden}`);
+  }
+  assert.doesNotMatch(sources[2], /<(?:script|link|img)[^>]+https?:\/\//u);
+  assert.match(combined, /StagePairing /u);
+  assert.match(combined, /\/api\/v1\/websocket-tickets/u);
+  assert.match(combined, /wss:\/\/api\.test\.guiltyparty\.app\/ws\/v1/u);
+});

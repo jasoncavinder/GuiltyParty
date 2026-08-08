@@ -79,7 +79,7 @@ the review and manual deployment procedure. The earlier local browser
 prototype is archived as implementation history and deterministic-engine
 evidence.
 
-The Stage has only been exercised as a browser proof of concept. It is not yet packageable because approved original icon assets and `appinfo.json` are not present. The native iOS project and physical-device workflows also remain incomplete; see the [iOS setup status](docs/platforms/ios-setup.md).
+The dependency-free LG webOS Stage now packages locally for sideload review with original project-owned icon artwork. Physical webOS 5.6 transport is verified through context-free pending pairing, and the protected deployed-service ticket/WebSocket rehearsal passes; physical authorized-projection and lifecycle evidence remains incomplete, while newer simulator Origin behavior currently fails closed. See the [webOS build and test runbook](docs/platforms/webos-stage-build-and-test.md) and [transport spike](docs/platforms/webos-transport-spike.md). The native iOS project and physical-device workflows also remain incomplete; see the [iOS setup status](docs/platforms/ios-setup.md).
 
 ## Documentation
 
