@@ -384,6 +384,23 @@ final class CommandAndRequestTests: XCTestCase {
         )
     }
 
+    func testWebSocketControlPayloadUsesTextFrame() throws {
+        let data = Data(#"{"type":"get_projection"}"#.utf8)
+
+        switch try WebSocketControlFrame.message(from: data) {
+        case .string(let text):
+            XCTAssertEqual(text, #"{"type":"get_projection"}"#)
+        case .data:
+            XCTFail("Control-plane JSON must use a WebSocket text frame")
+        @unknown default:
+            XCTFail("Unsupported WebSocket message frame")
+        }
+
+        XCTAssertThrowsError(try WebSocketControlFrame.message(from: Data([0xFF]))) { error in
+            XCTAssertEqual(error as? SessionModelError, .protocolViolation)
+        }
+    }
+
     func testShortRequestAndWebSocketUseDistinctResourceTimeouts() {
         let shortRequest = CompanionEnvironment.shortRequestConfiguration()
         let webSocket = CompanionEnvironment.webSocketConfiguration()

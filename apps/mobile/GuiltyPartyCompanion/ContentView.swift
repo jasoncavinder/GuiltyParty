@@ -61,9 +61,16 @@ struct ContentView: View {
 }
 
 private struct JoinView: View {
+    private enum JoinField: Hashable {
+        case nickname
+        case invitation
+    }
+
     @ObservedObject var session: CompanionSession
     @State private var nickname = ""
     @State private var invitation = ""
+    @State private var joinIsPending = false
+    @FocusState private var focusedField: JoinField?
 
     var body: some View {
         NavigationStack {
@@ -94,12 +101,18 @@ private struct JoinView: View {
                                 .textContentType(.nickname)
                                 .textInputAutocapitalization(.words)
                                 .autocorrectionDisabled()
+                                .focused($focusedField, equals: .nickname)
+                                .submitLabel(.next)
+                                .onSubmit {
+                                    focusedField = .invitation
+                                }
                                 .accessibilityLabel("Session nickname")
 
                             SecureField("GP1 invitation", text: $invitation)
-                                .textContentType(.oneTimeCode)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
+                                .focused($focusedField, equals: .invitation)
+                                .submitLabel(.join)
                                 .privacySensitive()
                                 .accessibilityLabel("Private GP1 invitation")
                                 .onSubmit(join)
@@ -115,7 +128,8 @@ private struct JoinView: View {
                             .buttonStyle(.borderedProminent)
                             .controlSize(.large)
                             .disabled(
-                                nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                joinIsPending
+                                    || nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                                     || invitation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
                             )
                             .keyboardShortcut(.defaultAction)
@@ -137,13 +151,22 @@ private struct JoinView: View {
     }
 
     private func join() {
+        guard !joinIsPending else { return }
+        joinIsPending = true
         let oneTimeInvitation = invitation
+        let oneTimeNickname = nickname
+        focusedField = nil
         invitation = ""
-        Task {
+
+        Task { @MainActor in
+            // Allow SwiftUI to resign and remove the sensitive keyboard input
+            // before the session phase replaces this view.
+            await Task.yield()
             await session.join(
                 invitationPayload: oneTimeInvitation,
-                displayName: nickname
+                displayName: oneTimeNickname
             )
+            joinIsPending = false
         }
     }
 }

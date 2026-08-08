@@ -240,7 +240,7 @@ final class FirstPartyWebSocket: @unchecked Sendable {
     }
 
     func send(_ data: Data) async throws {
-        try await task.send(.data(data))
+        try await task.send(WebSocketControlFrame.message(from: data))
     }
 
     func receive() async throws -> Data {
@@ -277,6 +277,15 @@ final class FirstPartyWebSocket: @unchecked Sendable {
     func cancel() {
         task.cancel(with: .goingAway, reason: nil)
         session.invalidateAndCancel()
+    }
+}
+
+enum WebSocketControlFrame {
+    static func message(from data: Data) throws -> URLSessionWebSocketTask.Message {
+        guard let text = String(data: data, encoding: .utf8) else {
+            throw SessionModelError.protocolViolation
+        }
+        return .string(text)
     }
 }
 
