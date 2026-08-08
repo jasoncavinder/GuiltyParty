@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.test.guiltyparty.app wss://api.test.guiltyparty.app http://127.0.0.1:* ws://127.0.0.1:* http://localhost:* ws://localhost:*; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+  <title>Guilty Party — Play</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header><a class="brand" href="/" aria-label="Guilty Party Play home"><span>G</span> Guilty Party</a><span id="connection-badge" class="badge">Private Companion</span></header>
+  <main>
+    <section id="join-panel" class="join-card" aria-labelledby="join-title">
+      <p class="kicker">Private Companion</p>
+      <h1 id="join-title">Join the story.</h1>
+      <p class="lede">Paste the invitation sent by your Host. Use a nickname—this early test does not use permanent accounts.</p>
+      <form id="join-form" class="stack">
+        <label>Invitation transfer<textarea id="invitation" rows="4" required placeholder="GP1.…" autocomplete="off" spellcheck="false"></textarea></label>
+        <label>Your nickname<input id="display-name" required minlength="1" maxlength="80" autocomplete="nickname"></label>
+        <button class="primary" type="submit">Join private session</button>
+      </form>
+      <p id="join-status" class="status" role="status">Checking for an in-progress session…</p>
+      <p class="privacy-note">Invitation text and private game content stay out of browser storage. Closing this tab clears the rendered view.</p>
+    </section>
+
+    <section id="game" class="game hidden" aria-label="Player game view">
+      <div class="story-head">
+        <div><p class="kicker">Now playing</p><h1 id="scenario-title">Guilty Party</h1><p id="session-meta" class="muted"></p></div>
+        <button id="leave-view" class="quiet" type="button">Hide private view</button>
+      </div>
+      <article id="character-card" class="card character-card">
+        <p class="kicker">Your character</p><h2 id="character-name">Waiting for the Host</h2><p id="private-objective" class="objective">Your private objective will appear here after assignment.</p>
+      </article>
+      <div class="grid">
+        <article class="card"><p class="kicker">Current scene</p><h2 id="scene-name">The room is gathering</h2><p id="scene-copy" class="muted">Stay close. The Host will begin shortly.</p></article>
+        <article class="card"><p class="kicker">Evidence</p><h2>What you know</h2><div id="clues" class="empty">No clues revealed to you.</div></article>
+      </div>
+      <article id="vote-card" class="card hidden"><p class="kicker">The accusation</p><h2>Cast your vote</h2><p>Your vote can be submitted once. Choose the character you believe is guilty.</p><div id="vote-options" class="vote-options"></div><p id="vote-status" class="status" role="status"></p></article>
+      <article id="outcome-card" class="card outcome hidden"><p class="kicker">Case resolved</p><h2 id="outcome-copy"></h2></article>
+      <p id="game-status" class="status" role="status"></p>
+    </section>
+  </main>
+  <div id="privacy-cover" class="privacy-cover" aria-hidden="true"><span>G</span><p>Private game view hidden</p></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>

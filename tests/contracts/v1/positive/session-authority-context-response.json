@@ -1,0 +1,9 @@
+{
+  "protocol_version": "1.0",
+  "session_id": "ses_0123456789abcdef",
+  "endpoint_id": "end_0123456789abcdef",
+  "audience": "participant",
+  "participant_id": "par_0123456789abcdef",
+  "primary_authority_generation": 1,
+  "authority_expires_at_unix_ms": 2000000000000
+}

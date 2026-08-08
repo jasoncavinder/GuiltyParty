@@ -42,6 +42,16 @@
       "expected_valid": true
     },
     {
+      "file": "positive/session-endpoint-roster-response.json",
+      "definition": "SessionEndpointRosterResponse",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/session-authority-context-response.json",
+      "definition": "SessionAuthorityContextResponse",
+      "expected_valid": true
+    },
+    {
       "file": "positive/get-projection-additive-field.json",
       "definition": "ClientEnvelope",
       "expected_valid": true

@@ -12,6 +12,11 @@ on:
       - "tooling/check_contract_artifacts.py"
       - "tooling/check_contract_schema.mjs"
       - "tooling/check_scenario_wasm.mjs"
+      - "tooling/build_remote_clients.mjs"
+      - "tooling/remote_rehearsal_websocket.mjs"
+      - "tooling/rehearse_remote_game.mjs"
+      - "tooling/rehearse_remote_lifecycle.mjs"
+      - "tooling/rehearse_stage_pairing_boundaries.mjs"
       - "tooling/mobile_contracts.py"
       - "tooling/run_contract_generator_spike.py"
       - "tooling/test_mobile_contracts.py"
@@ -30,6 +35,11 @@ on:
       - "tooling/check_contract_artifacts.py"
       - "tooling/check_contract_schema.mjs"
       - "tooling/check_scenario_wasm.mjs"
+      - "tooling/build_remote_clients.mjs"
+      - "tooling/remote_rehearsal_websocket.mjs"
+      - "tooling/rehearse_remote_game.mjs"
+      - "tooling/rehearse_remote_lifecycle.mjs"
+      - "tooling/rehearse_stage_pairing_boundaries.mjs"
       - "tooling/mobile_contracts.py"
       - "tooling/run_contract_generator_spike.py"
       - "tooling/test_mobile_contracts.py"
@@ -77,7 +87,7 @@ jobs:
       - name: Test
         run: cargo test --locked --workspace --all-targets
       - name: Check browser JavaScript syntax
-        run: node --check ../clients/host/app.js && node --check ../clients/stage/stage.js
+        run: node --check ../clients/shared/control-client.js && node --check ../clients/host/app.js && node --check ../clients/companion-web/app.js && node --check ../clients/stage/stage.js
 
   mobile-contracts:
     runs-on: macos-26

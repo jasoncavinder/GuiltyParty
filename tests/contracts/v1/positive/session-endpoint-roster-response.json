@@ -1,0 +1,25 @@
+{
+  "protocol_version": "1.0",
+  "endpoints": [
+    {
+      "endpoint_id": "end_host_0123456789",
+      "audience": "host",
+      "participant_id": null,
+      "display_name": null,
+      "platform": "browser",
+      "capabilities": ["host_control", "private_display"],
+      "authority_generation": 1,
+      "revoked": false
+    },
+    {
+      "endpoint_id": "end_participant_012345",
+      "audience": "participant",
+      "participant_id": "par_0123456789abcdef",
+      "display_name": "Synthetic Guest",
+      "platform": "browser",
+      "capabilities": ["private_display", "touch_input"],
+      "authority_generation": 2,
+      "revoked": true
+    }
+  ]
+}

@@ -11,6 +11,7 @@ const hostOrigin = process.env.GP_HOST_ORIGIN ?? "https://host.test.guiltyparty.
 const hibernationIdleMs = 15_000;
 const pollIntervalMs = 5_000;
 const lifecycleRetentionMs = 30_000;
+const responseDateToleranceMs = 5_000;
 
 if (baseUrl.pathname !== "/" || baseUrl.search || baseUrl.hash) {
   throw new Error("GP_REMOTE_BASE_URL must be an HTTP(S) origin without a path, query, or fragment");
@@ -23,14 +24,14 @@ async function rehearseAuthorityAndHibernation() {
   const host = await createSession("/api/v1/sessions");
   let cleanupError = null;
   try {
-    await expectJoinStatus(host, "deliberately-invalid-pairing-proof", 401);
+    await expectJoinStatus(host, "deliberately-invalid-pairing-proof", 401, "participant");
 
     const rotated = await hostControl(host.cookie, "/api/v1/session/invitation", "PUT", 200);
     assert.equal(rotated.body.action, "rotate_invitation");
-    await expectJoinStatus(host, host.pairingCode, 401);
+    await expectJoinStatus(host, host.pairingCode, 401, "participant");
     host.pairingCode = rotated.body.pairing_code;
 
-    const stage = await joinStage(host, host.pairingCode, 200);
+    const stage = await pairStage(host);
     const closed = await hostControl(host.cookie, "/api/v1/session/invitation", "DELETE", 200);
     assert.equal(closed.body.action, "close_invitation");
     await expectJoinStatus(host, host.pairingCode, 401, "participant");
@@ -92,26 +93,29 @@ async function rehearseExpiryAndDeletion() {
   assert.ok(host.pairingExpiresAtUnixMs < host.sessionExpiresAtUnixMs);
 
   await delayUntil(host.pairingExpiresAtUnixMs + 1_000);
-  await expectJoinStatus(host, host.pairingCode, 401);
+  await expectJoinStatus(host, host.pairingCode, 401, "participant");
 
   await delayUntil(host.sessionExpiresAtUnixMs + 1_000);
-  await expectJoinStatus(host, host.pairingCode, 410);
+  await expectJoinStatus(host, host.pairingCode, 410, "participant");
 
   await waitForDeletion(host, host.sessionExpiresAtUnixMs + 120_000);
 
   const endedHost = await createSession("/api/v1/rehearsals/lifecycle/sessions");
-  const beforeEnd = Date.now();
   const ended = await hostControl(endedHost.cookie, "/api/v1/session/end", "POST", 200);
-  const afterEnd = Date.now();
-  assert.ok(ended.body.delete_at_unix_ms >= beforeEnd + lifecycleRetentionMs);
-  assert.ok(ended.body.delete_at_unix_ms <= afterEnd + lifecycleRetentionMs);
-  await expectJoinStatus(endedHost, endedHost.pairingCode, 410);
+  const responseDate = Date.parse(ended.headers.get("date") ?? "");
+  assert.ok(Number.isFinite(responseDate), "session-end response must include a valid Date header");
+  const observedRetentionMs = ended.body.delete_at_unix_ms - responseDate;
+  assert.ok(
+    Math.abs(observedRetentionMs - lifecycleRetentionMs) <= responseDateToleranceMs,
+    `observed retention ${observedRetentionMs}ms must remain near the fixed ${lifecycleRetentionMs}ms window`,
+  );
+  await expectJoinStatus(endedHost, endedHost.pairingCode, 410, "participant");
   await waitForDeletion(endedHost, ended.body.delete_at_unix_ms + 90_000);
 }
 
 async function waitForDeletion(host, deletionDeadline) {
   while (Date.now() < deletionDeadline) {
-    const response = await joinResponse(host, host.pairingCode, "stage");
+    const response = await joinResponse(host, host.pairingCode, "participant");
     if (response.status === 404) {
       await response.body?.cancel();
       return;
@@ -156,13 +160,72 @@ async function createSession(pathname) {
   };
 }
 
-async function joinStage(host, pairingCode, expectedStatus) {
-  const response = await joinResponse(host, pairingCode, "stage");
-  await requireStatus(response, expectedStatus, "packaged Stage join");
-  const body = await response.json();
-  assert.equal(body.authority_transport, "bearer");
-  assert.equal(body.websocket_transport, "ticket_subprotocol");
-  return body;
+async function pairStage(host) {
+  const created = await fetch(new URL("/api/v1/stage-pairings", baseUrl), {
+    method: "POST",
+    headers: { Origin: "null", "Content-Type": "application/json" },
+    body: JSON.stringify({
+      protocol_version: "1.0",
+      endpoint: {
+        platform: "webos",
+        capabilities: ["public_display"],
+        client_build: {
+          application_id: "stage_webos",
+          application_version: "0.1.0",
+          build_number: 1,
+        },
+      },
+    }),
+  });
+  await requireStatus(created, 201, "packaged Stage pairing creation");
+  const pairing = await created.json();
+
+  const codeAlone = await fetch(new URL(pairing.redeem_path, baseUrl), {
+    method: "POST",
+    headers: { Origin: "null" },
+  });
+  await requireStatus(codeAlone, 401, "Stage display-code-only rejection");
+  await codeAlone.body?.cancel();
+
+  const pending = await redeemStagePairing(pairing);
+  await requireStatus(pending, 202, "pending Stage pairing poll");
+  const pendingBody = await pending.json();
+  assert.equal(pendingBody.status, "pending");
+  assert.equal("session_id" in pendingBody, false);
+  assert.equal("endpoint_id" in pendingBody, false);
+
+  const approval = await fetch(
+    new URL(`/api/v1/stage-pairings/${pairing.pairing_code}/approve`, baseUrl),
+    {
+      method: "POST",
+      headers: { Cookie: host.cookie, Origin: hostOrigin },
+    },
+  );
+  await requireStatus(approval, 200, "Host Stage pairing approval");
+  await approval.body?.cancel();
+
+  const redemption = await redeemStagePairing(pairing);
+  await requireStatus(redemption, 200, "approved packaged Stage redemption");
+  const stage = await redemption.json();
+  assert.equal(stage.authority_transport, "bearer");
+  assert.equal(stage.websocket_transport, "ticket_subprotocol");
+
+  const retry = await redeemStagePairing(pairing);
+  await requireStatus(retry, 200, "idempotent packaged Stage redemption");
+  const retriedStage = await retry.json();
+  assert.equal(retriedStage.endpoint_id, stage.endpoint_id);
+  assert.equal(retriedStage.room_id, stage.room_id);
+  return stage;
+}
+
+function redeemStagePairing(pairing) {
+  return fetch(new URL(pairing.redeem_path, baseUrl), {
+    method: "POST",
+    headers: {
+      Authorization: `StagePairing ${pairing.polling_secret}`,
+      Origin: "null",
+    },
+  });
 }
 
 async function expectJoinStatus(host, pairingCode, expectedStatus, kind = "stage") {

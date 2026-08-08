@@ -146,6 +146,20 @@ export default {
       return withCors(methodNotAllowed("PUT or DELETE"), request, env);
     }
 
+    if (url.pathname === "/api/v1/session/context") {
+      if (request.method !== "GET") {
+        return withCors(methodNotAllowed("GET"), request, env);
+      }
+      return withCors(await getSessionContext(request, env), request, env);
+    }
+
+    if (url.pathname === "/api/v1/session/endpoints") {
+      if (request.method !== "GET") {
+        return withCors(methodNotAllowed("GET"), request, env);
+      }
+      return withCors(await listSessionEndpoints(request, env), request, env);
+    }
+
     if (url.pathname === "/api/v1/session/end") {
       if (request.method !== "POST") {
         return withCors(methodNotAllowed("POST"), request, env);
@@ -880,6 +894,71 @@ async function controlSession(request, env, action, endpointId = null) {
   );
 }
 
+async function listSessionEndpoints(request, env) {
+  const unavailable = friendsServiceUnavailable(env);
+  if (unavailable) {
+    return unavailable;
+  }
+  if (!requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
+    return problemResponse(403, "origin_not_allowed", "Origin not allowed", { retryable: false });
+  }
+  const resolved = await resolveFriendsAuthority(request, env);
+  if (!resolved.ok || resolved.authority?.audience !== "host") {
+    return problemResponse(403, "host_authority_required", "Host authority required", {
+      retryable: false,
+    });
+  }
+  const response = await sessionStub(env, resolved.authority.sessionId).fetch(
+    "https://session.internal/internal/session/endpoints",
+    {
+      method: "GET",
+      headers: internalAuthorityHeaders(resolved.authority),
+    },
+  );
+  if (!response.ok) {
+    return safeInternalFailure(response, "endpoint_roster_failed", "Endpoint roster unavailable");
+  }
+  const result = await response.json();
+  return jsonResponse({ protocol_version: PROTOCOL_VERSION, endpoints: result.endpoints });
+}
+
+async function getSessionContext(request, env) {
+  const unavailable = friendsServiceUnavailable(env);
+  if (unavailable) {
+    return unavailable;
+  }
+  if (!requestOriginAllowed(request, env.ALLOWED_ORIGINS)) {
+    return problemResponse(403, "origin_not_allowed", "Origin not allowed", { retryable: false });
+  }
+  const resolved = await resolveFriendsAuthority(request, env);
+  if (!resolved.ok) {
+    return problemResponse(resolved.status, resolved.code, "Valid session authority required", {
+      retryable: false,
+    });
+  }
+  const authority = resolved.authority;
+  const response = await sessionStub(env, authority.sessionId).fetch(
+    "https://session.internal/internal/session/authorize",
+    {
+      method: "POST",
+      headers: internalAuthorityHeaders(authority),
+    },
+  );
+  if (!response.ok) {
+    return safeInternalFailure(response, "invalid_authority", "Valid session authority required");
+  }
+  await response.body?.cancel();
+  return jsonResponse({
+    protocol_version: PROTOCOL_VERSION,
+    session_id: authority.sessionId,
+    endpoint_id: authority.endpointId,
+    audience: authority.audience,
+    participant_id: authority.participantId,
+    primary_authority_generation: authority.authorityGeneration,
+    authority_expires_at_unix_ms: authority.expiresAtUnixMs,
+  });
+}
+
 function friendsServiceUnavailable(env) {
   if (env.EMERGENCY_DISABLED === "true") {
     return problemResponse(503, "service_emergency_disabled", "Remote friends MVP disabled");
@@ -986,6 +1065,8 @@ function isCredentialedApiPath(pathname) {
     /^\/api\/v1\/stage-pairings\/[^/]+\/(approve|redeem)$/u.test(pathname) ||
     pathname === "/api/v1/websocket-tickets" ||
     pathname === "/api/v1/session/invitation" ||
+    pathname === "/api/v1/session/context" ||
+    pathname === "/api/v1/session/endpoints" ||
     pathname === "/api/v1/session/end" ||
     /^\/api\/v1\/session\/endpoints\/[^/]+\/revoke$/u.test(pathname)
   );
@@ -1014,7 +1095,7 @@ function corsPreflight(request, env) {
     status: 204,
     headers: corsHeaders(origin, {
       "Access-Control-Allow-Headers": "Authorization, Content-Type, X-GP-Session-ID",
-      "Access-Control-Allow-Methods": "POST, PUT, DELETE, OPTIONS",
+      "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
       "Access-Control-Max-Age": "600",
     }, !packagedStage),
   });

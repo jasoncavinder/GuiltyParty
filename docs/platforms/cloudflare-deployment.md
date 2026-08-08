@@ -2,9 +2,10 @@
 
 ## Status
 
-The Remote Friends MVP development service was promoted on 2026-08-07 HST from
-reviewed `dev` commit `2501ff021b5a033c1357d9c9cea4f414a233fd6a` after PR
-#19 merged. The deployment remains limited to the synthetic
+The Remote Friends MVP development service was most recently promoted on
+2026-08-07 HST from reviewed `dev` commit
+`09ee0c09d5af16fd7275312612be5edcf5ecbeec` after PR #23 merged. The deployment
+remains limited to the synthetic
 `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
 `workers.dev` endpoint, the owner-approved `api.test.guiltyparty.app` Custom
 Domain, exact browser origins, and the minimum test authority secrets described
@@ -283,6 +284,35 @@ operator process environment. The rehearsal must observe the documented
 projection, then observe retained expiry and active-session data deletion. It
 does not change the ordinary four-hour and seven-day defaults and does not
 claim deletion from Cloudflare's provider-controlled recovery history.
+
+The reviewed PR #23 promotion created the `StagePairing` Durable Object export
+and produced Worker version `a9a70148-51de-47dc-bc0d-5329c9e480a4`. Both the
+`workers.dev` endpoint and `api.test.guiltyparty.app` reported `test-gated` with
+profile `friends-mvp-development`. Live operator rehearsals then passed:
+
+- packaged Stage approval, first WebSocket use, replay rejection, tamper
+  rejection, and cleanup
+- invalid, rotated, closed, and expired invitation boundaries
+- 120-second Stage transaction privacy, idempotent redemption, and edge `429`
+- ticket consumption, expiry, tamper, revocation, and fresh-ticket reconnect
+- Durable Object hibernation/reactivation and journal-derived projection
+- explicit end, alarm expiry, and active-storage deletion
+- the full deterministic game with a browser Host, two browser fallback
+  participants, and a public-only packaged Stage projection
+
+The full-game rehearsal also proved identical command retry, forbidden
+participant mutation, recipient-authorized private clue delivery, private
+objective separation, individual-vote privacy, reconnect, and deterministic
+outcome. This evidence used synthetic aliases and does not substitute for the
+remaining physical-client checks.
+
+The deployed version's provider script ETag is
+`bbb78395675d19eb187f86753b086c9255cb51cbe6facb3ed63fce2bbea4282d`.
+A fresh Wrangler 4.119.0 dry run of exact reviewed commit
+`09ee0c09d5af16fd7275312612be5edcf5ecbeec` produced `worker.js` SHA-256
+`2bf963a6532a9b577671a7b2cf8d82340c7bb77b2a5351ec02983d30f8eeda3c`
+and the existing WebAssembly SHA-256
+`3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`.
 
 The first-party WebAssembly module and original scenario are bundled with the
 Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
