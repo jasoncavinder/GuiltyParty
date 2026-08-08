@@ -20,8 +20,8 @@ projection, hardware identifier, or unpublished scenario content was recorded.
 ## Baseline
 
 - Source branch: `feature/webos-stage-mvp`
-- Stage application: `com.guiltyparty.stage`, version `0.1.0`
-- Client build: `stage_webos` / `0.1.0` / build `1`
+- Stage application: `com.guiltyparty.stage`, version `0.1.1`
+- Client build: `stage_webos` / `0.1.1` / build `2`
 - webOS CLI: `@webos-tools/cli` / `ares` `3.2.5`
 - API: `https://api.test.guiltyparty.app`
 - Realtime endpoint: `wss://api.test.guiltyparty.app/ws/v1`
@@ -37,7 +37,7 @@ projection, hardware identifier, or unpublished scenario content was recorded.
 
 The ignored bounded probe packaged successfully as
 `com.guiltyparty.stage.spike_0.0.1_all.ipk`. The product packages successfully
-as `.tmp/webos-packages/com.guiltyparty.stage_0.1.0_all.ipk`; the physically
+as `.tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk`; the physically
 installed build has SHA-256
 `bcb51e9620cb844497378d71c999c49ecd68369c18bdbc8a6d23ff327addd842`.
 
@@ -132,10 +132,15 @@ Automated first-party tests verify that the Stage:
 - obtains a new ticket before every connection attempt;
 - offers `guiltyparty.control.v1` followed by the short-lived ticket;
 - requires the server to select only `guiltyparty.control.v1`;
-- closes and resynchronizes on a sequence gap or regression;
+- closes and resynchronizes on a sequence regression;
 - clears polling, bearer, ticket, projection, and sequence state on lifecycle
   reset; and
-- caps full-jitter reconnect delay at 30 seconds.
+- caps full-jitter reconnect delay at 30 seconds;
+- requests a fresh authorized public projection every 15 seconds until a
+  dedicated application heartbeat exists, reports uncertainty after 30 seconds
+  without authenticated activity, and reconnects after 45 seconds;
+- treats every projection as a complete snapshot, accepting monotonic journal
+  sequence advances while rejecting regressions.
 
 webOS 6 simulator UI evidence confirms the 120-second expiry state, a focused
 retry action, a 1080p layout, and Back opening the exit confirmation that
@@ -155,7 +160,7 @@ resolved by the owner through the standard local `ares-novacom --getkey`
 interaction; no passphrase, key, serial number, or other device credential was
 recorded. `ares-device` then reported webOS SDK version `5.6.2`, and both
 `ares-install` and `ares-launch` completed successfully for
-`com.guiltyparty.stage` version `0.1.0`.
+`com.guiltyparty.stage` version `0.1.1`.
 
 The remaining owner interaction is an optional interactive Host approval of the
 physical television for projection, suspend/resume, network-loss, reconnect,

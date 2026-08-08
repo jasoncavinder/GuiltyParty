@@ -44,18 +44,18 @@ older-runtime-compatible inline package tree at
 `.tmp/lg-webos-stage-app`, validates that generated app, and writes:
 
 ```text
-.tmp/webos-packages/com.guiltyparty.stage_0.1.0_all.ipk
+.tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
 ```
 
 Inspect the artifact without installing it:
 
 ```sh
-ares-package -I .tmp/webos-packages/com.guiltyparty.stage_0.1.0_all.ipk
-shasum -a 256 .tmp/webos-packages/com.guiltyparty.stage_0.1.0_all.ipk
+ares-package -I .tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
+shasum -a 256 .tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
 ```
 
 The expected package ID is `com.guiltyparty.stage`; the application and client
-version are `0.1.0`, and the client build number is `1`.
+version are `0.1.1`, and the client build number is `2`.
 
 ## Simulator launch
 
@@ -94,7 +94,7 @@ the developer-key interaction:
 
 ```sh
 ares-install -d '<configured-target>' \
-  .tmp/webos-packages/com.guiltyparty.stage_0.1.0_all.ipk
+  .tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
 ares-launch -d '<configured-target>' com.guiltyparty.stage
 ```
 
@@ -105,7 +105,7 @@ remove this exact application ID and retry the install:
 ```sh
 ares-install -r com.guiltyparty.stage -d '<configured-target>'
 ares-install -d '<configured-target>' \
-  .tmp/webos-packages/com.guiltyparty.stage_0.1.0_all.ipk
+  .tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
 ```
 
 Removal terminates the Stage and intentionally loses all in-memory authority.

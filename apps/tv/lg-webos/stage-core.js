@@ -7,10 +7,13 @@
   var API_ORIGIN = "https://api.test.guiltyparty.app";
   var STAGE_BUILD = {
     application_id: "stage_webos",
-    application_version: "0.1.0",
-    build_number: 1
+    application_version: "0.1.1",
+    build_number: 2
   };
   var RECONNECT_SECONDS = [1, 2, 4, 8, 15, 30];
+  var HEARTBEAT_INTERVAL_MS = 15000;
+  var CONNECTION_UNCERTAIN_AFTER_MS = 30000;
+  var CONNECTION_DISCONNECT_AFTER_MS = 45000;
   var PRIVATE_KEYS = {
     private_objective: true,
     private_objectives: true,
@@ -270,7 +273,6 @@
   };
 
   SequenceTracker.prototype.accept = function (sequence) {
-    var result;
     if (!isSafeInteger(sequence, 0)) return "resync";
     if (this.firstOnConnection) {
       this.firstOnConnection = false;
@@ -279,15 +281,31 @@
       return "apply";
     }
     if (sequence === this.last) return "duplicate";
-    result = sequence === this.last + 1 ? "apply" : "resync";
-    if (result === "apply") this.last = sequence;
-    return result;
+    if (sequence < this.last) return "resync";
+    // Projection messages are complete authorized snapshots. Their sequence is
+    // the canonical journal position, which may advance by more than one when
+    // a single operation appends multiple events or intermediate projections
+    // are not delivered to this public endpoint.
+    this.last = sequence;
+    return "apply";
   };
 
   SequenceTracker.prototype.reset = function () {
     this.last = -1;
     this.firstOnConnection = true;
   };
+
+  function connectionHealthAction(lastAuthenticatedActivityUnixMs, nowUnixMs) {
+    var elapsed;
+    if (!isSafeInteger(lastAuthenticatedActivityUnixMs, 0) || !isSafeInteger(nowUnixMs, 0)) {
+      return "disconnect";
+    }
+    elapsed = nowUnixMs - lastAuthenticatedActivityUnixMs;
+    if (elapsed < 0) return "disconnect";
+    if (elapsed >= CONNECTION_DISCONNECT_AFTER_MS) return "disconnect";
+    if (elapsed >= CONNECTION_UNCERTAIN_AFTER_MS) return "uncertain";
+    return "healthy";
+  }
 
   function reconnectDelayMs(attempt, randomValue) {
     var index = Math.min(Math.max(0, attempt), RECONNECT_SECONDS.length - 1);
@@ -323,11 +341,15 @@
 
   root.GuiltyPartyStageCore = {
     API_ORIGIN: API_ORIGIN,
+    CONNECTION_DISCONNECT_AFTER_MS: CONNECTION_DISCONNECT_AFTER_MS,
+    CONNECTION_UNCERTAIN_AFTER_MS: CONNECTION_UNCERTAIN_AFTER_MS,
     CONTROL_SUBPROTOCOL: CONTROL_SUBPROTOCOL,
+    HEARTBEAT_INTERVAL_MS: HEARTBEAT_INTERVAL_MS,
     PROTOCOL_VERSION: PROTOCOL_VERSION,
     STAGE_BUILD: STAGE_BUILD,
     SequenceTracker: SequenceTracker,
     clearSensitiveState: clearSensitiveState,
+    connectionHealthAction: connectionHealthAction,
     hasForbiddenKey: hasForbiddenKey,
     pairingExpired: pairingExpired,
     reconnectDelayMs: reconnectDelayMs,
