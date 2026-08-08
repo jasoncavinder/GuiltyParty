@@ -8,11 +8,13 @@ import { fileURLToPath } from "node:url";
 
 import {
   COMPANION_BUILD,
+  ControlConnection,
   DEFAULT_API_ORIGIN,
   HOST_BUILD,
   decodeInvitationTransfer,
   normalizeApiOrigin,
 } from "../../../clients/shared/control-client.js";
+import { privateViewShouldBeHidden } from "../../../clients/companion-web/private-view.js";
 import { encodeInvitationTransfer } from "../src/invitation-transfer.js";
 
 const execFileAsync = promisify(execFile);
@@ -45,6 +47,79 @@ test("browser invitation decoder interoperates with the server encoder", () => {
   assert.throws(() => decodeInvitationTransfer("https://example.test/join"), TypeError);
 });
 
+test("browser connection ignores stale socket events after a lifecycle restart", () => {
+  const originalWebSocket = globalThis.WebSocket;
+  class FakeWebSocket {
+    static OPEN = 1;
+    static instances = [];
+
+    constructor() {
+      this.readyState = 0;
+      this.listeners = new Map();
+      FakeWebSocket.instances.push(this);
+    }
+
+    addEventListener(type, listener) {
+      this.listeners.set(type, listener);
+    }
+
+    close() {}
+
+    emit(type, event = {}) {
+      this.listeners.get(type)?.(event);
+    }
+  }
+
+  globalThis.WebSocket = FakeWebSocket;
+  try {
+    let terminalCount = 0;
+    const statuses = [];
+    const connection = new ControlConnection({
+      apiOrigin: DEFAULT_API_ORIGIN,
+      context: { session_id: "ses_synthetic", endpoint_id: "end_synthetic" },
+      onProjection() {},
+      onStatus(status) { statuses.push(status); },
+      onProblem() {},
+      onTerminal() { terminalCount += 1; },
+    });
+
+    connection.start();
+    const staleSocket = FakeWebSocket.instances[0];
+    connection.stop();
+    connection.start();
+    const activeSocket = FakeWebSocket.instances[1];
+    staleSocket.emit("error");
+    staleSocket.emit("close", { code: 1000 });
+
+    assert.equal(terminalCount, 0);
+    assert.equal(connection.stopped, false);
+    assert.equal(connection.socket, activeSocket);
+    assert.equal(statuses.at(-1), "connecting");
+    connection.stop();
+  } finally {
+    globalThis.WebSocket = originalWebSocket;
+  }
+});
+
+test("private view remains covered until the player explicitly reveals it", () => {
+  assert.equal(
+    privateViewShouldBeHidden({ contextActive: true, documentHidden: false, manuallyHidden: true }),
+    true,
+  );
+  assert.equal(
+    privateViewShouldBeHidden({ contextActive: true, documentHidden: true, manuallyHidden: false }),
+    true,
+  );
+  assert.equal(
+    privateViewShouldBeHidden({ contextActive: true, documentHidden: false, manuallyHidden: false }),
+    false,
+  );
+  assert.equal(
+    privateViewShouldBeHidden({ contextActive: false, documentHidden: true, manuallyHidden: true }),
+    false,
+  );
+});
+
 test("browser client sources avoid persistent storage, URL credentials, and third-party assets", async () => {
   const files = [
     "clients/shared/control-client.js",
@@ -52,6 +127,7 @@ test("browser client sources avoid persistent storage, URL credentials, and thir
     "clients/host/app.js",
     "clients/companion-web/index.html",
     "clients/companion-web/app.js",
+    "clients/companion-web/private-view.js",
   ];
   const sources = await Promise.all(files.map((file) => readFile(path.join(repository, file), "utf8")));
   const combined = sources.join("\n");
@@ -70,7 +146,9 @@ test("browser client build produces isolated Cloudflare Pages artifacts", async 
   await execFileAsync(process.execPath, ["tooling/build_remote_clients.mjs"], { cwd: repository });
   for (const surface of ["host", "play"]) {
     const directory = path.join(repository, ".tmp", "remote-clients", surface);
-    for (const file of ["index.html", "app.js", "styles.css", "control-client.js", "_headers", "robots.txt"]) {
+    const expectedFiles = ["index.html", "app.js", "styles.css", "control-client.js", "_headers", "robots.txt"];
+    if (surface === "play") expectedFiles.push("private-view.js");
+    for (const file of expectedFiles) {
       assert.ok((await readFile(path.join(directory, file), "utf8")).length > 0, `${surface}/${file}`);
     }
   }

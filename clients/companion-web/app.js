@@ -2,18 +2,20 @@ import {
   ApiProblem, COMPANION_BUILD, ControlConnection, PROTOCOL_VERSION,
   apiRequest, configuredApiOrigin, decodeInvitationTransfer, recoverContext,
 } from "./control-client.js";
+import { privateViewShouldBeHidden } from "./private-view.js";
 
 const apiOrigin = configuredApiOrigin();
 const $ = (selector) => document.querySelector(selector);
 let context = null;
 let connection = null;
 let lastProjection = null;
+let privateViewHiddenByPlayer = false;
 
 $("#join-form").addEventListener("submit", joinSession);
 $("#leave-view").addEventListener("click", hidePrivateView);
-document.addEventListener("visibilitychange", () => document.body.classList.toggle("private-hidden", document.hidden && context !== null));
+document.addEventListener("visibilitychange", syncPrivateCover);
 window.addEventListener("pagehide", () => { connection?.stop(); clearRenderedSecrets(); });
-window.addEventListener("pageshow", (event) => { if (event.persisted && context) connection?.start(); });
+window.addEventListener("pageshow", (event) => { if (event.persisted && context) restorePersistedSession(); });
 
 await resume();
 
@@ -23,6 +25,17 @@ async function resume() {
     if (recovered) activate(recovered);
     else setStatus("join", "Paste an active invitation to begin.");
   } catch (error) { setStatus("join", present(error), true); }
+}
+
+async function restorePersistedSession() {
+  try {
+    const recovered = await recoverContext(apiOrigin, "participant");
+    if (recovered) activate(recovered, { preservePrivacy: true });
+    else leaveEndedSession();
+  } catch (error) {
+    setStatus("game", present(error), true);
+    connection?.start();
+  }
 }
 
 async function joinSession(event) {
@@ -60,8 +73,10 @@ async function joinSession(event) {
   }
 }
 
-function activate(nextContext) {
+function activate(nextContext, { preservePrivacy = false } = {}) {
   context = nextContext;
+  if (!preservePrivacy) privateViewHiddenByPlayer = false;
+  syncPrivateCover();
   $("#join-panel").classList.add("hidden");
   $("#game").classList.remove("hidden");
   connection?.stop();
@@ -117,14 +132,29 @@ async function vote(characterId) {
 }
 
 function hidePrivateView() {
-  document.body.classList.add("private-hidden");
-  $("#privacy-cover").setAttribute("aria-hidden", "false");
+  privateViewHiddenByPlayer = true;
+  syncPrivateCover();
 }
-$("#privacy-cover").addEventListener("click", () => { document.body.classList.remove("private-hidden"); $("#privacy-cover").setAttribute("aria-hidden", "true"); });
+$("#privacy-cover").addEventListener("click", () => {
+  privateViewHiddenByPlayer = false;
+  syncPrivateCover();
+});
+
+function syncPrivateCover() {
+  const hidden = privateViewShouldBeHidden({
+    contextActive: context !== null,
+    documentHidden: document.hidden,
+    manuallyHidden: privateViewHiddenByPlayer,
+  });
+  document.body.classList.toggle("private-hidden", hidden);
+  $("#privacy-cover").setAttribute("aria-hidden", String(!hidden));
+}
 
 function leaveEndedSession() {
   clearRenderedSecrets();
   context = null;
+  privateViewHiddenByPlayer = false;
+  syncPrivateCover();
   $("#game").classList.add("hidden");
   $("#join-panel").classList.remove("hidden");
   setStatus("join", "This device was removed or the session ended. Ask the Host for an active invitation to rejoin.", true);

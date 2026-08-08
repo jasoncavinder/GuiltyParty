@@ -21,6 +21,7 @@ $("#refresh-roster").addEventListener("click", loadRoster);
 $("#end-session").addEventListener("click", endSession);
 document.querySelectorAll("[data-command]").forEach((button) => button.addEventListener("click", () => submit(JSON.parse(button.dataset.command))));
 window.addEventListener("pagehide", () => connection?.stop());
+window.addEventListener("pageshow", (event) => { if (event.persisted && context) restorePersistedSession(); });
 
 await resume();
 
@@ -31,6 +32,17 @@ async function resume() {
     else setStatus("setup", "No active Host session found.");
   } catch (error) {
     setStatus("setup", present(error), true);
+  }
+}
+
+async function restorePersistedSession() {
+  try {
+    const recovered = await recoverContext(apiOrigin, "host");
+    if (recovered) activate(recovered);
+    else leaveEndedHost();
+  } catch (error) {
+    setStatus("action", present(error), true);
+    connection?.start();
   }
 }
 

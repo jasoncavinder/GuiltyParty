@@ -117,6 +117,7 @@ export class ControlConnection {
   }
 
   start() {
+    if (!this.stopped) return;
     this.stopped = false;
     this.connect();
   }
@@ -142,9 +143,12 @@ export class ControlConnection {
       this.requestProjection();
     });
     socket.addEventListener("message", (event) => this.receive(event.data));
-    socket.addEventListener("error", () => this.onStatus("disconnected"));
+    socket.addEventListener("error", () => {
+      if (this.socket === socket) this.onStatus("disconnected");
+    });
     socket.addEventListener("close", (event) => {
-      if (this.socket === socket) this.socket = null;
+      if (this.socket !== socket) return;
+      this.socket = null;
       if (this.stopped) return;
       if ([1000, 1001, 1008].includes(event.code)) {
         this.stopped = true;
