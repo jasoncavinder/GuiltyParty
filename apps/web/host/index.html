@@ -70,6 +70,19 @@
         </aside>
       </section>
     </div>
+
+    <dialog id="end-session-dialog" class="confirmation-dialog" aria-labelledby="end-session-title" aria-describedby="end-session-description">
+      <form id="end-session-form" class="dialog-card" method="dialog">
+        <p class="kicker">End live session</p>
+        <h2 id="end-session-title">End the session for everyone?</h2>
+        <p id="end-session-description" class="lede-small">Every Host, Stage, and Companion will lose access immediately. The session will be scheduled for deletion.</p>
+        <p id="end-session-status" class="status" role="status" aria-live="polite"></p>
+        <div class="button-row dialog-actions">
+          <button id="cancel-end-session" type="button">Keep session</button>
+          <button id="confirm-end-session" class="danger" type="submit">End session for everyone</button>
+        </div>
+      </form>
+    </dialog>
   </main>
   <script type="module" src="app.js"></script>
 </body>

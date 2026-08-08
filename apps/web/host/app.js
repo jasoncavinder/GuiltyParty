@@ -7,10 +7,12 @@ const apiOrigin = configuredApiOrigin();
 const $ = (selector) => document.querySelector(selector);
 const setup = $("#setup-panel");
 const consolePanel = $("#console");
+const endSessionDialog = $("#end-session-dialog");
 let context = null;
 let connection = null;
 let projection = null;
 let invitationPayload = "";
+let endingSession = false;
 
 $("#create-form").addEventListener("submit", createSession);
 $("#copy-invitation").addEventListener("click", copyInvitation);
@@ -18,7 +20,11 @@ $("#rotate-invitation").addEventListener("click", rotateInvitation);
 $("#close-invitation").addEventListener("click", closeInvitation);
 $("#stage-form").addEventListener("submit", approveStage);
 $("#refresh-roster").addEventListener("click", loadRoster);
-$("#end-session").addEventListener("click", endSession);
+$("#end-session").addEventListener("click", showEndSessionDialog);
+$("#end-session-form").addEventListener("submit", endSession);
+$("#cancel-end-session").addEventListener("click", () => endSessionDialog.close());
+endSessionDialog.addEventListener("cancel", (event) => { if (endingSession) event.preventDefault(); });
+endSessionDialog.addEventListener("close", resetEndSessionDialog);
 document.querySelectorAll("[data-command]").forEach((button) => button.addEventListener("click", () => submit(JSON.parse(button.dataset.command))));
 window.addEventListener("pagehide", () => connection?.stop());
 window.addEventListener("pageshow", (event) => { if (event.persisted && context) restorePersistedSession(); });
@@ -193,16 +199,56 @@ async function revokeEndpoint(endpointId) {
   catch (error) { setStatus("action", present(error), true); }
 }
 
-async function endSession() {
-  if (!confirm("End this session for every player and schedule its data for deletion?")) return;
-  try { await apiRequest(apiOrigin, "/api/v1/session/end", { method: "POST" }); connection?.stop(); context = null; location.reload(); }
-  catch (error) { setStatus("action", present(error), true); }
+function showEndSessionDialog() {
+  if (!context || endSessionDialog.open) return;
+  resetEndSessionDialog();
+  endSessionDialog.showModal();
+  $("#cancel-end-session").focus();
+}
+
+async function endSession(event) {
+  event.preventDefault();
+  if (endingSession) return;
+  endingSession = true;
+  const cancelButton = $("#cancel-end-session");
+  const confirmButton = $("#confirm-end-session");
+  cancelButton.disabled = true;
+  confirmButton.disabled = true;
+  setEndSessionStatus("Ending the session…");
+  try {
+    await apiRequest(apiOrigin, "/api/v1/session/end", { method: "POST" });
+    connection?.stop();
+    context = null;
+    endSessionDialog.close();
+    location.reload();
+  } catch (error) {
+    endingSession = false;
+    cancelButton.disabled = false;
+    confirmButton.disabled = false;
+    setEndSessionStatus(present(error), true);
+    confirmButton.focus();
+  }
+}
+
+function resetEndSessionDialog() {
+  endingSession = false;
+  $("#cancel-end-session").disabled = false;
+  $("#confirm-end-session").disabled = false;
+  setEndSessionStatus("");
+  if (context) $("#end-session").focus();
+}
+
+function setEndSessionStatus(message, error = false) {
+  const element = $("#end-session-status");
+  element.textContent = message;
+  element.className = `status${error ? " error" : ""}`;
 }
 
 function leaveEndedHost() {
   projection = null;
   context = null;
   invitationPayload = "";
+  if (endSessionDialog.open) endSessionDialog.close();
   $("#invitation-payload").value = "";
   $("#participants").replaceChildren();
   $("#clues").replaceChildren();
