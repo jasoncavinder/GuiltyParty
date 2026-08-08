@@ -171,3 +171,19 @@ Record only:
 - known limitations and owner interaction still required.
 
 Never record raw request/response headers when credentials may be present.
+
+## 2026-08-08 Physical Rehearsal Evidence
+
+Packaged Stage 0.1.1 (2) was built from merged source, installed on an LG
+65NANO85UNA running webOS 5.6.2-21, and paired through the deployed Browser
+Host. In a synthetic session it received participant joins, character
+assignment, scene changes, public clues, aggregate vote progress, the
+deterministic outcome, and explicit session end without displaying a private
+objective, recipient-only clue, or individual vote. After the Worker fan-out
+and Stage liveness remediations, participant changes reached the already-open
+Stage without a Host reload or manual Stage restart. Explicit session end
+cleared the public projection as expected.
+
+This evidence does not claim LG Store distribution, a forced network-loss
+timing test for build 0.1.1 (2), or any persistence of Stage authority. The
+Stage still requires pairing after application termination by design.
