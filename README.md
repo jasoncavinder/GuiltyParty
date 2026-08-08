@@ -79,7 +79,12 @@ the review and manual deployment procedure. The earlier local browser
 prototype is archived as implementation history and deterministic-engine
 evidence.
 
-The Stage has only been exercised as a browser proof of concept. It is not yet packageable because approved original icon assets and `appinfo.json` are not present. The native iOS project and physical-device workflows also remain incomplete; see the [iOS setup status](docs/platforms/ios-setup.md).
+The Stage has only been exercised as a browser proof of concept. It is not yet
+packageable because approved original icon assets and `appinfo.json` are not
+present. The native iOS/iPadOS Companion project is committed under
+`apps/mobile`, with simulator and physical-iPhone evidence recorded in the
+[iOS setup status](docs/platforms/ios-setup.md). A live authorized multi-client
+rehearsal and physical-iPad validation remain incomplete.
 
 ## Documentation
 

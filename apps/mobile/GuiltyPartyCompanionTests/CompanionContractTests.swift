@@ -361,6 +361,78 @@ final class CommandAndRequestTests: XCTestCase {
         )
     }
 
+    func testShortRequestAndWebSocketUseDistinctResourceTimeouts() {
+        let shortRequest = CompanionEnvironment.shortRequestConfiguration()
+        let webSocket = CompanionEnvironment.webSocketConfiguration()
+
+        XCTAssertEqual(shortRequest.timeoutIntervalForRequest, 15)
+        XCTAssertEqual(shortRequest.timeoutIntervalForResource, 20)
+        XCTAssertGreaterThan(webSocket.timeoutIntervalForResource, 4 * 60 * 60)
+    }
+
+    func testWebSocketTaskCompletionErrorProducesFailedLifecycleEvent() {
+        let recorder = SocketEventRecorder()
+        let delegate = WebSocketDelegate { event in
+            recorder.record(event)
+        }
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        let task = session.webSocketTask(with: URL(string: "wss://example.invalid")!)
+
+        delegate.urlSession(
+            session,
+            task: task,
+            didCompleteWithError: URLError(.cannotConnectToHost)
+        )
+        delegate.urlSession(session, task: task, didCompleteWithError: nil)
+
+        XCTAssertEqual(recorder.snapshot, [.failed])
+    }
+
+    func testAuthorityBearingTransportsRejectRedirects() throws {
+        let session = URLSession(configuration: .ephemeral)
+        defer { session.invalidateAndCancel() }
+        let originalURL = try XCTUnwrap(URL(string: "https://api.test.guiltyparty.app/api/v1/join"))
+        let redirectURL = try XCTUnwrap(URL(string: "https://redirect.invalid/join"))
+        let response = try XCTUnwrap(
+            HTTPURLResponse(
+                url: originalURL,
+                statusCode: 307,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Location": redirectURL.absoluteString]
+            )
+        )
+        let redirectedRequest = URLRequest(url: redirectURL)
+
+        let joinDecision = RedirectDecisionRecorder()
+        RejectingRedirectDelegate().urlSession(
+            session,
+            task: session.dataTask(with: originalURL),
+            willPerformHTTPRedirection: response,
+            newRequest: redirectedRequest
+        ) { request in
+            joinDecision.record(request)
+        }
+
+        let socketEvents = SocketEventRecorder()
+        let socketDecision = RedirectDecisionRecorder()
+        let webSocketDelegate = WebSocketDelegate { event in
+            socketEvents.record(event)
+        }
+        webSocketDelegate.urlSession(
+            session,
+            task: session.webSocketTask(with: WebSocketRequestBuilder.request(authority: authority())),
+            willPerformHTTPRedirection: response,
+            newRequest: redirectedRequest
+        ) { request in
+            socketDecision.record(request)
+        }
+
+        XCTAssertEqual(joinDecision.snapshot, [true])
+        XCTAssertEqual(socketDecision.snapshot, [true])
+        XCTAssertEqual(socketEvents.snapshot, [.failed])
+    }
+
     func testCastVoteEnvelopeCarriesCurrentGenerationAndNoCredential() throws {
         let factory = CommandFactory()
         let command = try factory.castVote(targetCharacterID: "character-synthetic-002")
@@ -377,6 +449,23 @@ final class CommandAndRequestTests: XCTestCase {
             return XCTFail("Expected cast vote")
         }
         XCTAssertEqual(vote.targetCharacterId.value, "character-synthetic-002")
+    }
+}
+
+final class ReconnectBackoffTests: XCTestCase {
+    func testDelayGrowsUntilRecoveryExplicitlyResetsIt() {
+        var backoff = ReconnectBackoff()
+
+        XCTAssertEqual(
+            (0..<8).map { _ in backoff.nextMaximumDelaySeconds() },
+            [1, 2, 4, 8, 15, 30, 30, 30]
+        )
+        XCTAssertEqual(backoff.attempt, 8)
+
+        backoff.reset()
+
+        XCTAssertEqual(backoff.attempt, 0)
+        XCTAssertEqual(backoff.nextMaximumDelaySeconds(), 1)
     }
 }
 
@@ -411,4 +500,38 @@ private func projection(assigned: Bool) -> ParticipantProjection {
         votesCast: 0,
         publicOutcome: nil
     )
+}
+
+private final class SocketEventRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var events: [SocketLifecycleEvent] = []
+
+    var snapshot: [SocketLifecycleEvent] {
+        lock.lock()
+        defer { lock.unlock() }
+        return events
+    }
+
+    func record(_ event: SocketLifecycleEvent) {
+        lock.lock()
+        defer { lock.unlock() }
+        events.append(event)
+    }
+}
+
+private final class RedirectDecisionRecorder: @unchecked Sendable {
+    private let lock = NSLock()
+    private var rejected: [Bool] = []
+
+    var snapshot: [Bool] {
+        lock.lock()
+        defer { lock.unlock() }
+        return rejected
+    }
+
+    func record(_ request: URLRequest?) {
+        lock.lock()
+        defer { lock.unlock() }
+        rejected.append(request == nil)
+    }
 }

@@ -14,7 +14,7 @@ final class CompanionSession: ObservableObject {
     private var heartbeatTask: Task<Void, Never>?
     private var reconnectTask: Task<Void, Never>?
     private var socketID: UUID?
-    private var reconnectAttempt = 0
+    private var reconnectBackoff = ReconnectBackoff()
     private var hasOpenedConnection = false
     private var appIsActive = true
     private var captureIsActive = false
@@ -42,7 +42,7 @@ final class CompanionSession: ObservableObject {
         authority = nil
         advertisedGameplayLanguage = nil
         pendingCommands.removeAll(keepingCapacity: false)
-        reconnectAttempt = 0
+        reconnectBackoff.reset()
         hasOpenedConnection = false
         state.beginJoin()
         statusMessage = "Validating the invitation and joining privately…"
@@ -127,7 +127,7 @@ final class CompanionSession: ObservableObject {
         advertisedGameplayLanguage = nil
         manuallyShielded = false
         captureIsActive = false
-        reconnectAttempt = 0
+        reconnectBackoff.reset()
         hasOpenedConnection = false
         state.requireManualRejoin()
         statusMessage = "Paste or enter an active GP1 invitation."
@@ -168,7 +168,6 @@ final class CompanionSession: ObservableObject {
                 failProtocol()
                 return
             }
-            reconnectAttempt = 0
             let wasRejoin = hasOpenedConnection
             hasOpenedConnection = true
             statusMessage = wasRejoin
@@ -181,6 +180,8 @@ final class CompanionSession: ObservableObject {
             }
         case .closed(let code):
             handleSocketClosure(code: code, socketID: eventSocketID)
+        case .failed:
+            protectAndReconnect(reason: .connectionUncertain)
         }
     }
 
@@ -261,6 +262,7 @@ final class CompanionSession: ObservableObject {
                 sequence: envelope.serverSequence,
                 socketID: eventSocketID
             )
+            reconnectBackoff.reset()
             advertisedGameplayLanguage = nextProjection.gameplayLanguage
             statusMessage = state.phase == .rejoined
                 ? "Rejoined with a fresh server-authorized private view."
@@ -342,8 +344,7 @@ final class CompanionSession: ObservableObject {
     private func scheduleReconnect() {
         guard authority != nil, appIsActive, !captureIsActive, !manuallyShielded else { return }
         reconnectTask?.cancel()
-        let seconds = [1.0, 2.0, 4.0, 8.0, 15.0, 30.0][min(reconnectAttempt, 5)]
-        reconnectAttempt += 1
+        let seconds = reconnectBackoff.nextMaximumDelaySeconds()
         let delay = Double.random(in: 0...seconds)
         reconnectTask = Task { [weak self] in
             try? await Task.sleep(for: .seconds(delay))
@@ -410,5 +411,20 @@ final class CompanionSession: ObservableObject {
         guard authority.expiresAtUnixMilliseconds > now else {
             throw SessionModelError.expiredOrRevoked
         }
+    }
+}
+
+struct ReconnectBackoff: Equatable, Sendable {
+    private static let maximumDelaySeconds = [1.0, 2.0, 4.0, 8.0, 15.0, 30.0]
+    private(set) var attempt = 0
+
+    mutating func nextMaximumDelaySeconds() -> Double {
+        let delay = Self.maximumDelaySeconds[min(attempt, Self.maximumDelaySeconds.count - 1)]
+        attempt += 1
+        return delay
+    }
+
+    mutating func reset() {
+        attempt = 0
     }
 }

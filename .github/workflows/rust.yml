@@ -109,3 +109,21 @@ jobs:
         run: cargo fetch --locked --manifest-path server/Cargo.toml
       - name: Check generated mobile contracts
         run: make check-mobile-contracts
+      - name: Test native iPhone Companion
+        run: >-
+          xcodebuild
+          -project apps/mobile/GuiltyPartyCompanion.xcodeproj
+          -scheme GuiltyPartyCompanion
+          -configuration Debug
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'
+          -derivedDataPath "$RUNNER_TEMP/guiltyparty-ios-derived-data"
+          test
+      - name: Test native iPad Companion
+        run: >-
+          xcodebuild
+          -project apps/mobile/GuiltyPartyCompanion.xcodeproj
+          -scheme GuiltyPartyCompanion
+          -configuration Debug
+          -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M5),OS=26.5'
+          -derivedDataPath "$RUNNER_TEMP/guiltyparty-ios-derived-data"
+          test

@@ -24,8 +24,8 @@ device identifier, or signing-team identifier.
 | `make test` | repository host | Passed: contract checks, 63 Remote Friends tests, scenario parity, and all Rust unit/doc tests |
 | `make check-mobile-contracts` | repository host | Passed: deterministic outputs match; Swift and Kotlin fixture suites each passed 28 cases |
 | App build | generic iOS Simulator, Debug | Passed; first-party Swift compiled with warnings-as-errors |
-| XCTest | iPhone 17 Pro, iOS 26.5 simulator, Debug | Passed: 23 tests |
-| XCTest | iPad Pro 13-inch (M5), iOS 26.5 simulator, Debug | Passed: 23 tests |
+| XCTest | iPhone 17 Pro, iOS 26.5 simulator, Debug | Passed: 27 tests |
+| XCTest | iPad Pro 13-inch (M5), iOS 26.5 simulator, Debug | Passed: 27 tests |
 | App build | iPhone 17 Pro, iOS 26.5 simulator, Release | Passed |
 | App build | iPad Pro 13-inch (M5), iOS 26.5 simulator, Release | Passed |
 | Launch/layout inspection | iPhone 17 Pro and iPad Pro 13-inch (M5) simulators | Passed for the account-free join flow |
@@ -38,12 +38,19 @@ declaration for a non-full-screen universal target. Debug and Release now
 declare all four orientations; the clean physical rebuild completed without
 that warning.
 
+The physical-device result predates the independent review remediation that
+added WebSocket failure reporting, long-lived transport timeouts, redirect
+rejection, reconnect-backoff coverage, and native CI execution. The remediated
+27-test suite passed on both documented simulators; no new physical-device
+result is claimed for those follow-up changes.
+
 The XCTest suite covers GP1 acceptance/rejection, generated-model JSON
 round trips, shared positive and negative fixtures, additive fields, unknown
 critical variants, portable numeric limits, privacy fixtures, participant
 recipient boundaries, connection states, stale sockets, sequence regression,
-idempotency, request credential placement, background/capture clearing, and the
-fresh-projection reconnect gate.
+idempotency, request credential placement, redirect rejection, distinct HTTP
+and long-lived WebSocket timeouts, failed-handshake reporting, reconnect
+backoff, background/capture clearing, and the fresh-projection reconnect gate.
 
 ## Layout Review
 

@@ -9,15 +9,36 @@ enum CompanionEnvironment {
     static let buildNumber: Int64 = 1
     static let maximumResponseBytes = 262_144
 
-    static func ephemeralConfiguration() -> URLSessionConfiguration {
+    static func shortRequestConfiguration() -> URLSessionConfiguration {
+        let configuration = baseEphemeralConfiguration()
+        configuration.timeoutIntervalForRequest = 15
+        configuration.timeoutIntervalForResource = 20
+        return configuration
+    }
+
+    static func webSocketConfiguration() -> URLSessionConfiguration {
+        baseEphemeralConfiguration()
+    }
+
+    private static func baseEphemeralConfiguration() -> URLSessionConfiguration {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.urlCache = nil
         configuration.requestCachePolicy = .reloadIgnoringLocalAndRemoteCacheData
         configuration.httpShouldSetCookies = false
         configuration.httpCookieAcceptPolicy = .never
-        configuration.timeoutIntervalForRequest = 15
-        configuration.timeoutIntervalForResource = 20
         return configuration
+    }
+}
+
+final class RejectingRedirectDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        completionHandler(nil)
     }
 }
 
@@ -69,7 +90,11 @@ enum JoinClient {
 
     static func join(invitation: Invitation, displayName: String) async throws -> SessionAuthority {
         let request = try request(invitation: invitation, displayName: displayName)
-        let session = URLSession(configuration: CompanionEnvironment.ephemeralConfiguration())
+        let session = URLSession(
+            configuration: CompanionEnvironment.shortRequestConfiguration(),
+            delegate: RejectingRedirectDelegate(),
+            delegateQueue: nil
+        )
         defer { session.invalidateAndCancel() }
         let (data, response) = try await session.data(for: request)
         guard data.count <= CompanionEnvironment.maximumResponseBytes,
@@ -133,12 +158,13 @@ enum WebSocketRequestBuilder {
     }
 }
 
-enum SocketLifecycleEvent: Sendable {
+enum SocketLifecycleEvent: Equatable, Sendable {
     case opened(subprotocol: String?)
     case closed(code: Int)
+    case failed
 }
 
-private final class WebSocketDelegate: NSObject, URLSessionWebSocketDelegate, @unchecked Sendable {
+final class WebSocketDelegate: NSObject, URLSessionWebSocketDelegate, @unchecked Sendable {
     private let handler: @Sendable (SocketLifecycleEvent) -> Void
 
     init(handler: @escaping @Sendable (SocketLifecycleEvent) -> Void) {
@@ -161,6 +187,27 @@ private final class WebSocketDelegate: NSObject, URLSessionWebSocketDelegate, @u
     ) {
         handler(.closed(code: closeCode.rawValue))
     }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        didCompleteWithError error: (any Error)?
+    ) {
+        if error != nil {
+            handler(.failed)
+        }
+    }
+
+    func urlSession(
+        _ session: URLSession,
+        task: URLSessionTask,
+        willPerformHTTPRedirection response: HTTPURLResponse,
+        newRequest request: URLRequest,
+        completionHandler: @escaping (URLRequest?) -> Void
+    ) {
+        completionHandler(nil)
+        handler(.failed)
+    }
 }
 
 final class FirstPartyWebSocket: @unchecked Sendable {
@@ -174,7 +221,7 @@ final class FirstPartyWebSocket: @unchecked Sendable {
     ) {
         let delegate = WebSocketDelegate(handler: lifecycleHandler)
         let session = URLSession(
-            configuration: CompanionEnvironment.ephemeralConfiguration(),
+            configuration: CompanionEnvironment.webSocketConfiguration(),
             delegate: delegate,
             delegateQueue: nil
         )
