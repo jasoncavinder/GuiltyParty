@@ -3,9 +3,9 @@
 ## Status
 
 The dependency-free Browser Host and Browser Companion fallback are implemented
-as reviewable static assets. They are not deployed by this document. The first
-deployment must use a clean, reviewed `dev` commit and the manual procedure
-below; branch previews and automatic GitHub deployments remain disabled.
+as reviewable static assets and were manually promoted from reviewed `dev`
+commit `e85b486b1928704382329bbd73d4fa0a4ae28539` on 2026-08-07 HST. Branch
+previews and automatic GitHub deployments remain disabled.
 
 ## Intended test surfaces
 
@@ -82,6 +82,21 @@ certificates, the committed response headers, absence of directory listing,
 and that the default Pages hostname does not become an advertised test entry
 point. Do not put a Host bootstrap proof, authority credential, invitation,
 account identifier, or player alias into a Pages environment variable.
+
+The first manual promotion created these production deployments:
+
+- Host: `5bde1db6-ee32-4834-bd30-732950f261e5`
+  (`https://5bde1db6.guilty-party-host-test.pages.dev`)
+- Companion fallback: `eed998d9-d960-4cab-9c9f-537967ab2798`
+  (`https://eed998d9.guilty-party-play-test.pages.dev`)
+
+The Pages production aliases returned the reviewed assets with `no-store`,
+the committed CSP, and the committed referrer, permissions, framing,
+content-type, and indexing protections. The Pages aliases are verification
+addresses only; invitations must advertise the approved custom origins.
+Both approved custom domains reported active managed TLS and resolved through
+public Cloudflare DNS after attachment. Browser smoke checks used those custom
+origins, not the Pages aliases, so exact-origin CORS matched the deployed API.
 
 ## Post-deployment rehearsal
 

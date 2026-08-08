@@ -4,7 +4,7 @@
 
 The Remote Friends MVP development service was most recently promoted on
 2026-08-07 HST from reviewed `dev` commit
-`09ee0c09d5af16fd7275312612be5edcf5ecbeec` after PR #23 merged. The deployment
+`e85b486b1928704382329bbd73d4fa0a4ae28539` after PR #25 merged. The deployment
 remains limited to the synthetic
 `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
 `workers.dev` endpoint, the owner-approved `api.test.guiltyparty.app` Custom
@@ -306,6 +306,25 @@ objective separation, individual-vote privacy, reconnect, and deterministic
 outcome. This evidence used synthetic aliases and does not substitute for the
 remaining physical-client checks.
 
+The reviewed PR #25 promotion advanced the API to Worker version
+`603165d6-001a-4de4-98e6-faad5e78c426` from exact `dev` commit
+`e85b486b1928704382329bbd73d4fa0a4ae28539`. The provider script ETag is
+`fb72c47a3ee2bf94bbac88d4925919aac14a1719641fb49a935588c615a2b52c`.
+A fresh Wrangler 4.119.0 dry run produced `worker.js` SHA-256
+`814a516a80430c27f22bec38f447af8042f76f58c1f4e1ee15a9063527b9c0a5`;
+the WebAssembly SHA-256 remained
+`3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`.
+
+The same reviewed commit was manually promoted to separate Pages projects for
+the Browser Host and Browser Companion fallback. Their production deployment
+identifiers are `5bde1db6-ee32-4834-bd30-732950f261e5` and
+`eed998d9-d960-4cab-9c9f-537967ab2798`, respectively. No secret or private
+runtime value is configured in either Pages project. Automated gameplay,
+packaged-Stage, pairing-boundary, and lifecycle rehearsals passed against the
+promoted API. The lifecycle rehearsal required a follow-up correction so its
+synthetic Host and fallback-participant requests declare the supported build
+metadata enforced by PR #25; the deployed service itself was unchanged.
+
 The deployed version's provider script ETag is
 `bbb78395675d19eb187f86753b086c9255cb51cbe6facb3ed63fce2bbea4282d`.
 A fresh Wrangler 4.119.0 dry run of exact reviewed commit
@@ -318,13 +337,13 @@ The first-party WebAssembly module and original scenario are bundled with the
 Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
 Queues, Realtime, Containers, analytics, and remote AI remain absent.
 
-Before named friends join, a separate readiness slice must complete hibernation
-and deletion evidence, app conformance, API Custom Domain DNS/certificate
-verification, packaged Stage transport evidence, tester notice, and the final
-owner go/no-go record. The
-emergency disable, invitation rotation and closure, endpoint revocation,
-explicit session end, per-session join limiting, and per-endpoint message
-limiting are implemented and still require app-level rehearsal.
+Before named friends join, the readiness gate still requires app conformance,
+the approved tester notice, and the final owner go/no-go record. Hibernation,
+active-storage deletion, API and Pages Custom Domain DNS/certificate checks,
+packaged Stage transport, emergency disable, invitation rotation and closure,
+endpoint revocation, explicit session end, per-session join limiting, and
+per-endpoint message limiting have deployed evidence. The client-specific
+behaviors still require physical app-level rehearsal.
 
 ## Staging Gate
 
