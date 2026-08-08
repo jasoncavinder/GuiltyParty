@@ -5,6 +5,7 @@ on:
     branches: [dev, main]
     paths:
       - "server/**"
+      - "apps/web/**"
       - "clients/**"
       - "services/remote/**"
       - "contracts/**"
@@ -28,6 +29,7 @@ on:
     branches: [dev, main]
     paths:
       - "server/**"
+      - "apps/web/**"
       - "clients/**"
       - "services/remote/**"
       - "contracts/**"
@@ -87,7 +89,7 @@ jobs:
       - name: Test
         run: cargo test --locked --workspace --all-targets
       - name: Check browser JavaScript syntax
-        run: node --check ../clients/shared/control-client.js && node --check ../clients/host/app.js && node --check ../clients/companion-web/app.js && node --check ../clients/stage/stage.js
+        run: node --check ../apps/web/shared/control-client.js && node --check ../apps/web/host/app.js && node --check ../apps/web/companion/app.js && node --check ../clients/stage/stage.js
 
   mobile-contracts:
     runs-on: macos-26

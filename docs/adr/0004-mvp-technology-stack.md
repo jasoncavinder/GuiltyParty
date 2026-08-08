@@ -90,13 +90,22 @@ Browser origins are an exact operator-configured allowlist, applied to HTTP CORS
 ```
 /
 ├── server/           # Rust Cargo workspace (backend & engine)
-├── clients/
-│   ├── host/         # Vanilla JS Host Console
-│   ├── stage/        # Vanilla JS LG webOS app
-│   └── companion/    # iOS SwiftUI Xcode project
+├── apps/
+│   ├── web/
+│   │   ├── host/     # Vanilla JS Host Console
+│   │   └── companion/ # Browser Companion fallback
+│   ├── tv/
+│   │   └── lg-webos/ # Vanilla JS packaged LG webOS app
+│   └── mobile/       # Native mobile application projects
 ├── docs/             # Documentation
 └── Makefile          # Root developer commands
 ```
+
+The source tree was corrected to use the repository's existing `apps/`
+platform taxonomy. This is an organizational correction only; it does not
+change the selected languages, runtimes, application roles, or security
+boundaries.
+
 **Developer Commands (Makefile):**
 - `make setup`: Check the dependencies required by the current slice and report optional platform tooling.
 - `make run-server`: Boot the Rust backend.

@@ -13,8 +13,8 @@ import {
   HOST_BUILD,
   decodeInvitationTransfer,
   normalizeApiOrigin,
-} from "../../../clients/shared/control-client.js";
-import { privateViewShouldBeHidden } from "../../../clients/companion-web/private-view.js";
+} from "../../../apps/web/shared/control-client.js";
+import { privateViewShouldBeHidden } from "../../../apps/web/companion/private-view.js";
 import { encodeInvitationTransfer } from "../src/invitation-transfer.js";
 
 const execFileAsync = promisify(execFile);
@@ -122,12 +122,12 @@ test("private view remains covered until the player explicitly reveals it", () =
 
 test("browser client sources avoid persistent storage, URL credentials, and third-party assets", async () => {
   const files = [
-    "clients/shared/control-client.js",
-    "clients/host/index.html",
-    "clients/host/app.js",
-    "clients/companion-web/index.html",
-    "clients/companion-web/app.js",
-    "clients/companion-web/private-view.js",
+    "apps/web/shared/control-client.js",
+    "apps/web/host/index.html",
+    "apps/web/host/app.js",
+    "apps/web/companion/index.html",
+    "apps/web/companion/app.js",
+    "apps/web/companion/private-view.js",
   ];
   const sources = await Promise.all(files.map((file) => readFile(path.join(repository, file), "utf8")));
   const combined = sources.join("\n");
