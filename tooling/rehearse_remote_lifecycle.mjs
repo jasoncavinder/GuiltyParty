@@ -140,9 +140,15 @@ async function createSession(pathname) {
     },
     body: JSON.stringify({
       protocol_version: "1.0",
+      gameplay_language: "en",
       endpoint: {
         platform: "browser",
         capabilities: ["host_control", "private_display"],
+        client_build: {
+          application_id: "host_web",
+          application_version: "0.1.0",
+          build_number: 1,
+        },
       },
     }),
   });
@@ -249,8 +255,24 @@ function joinResponse(host, pairingCode, kind) {
       kind,
       display_name: participant ? "Synthetic Lifecycle Guest" : null,
       endpoint: participant
-        ? { platform: "browser", capabilities: ["private_display"] }
-        : { platform: "webos", capabilities: ["public_display"] },
+        ? {
+            platform: "browser",
+            capabilities: ["private_display"],
+            client_build: {
+              application_id: "companion_web",
+              application_version: "0.1.0",
+              build_number: 1,
+            },
+          }
+        : {
+            platform: "webos",
+            capabilities: ["public_display"],
+            client_build: {
+              application_id: "stage_webos",
+              application_version: "0.1.0",
+              build_number: 1,
+            },
+          },
     }),
   });
 }

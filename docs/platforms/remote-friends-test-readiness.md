@@ -7,24 +7,25 @@ invitation until the project owner records the final decision below.
 
 ## Candidate Deployment
 
-- Reviewed source commit: `09ee0c09d5af16fd7275312612be5edcf5ecbeec`
-- Worker version: `a9a70148-51de-47dc-bc0d-5329c9e480a4`
+- Reviewed source commit: `e85b486b1928704382329bbd73d4fa0a4ae28539`
+- Worker version: `603165d6-001a-4de4-98e6-faad5e78c426`
 - Provider script ETag:
-  `bbb78395675d19eb187f86753b086c9255cb51cbe6facb3ed63fce2bbea4282d`
+  `fb72c47a3ee2bf94bbac88d4925919aac14a1719641fb49a935588c615a2b52c`
 - Wrangler 4.119.0 dry-run runtime artifact manifest:
 
   - `worker.js` SHA-256:
-    `2bf963a6532a9b577671a7b2cf8d82340c7bb77b2a5351ec02983d30f8eeda3c`
+    `814a516a80430c27f22bec38f447af8042f76f58c1f4e1ee15a9063527b9c0a5`
   - `85b31fdbd5ef4c5f690c397f89cbbb70b9af79d5-gp_scenario_wasm.wasm`
     SHA-256:
     `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`
 
 - API hostname: `api.test.guiltyparty.app`
-- Browser Host origin: `https://host.test.guiltyparty.app`
-- Currently deployed secondary browser origin:
-  `https://stage.test.guiltyparty.app`
-- Next reviewed browser Companion origin, not yet promoted:
-  `https://play.test.guiltyparty.app`
+- Browser Host origin: `https://host.test.guiltyparty.app`; Pages project
+  `guilty-party-host-test`; deployment
+  `5bde1db6-ee32-4834-bd30-732950f261e5`
+- Browser Companion origin: `https://play.test.guiltyparty.app`; Pages project
+  `guilty-party-play-test`; deployment
+  `eed998d9-d960-4cab-9c9f-537967ab2798`
 - Packaged Stage transport: opaque `null` Origin plus realtime connect ticket
 - Deployment operator and date: project owner through authenticated Wrangler,
   2026-08-07 HST
@@ -63,6 +64,10 @@ authority, connect tickets, player names, or private scenario content here.
 - [x] Alarm expiry and active-storage deletion are observed in the deployed
       environment within the approved lifecycle.
 - [x] Emergency disable, restoration, rollback, and redeployment succeed.
+- [x] The reviewed Browser Host and Browser Companion static outputs are
+      deployed as separate Pages projects with the committed security headers.
+- [x] Both Pages custom domains report active managed TLS, resolve through
+      public Cloudflare DNS, and return the intended surface over HTTPS.
 
 ## Physical Client Evidence
 
@@ -88,6 +93,13 @@ authority, connect tickets, player names, or private scenario content here.
       rejection, idempotent redemption, and live edge throttling passed.
 - [x] Fixed-window invitation, ticket, hibernation, reconnect, explicit-end,
       alarm-expiry, and active-storage-deletion paths passed.
+- [x] Deployed Browser Host and Companion fallback custom origins loaded with
+      clean unauthenticated recovery states and no browser console warnings.
+- [x] A real Browser Host smoke session cleared the one-time operator proof,
+      rotated and closed its invitation, recovered its HttpOnly-cookie context
+      after reload, refreshed its endpoint roster, and ended cleanly.
+- [x] The Companion fallback rendered without horizontal overflow at a
+      390-by-844 phone viewport.
 
 These automated checks do not satisfy the unchecked physical-client evidence
 or authorize named-friend traffic.
