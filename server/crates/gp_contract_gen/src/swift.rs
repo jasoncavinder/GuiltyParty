@@ -550,6 +550,13 @@ fn render_array_validation(
         )
         .unwrap();
     }
+    if let Some(maximum) = rules.maximum_items {
+        writeln!(
+            output,
+            "{indent}guard {expression}.count <= {maximum} else {{ throw GPContractError.constraint(\"array is longer than maxItems\") }}"
+        )
+        .unwrap();
+    }
     if rules.unique_items {
         writeln!(output, "{indent}try gpValidateUnique({expression})").unwrap();
     }

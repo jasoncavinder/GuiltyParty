@@ -37,6 +37,7 @@ Browser display, casting, and screen mirroring are fallback paths.
 - [Mobile audio routes and interruptions](../adr/0022-mobile-audio-route-and-interruption-policy.md)
 - [Physical-device test-matrix policy](../adr/0023-physical-device-test-matrix.md)
 - [Living mobile test matrix and available environment](mobile-test-matrix.md)
+- [Android entry-checkpoint evidence](android-entry-checkpoint-evidence.md)
 - [Mobile beta-distribution policy](../adr/0024-mobile-beta-distribution.md)
 - [Mobile beta-distribution status and checklist](mobile-beta-distribution.md)
 - [Third-party dependency and SDK governance](../adr/0025-third-party-dependency-governance.md)

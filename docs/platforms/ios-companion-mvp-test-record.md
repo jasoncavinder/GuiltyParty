@@ -145,7 +145,8 @@ clearing, and the fresh-projection reconnect gate.
 | Screen recording or mirroring | Capture trait shields content and disables actions until capture ends and a fresh projection arrives | Unit covered; source inspected; live private projection unavailable |
 | Screenshot | Honest post-capture warning; no prevention/deletion claim | Source inspected; live private projection unavailable |
 | Revocation or session end | Authority and projection discarded; no private actions | Unit covered; live synthetic session-end check passed on physical iPhone and iPad simulator |
-| Persistence review | No UserDefaults, Keychain, file cache, logs, analytics, or diagnostics upload | Source inspection passed |
+| Persistence review | No private gameplay cache, UserDefaults authority, logs, analytics, or diagnostics upload; only a device-only Keychain resume credential and minimum opaque metadata persist | Source inspection and unit coverage passed; backup/transfer and physical restart checks pending |
+| Application restart | Rotate endpoint-bound resume authority, preserve participant and endpoint, resolve pending idempotency IDs, and require a fresh projection | Contract, Worker, Durable Object, and native unit coverage passed; deployed physical exercise pending |
 
 ## Generated Contract and Dependency Evidence
 
@@ -171,8 +172,10 @@ clearing, and the fresh-projection reconnect gate.
 - A live synthetic join requires an active GP1 invitation issued through the
   authorized Host flow. No credential is sourced from logs, environment dumps,
   pasteboard inspection, or repository content.
-- Participant authority remains memory-only in this MVP. If automatic socket
-  recovery is no longer possible and the player manually joins again, the
-  server creates a new participant while the prior participant remains in the
-  roster. Persistent device-bound resume and Host-assisted participant cleanup
-  remain future work.
+- Short-lived participant access authority remains memory-only. Companion
+  `0.2.0 (3)` adds an endpoint-bound rotating resume credential and minimum
+  opaque resumption metadata in device-only, non-synchronizing Keychain
+  storage. Automated contract, server, and native tests cover the candidate;
+  the deployed physical restart exercise in
+  `android-entry-checkpoint-evidence.md` remains required before claiming the
+  duplicate-participant defect is closed or starting Android application work.

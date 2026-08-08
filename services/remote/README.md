@@ -19,6 +19,10 @@ remains blocked by the operational and client acceptance gates below.
   SameSite=Strict cookie, and returns a fifteen-minute pairing invitation.
 - `POST /api/v1/join` admits up to eight guest participants using the invitation
   proof. The packaged Stage does not receive or redeem that shared proof.
+- `POST /api/v1/resume` lets a native participant recover the same participant
+  and endpoint after restart. The device-only credential rotates on every
+  successful use, reuse revokes its credential family, and the response carries
+  a fresh short-lived bearer plus the current journal sequence.
 - `POST /api/v1/stage-pairings` creates a 120-second packaged Stage transaction;
   an authenticated Host approves its non-secret display code, and the Stage
   redeems with a separate high-entropy memory-only polling secret.
@@ -138,8 +142,10 @@ or secret. It is not a staging or production configuration.
 The Remote Friends MVP boundary expects:
 
 - `ENVIRONMENT_PROFILE=friends-mvp-development`
-- secret `AUTHORITY_SIGNING_KEY`, a random value of at least 32 bytes used only
-  for HMAC signing of short-lived endpoint authority
+- secret `AUTHORITY_SIGNING_KEY`, a random value of at least 32 bytes used for
+  domain-separated HMAC signing of short-lived endpoint authority and keyed
+  participant-resume credential digests; raw resume credentials are never
+  stored in the Durable Object
 - secret `HOST_BOOTSTRAP_TOKEN_SHA256`, the lowercase SHA-256 digest of the
   operator-controlled Host creation proof
 - `ALLOWED_ORIGINS`, an exact comma-separated HTTPS allowlist for the browser
@@ -178,7 +184,8 @@ responses contain it only in the non-cacheable HTTPS response.
 
 - reviewed Browser Host and Companion fallback Pages deployment and browser UI
   rehearsal
-- physical packaged webOS Stage and two-iOS-Companion conformance
+- physical packaged webOS Stage and two-iOS-Companion conformance, including
+  restart recovery without a duplicate participant or action
 - named-tester notice and explicit final owner approval
 
 Until those pass, local runtime tests use synthetic aliases and the committed

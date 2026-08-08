@@ -19,8 +19,15 @@ struct SessionStateMachine: Equatable, Sendable {
         currentConnectionIsRejoin = false
     }
 
-    mutating func beginSocket(id: UUID, isRejoin: Bool) {
+    mutating func beginSocket(
+        id: UUID,
+        isRejoin: Bool,
+        baselineServerSequence: Int64? = nil
+    ) {
         socketID = id
+        if let baselineServerSequence {
+            lastServerSequence = max(lastServerSequence ?? 0, baselineServerSequence)
+        }
         projection = nil
         privacyInterruption = .connectionUncertain
         needsFreshProjection = true

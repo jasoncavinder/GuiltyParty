@@ -25,7 +25,35 @@ final class CompanionSession: ObservableObject {
     private var captureIsActive = false
     private var manuallyShielded = false
     private var pendingCommands: [String: OutboundCommand] = [:]
+    private var resumeCredential: StoredResumeCredential?
+    private var credentialResumeTask: Task<Void, Never>?
+    private let credentialStore: any ResumeCredentialStoring
     private let commandFactory = CommandFactory()
+
+    init(
+        credentialStore: any ResumeCredentialStoring = KeychainResumeCredentialStore(),
+        automaticallyResume: Bool = true
+    ) {
+        self.credentialStore = credentialStore
+        do {
+            guard let credential = try credentialStore.load() else { return }
+            let now = Int64(Date().timeIntervalSince1970 * 1_000)
+            guard credential.expiresAtUnixMilliseconds > now else {
+                try credentialStore.delete()
+                return
+            }
+            resumeCredential = credential
+            advertisedGameplayLanguage = credential.gameplayLanguage
+            state.beginJoin()
+            statusMessage = "Recovering this device's private session…"
+            if automaticallyResume {
+                beginCredentialResumeIfNeeded()
+            }
+        } catch {
+            try? credentialStore.delete()
+            statusMessage = "Saved session access could not be read safely. Join with a fresh invitation."
+        }
+    }
 
     var phase: CompanionPhase { state.phase }
     var projection: ParticipantProjection? { state.projection }
@@ -44,6 +72,7 @@ final class CompanionSession: ObservableObject {
 
     func join(invitationPayload: String, displayName: String) async {
         stopTransport()
+        clearResumeCredential()
         authority = nil
         advertisedGameplayLanguage = nil
         pendingCommands.removeAll(keepingCapacity: false)
@@ -55,9 +84,10 @@ final class CompanionSession: ObservableObject {
         do {
             let invitation = try InvitationDecoder.decode(invitationPayload)
             advertisedGameplayLanguage = invitation.gameplayLanguage
-            let joined = try await JoinClient.join(invitation: invitation, displayName: displayName)
-            authority = joined
-            try ensureAuthorityIsCurrent(joined)
+            let admission = try await JoinClient.join(invitation: invitation, displayName: displayName)
+            try persistResumeCredential(admission.resumeCredential)
+            authority = admission.authority
+            try ensureAuthorityIsCurrent(admission.authority)
             connect(isRejoin: false)
         } catch let error as SessionModelError {
             handleTerminalOrJoinError(error)
@@ -76,6 +106,7 @@ final class CompanionSession: ObservableObject {
             let command = try commandFactory.castVote(targetCharacterID: targetCharacterID)
             let data = try commandFactory.encode(command, authority: authority)
             pendingCommands[command.messageID] = command
+            try recordPendingIdempotencyID(command.idempotencyID)
             statusMessage = "Submitting your private vote…"
             try await socket.send(data)
         } catch let error as SessionModelError {
@@ -127,6 +158,7 @@ final class CompanionSession: ObservableObject {
 
     func manualRejoin() {
         stopTransport()
+        clearResumeCredential()
         authority = nil
         pendingCommands.removeAll(keepingCapacity: false)
         advertisedGameplayLanguage = nil
@@ -143,14 +175,18 @@ final class CompanionSession: ObservableObject {
         do {
             try ensureAuthorityIsCurrent(authority)
         } catch {
-            transitionToExpiredOrRevoked()
+            recoverWithResumeCredentialOrExpire()
             return
         }
 
         stopTransport()
         let newSocketID = UUID()
         socketID = newSocketID
-        state.beginSocket(id: newSocketID, isRejoin: isRejoin)
+        state.beginSocket(
+            id: newSocketID,
+            isRejoin: isRejoin,
+            baselineServerSequence: resumeCredential?.lastServerSequence
+        )
         statusMessage = isRejoin
             ? "Reconnecting. Private content stays hidden until the server sends a fresh view."
             : "Opening the private game connection…"
@@ -352,6 +388,7 @@ final class CompanionSession: ObservableObject {
         }
         switch try ControlPlaneCodec.decodeServerEvent(data, authority: authority) {
         case .projection(let envelope):
+            try ensureSequenceIsNotBeforeResume(envelope.serverSequence)
             let nextProjection = try ProjectionValidator.participantProjection(
                 from: envelope,
                 authority: authority
@@ -361,6 +398,7 @@ final class CompanionSession: ObservableObject {
                 sequence: envelope.serverSequence,
                 socketID: eventSocketID
             )
+            try recordServerSequence(envelope.serverSequence)
             recordAuthenticatedActivity(socketID: eventSocketID, establishesPrivateView: true)
             advertisedGameplayLanguage = nextProjection.gameplayLanguage
             statusMessage = state.phase == .rejoined
@@ -376,16 +414,22 @@ final class CompanionSession: ObservableObject {
                 }
             }
         case .commandResult(let envelope):
+            try ensureSequenceIsNotBeforeResume(envelope.serverSequence)
             try state.acceptServerSequence(envelope.serverSequence, socketID: eventSocketID)
             try handleCommandResult(envelope)
+            try recordServerSequence(envelope.serverSequence)
             recordAuthenticatedActivity(socketID: eventSocketID)
         case .error(let envelope):
             if let sequence = envelope.serverSequence {
+                try ensureSequenceIsNotBeforeResume(sequence)
                 try state.acceptServerSequence(sequence, socketID: eventSocketID)
+                try recordServerSequence(sequence)
             }
             recordAuthenticatedActivity(socketID: eventSocketID)
             if let correlationID = envelope.correlationId?.value {
-                pendingCommands.removeValue(forKey: correlationID)
+                if let pending = pendingCommands.removeValue(forKey: correlationID) {
+                    try removePendingIdempotencyID(pending.idempotencyID)
+                }
             }
             let code = envelope.payload.code
             if code.contains("expired") || code.contains("revoked") {
@@ -401,6 +445,7 @@ final class CompanionSession: ObservableObject {
         else {
             return
         }
+        try removePendingIdempotencyID(pending.idempotencyID)
         switch envelope.payload {
         case .accepted(let result):
             guard result.idempotencyId.value == pending.idempotencyID,
@@ -422,9 +467,10 @@ final class CompanionSession: ObservableObject {
         switch code {
         case URLSessionWebSocketTask.CloseCode.normalClosure.rawValue:
             transitionToSessionEnded()
-        case URLSessionWebSocketTask.CloseCode.policyViolation.rawValue,
-             URLSessionWebSocketTask.CloseCode.goingAway.rawValue:
-            transitionToExpiredOrRevoked()
+        case URLSessionWebSocketTask.CloseCode.policyViolation.rawValue:
+            recoverWithResumeCredentialOrExpire()
+        case URLSessionWebSocketTask.CloseCode.goingAway.rawValue:
+            protectAndReconnect(reason: .connectionUncertain)
         default:
             protectAndReconnect(reason: .connectionUncertain)
         }
@@ -455,8 +501,17 @@ final class CompanionSession: ObservableObject {
     }
 
     private func resumeIfPermitted() {
-        guard authority != nil, appIsActive, !captureIsActive, !manuallyShielded else { return }
-        connect(isRejoin: true)
+        guard appIsActive, !captureIsActive, !manuallyShielded else { return }
+        if let authority {
+            do {
+                try ensureAuthorityIsCurrent(authority)
+                connect(isRejoin: true)
+            } catch {
+                recoverWithResumeCredentialOrExpire()
+            }
+        } else {
+            beginCredentialResumeIfNeeded()
+        }
     }
 
     private func stopTransport() {
@@ -479,8 +534,132 @@ final class CompanionSession: ObservableObject {
         connectionIsShieldedForInactivity = false
     }
 
+    private func beginCredentialResumeIfNeeded() {
+        guard credentialResumeTask == nil,
+              authority == nil,
+              resumeCredential != nil,
+              appIsActive,
+              !captureIsActive,
+              !manuallyShielded
+        else {
+            return
+        }
+        credentialResumeTask = Task { [weak self] in
+            await self?.resumeStoredSession()
+        }
+    }
+
+    private func resumeStoredSession() async {
+        defer { credentialResumeTask = nil }
+        guard let credential = resumeCredential else { return }
+        let now = Int64(Date().timeIntervalSince1970 * 1_000)
+        guard credential.expiresAtUnixMilliseconds > now else {
+            transitionToExpiredOrRevoked()
+            return
+        }
+        state.beginJoin()
+        statusMessage = "Recovering this device's private session…"
+        do {
+            let admission = try await ResumeClient.resume(credential)
+            try persistResumeCredential(admission.resumeCredential)
+            authority = admission.authority
+            advertisedGameplayLanguage = admission.authority.gameplayLanguage
+            try ensureAuthorityIsCurrent(admission.authority)
+            connect(isRejoin: true)
+        } catch let error as SessionModelError {
+            if error == .connectionUnavailable {
+                state.interrupt(.connectionUncertain)
+                statusMessage = "Session recovery is waiting for a secure connection."
+                scheduleCredentialResume()
+            } else {
+                handleTerminalOrJoinError(error)
+            }
+        } catch {
+            state.interrupt(.connectionUncertain)
+            statusMessage = "Session recovery is waiting for a secure connection."
+            scheduleCredentialResume()
+        }
+    }
+
+    private func scheduleCredentialResume() {
+        guard resumeCredential != nil, appIsActive, !captureIsActive, !manuallyShielded else { return }
+        reconnectTask?.cancel()
+        let seconds = reconnectBackoff.nextMaximumDelaySeconds()
+        let delay = Double.random(in: 0...seconds)
+        reconnectTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(delay))
+            guard let self, !Task.isCancelled else { return }
+            beginCredentialResumeIfNeeded()
+        }
+    }
+
+    private func recoverWithResumeCredentialOrExpire() {
+        guard resumeCredential != nil else {
+            transitionToExpiredOrRevoked()
+            return
+        }
+        stopTransport()
+        authority = nil
+        pendingCommands.removeAll(keepingCapacity: false)
+        state.interrupt(.connectionUncertain)
+        statusMessage = "Refreshing this device's private session access…"
+        beginCredentialResumeIfNeeded()
+    }
+
+    private func persistResumeCredential(_ credential: StoredResumeCredential) throws {
+        try credentialStore.save(credential)
+        resumeCredential = credential
+    }
+
+    private func recordServerSequence(_ sequence: Int64) throws {
+        guard let credential = resumeCredential else {
+            return
+        }
+        guard sequence >= credential.lastServerSequence else {
+            throw SessionModelError.sequenceRegression
+        }
+        guard sequence != credential.lastServerSequence else { return }
+        try persistResumeCredential(credential.updating(lastServerSequence: sequence))
+    }
+
+    private func ensureSequenceIsNotBeforeResume(_ sequence: Int64) throws {
+        if let credential = resumeCredential,
+           sequence < credential.lastServerSequence {
+            throw SessionModelError.sequenceRegression
+        }
+    }
+
+    private func recordPendingIdempotencyID(_ identifier: String) throws {
+        guard let credential = resumeCredential else {
+            throw SessionModelError.connectionUnavailable
+        }
+        var pending = credential.pendingIdempotencyIDs
+        if !pending.contains(identifier) {
+            pending.append(identifier)
+        }
+        guard pending.count <= 32 else {
+            throw SessionModelError.protocolViolation
+        }
+        try persistResumeCredential(credential.updating(pendingIdempotencyIDs: pending))
+    }
+
+    private func removePendingIdempotencyID(_ identifier: String) throws {
+        guard let credential = resumeCredential else { return }
+        let pending = credential.pendingIdempotencyIDs.filter { $0 != identifier }
+        guard pending != credential.pendingIdempotencyIDs else { return }
+        try persistResumeCredential(credential.updating(pendingIdempotencyIDs: pending))
+    }
+
+    private func clearResumeCredential() {
+        credentialResumeTask?.cancel()
+        credentialResumeTask = nil
+        resumeCredential = nil
+        try? credentialStore.delete()
+    }
+
     private func failProtocol() {
         stopTransport()
+        clearResumeCredential()
         authority = nil
         pendingCommands.removeAll(keepingCapacity: false)
         state.requireManualRejoin()
@@ -493,6 +672,10 @@ final class CompanionSession: ObservableObject {
             transitionToExpiredOrRevoked(message: error.userMessage)
         case .sessionEnded:
             transitionToSessionEnded()
+        case .invalidResponse, .protocolViolation, .recipientBoundaryViolation:
+            clearResumeCredential()
+            state.requireManualRejoin()
+            statusMessage = error.userMessage
         default:
             state.requireManualRejoin()
             statusMessage = error.userMessage
@@ -501,6 +684,7 @@ final class CompanionSession: ObservableObject {
 
     private func transitionToExpiredOrRevoked(message: String? = nil) {
         stopTransport()
+        clearResumeCredential()
         authority = nil
         pendingCommands.removeAll(keepingCapacity: false)
         state.expireOrRevoke()
@@ -509,6 +693,7 @@ final class CompanionSession: ObservableObject {
 
     private func transitionToSessionEnded() {
         stopTransport()
+        clearResumeCredential()
         authority = nil
         pendingCommands.removeAll(keepingCapacity: false)
         state.endSession()

@@ -567,6 +567,13 @@ fn render_array_validation(
         )
         .unwrap();
     }
+    if let Some(maximum) = rules.maximum_items {
+        writeln!(
+            output,
+            "{indent}gpRequire({expression}.size <= {maximum}, \"array is longer than maxItems\")"
+        )
+        .unwrap();
+    }
     if rules.unique_items {
         writeln!(output, "{indent}gpRequire({expression}.toSet().size == {expression}.size, \"array items are not unique\")").unwrap();
     }

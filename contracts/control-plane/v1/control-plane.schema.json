@@ -273,6 +273,119 @@
         }
       ]
     },
+    "ParticipantResumeRequest": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "session_id",
+        "endpoint_id",
+        "participant_id",
+        "last_server_sequence",
+        "primary_authority_generation",
+        "pending_idempotency_ids",
+        "client_build"
+      ],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "session_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "endpoint_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "participant_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "last_server_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "primary_authority_generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "pending_idempotency_ids": {
+          "type": "array",
+          "maxItems": 32,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/MessageIdentifier"
+          },
+          "description": "Opaque identifiers of commands whose outcome was unknown when the prior process stopped. No command or private-choice content is persisted here."
+        },
+        "client_build": {
+          "$ref": "#/$defs/ClientBuild"
+        }
+      },
+      "description": "Same-installation participant recovery metadata. The endpoint-bound resume credential is carried only in Authorization and is not part of this payload."
+    },
+    "ResumedCommandStatus": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/ResumedAcceptedCommandStatus"
+        },
+        {
+          "$ref": "#/$defs/ResumedRejectedCommandStatus"
+        },
+        {
+          "$ref": "#/$defs/ResumedUnknownCommandStatus"
+        }
+      ],
+      "description": "Minimal recovery status for an opaque pending command identifier. It contains no command payload or private choice."
+    },
+    "ResumedAcceptedCommandStatus": {
+      "type": "object",
+      "required": ["idempotency_id", "status", "server_sequence"],
+      "properties": {
+        "idempotency_id": {
+          "$ref": "#/$defs/MessageIdentifier"
+        },
+        "status": {
+          "const": "accepted"
+        },
+        "server_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "ResumedRejectedCommandStatus": {
+      "type": "object",
+      "required": ["idempotency_id", "status", "server_sequence"],
+      "properties": {
+        "idempotency_id": {
+          "$ref": "#/$defs/MessageIdentifier"
+        },
+        "status": {
+          "const": "rejected"
+        },
+        "server_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        }
+      }
+    },
+    "ResumedUnknownCommandStatus": {
+      "type": "object",
+      "required": ["idempotency_id", "status", "server_sequence"],
+      "properties": {
+        "idempotency_id": {
+          "$ref": "#/$defs/MessageIdentifier"
+        },
+        "status": {
+          "const": "unknown"
+        },
+        "server_sequence": {
+          "type": "null"
+        }
+      }
+    },
     "CreateSessionRequest": {
       "type": "object",
       "required": ["protocol_version", "endpoint"],
@@ -691,14 +804,110 @@
         },
         {
           "type": "object",
-          "required": ["websocket_transport"],
+          "required": [
+            "websocket_transport",
+            "resume_token",
+            "resume_expires_at_unix_ms",
+            "server_sequence"
+          ],
           "properties": {
             "websocket_transport": {
               "const": "authorization_header"
+            },
+            "resume_token": {
+              "$ref": "#/$defs/Token",
+              "description": "Rotating endpoint-bound participant resume credential for device-only native storage."
+            },
+            "resume_expires_at_unix_ms": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9007199254740991
+            },
+            "server_sequence": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9007199254740991
             }
           }
         }
       ]
+    },
+    "RemoteNativeResumeResponse": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "token",
+        "resume_token",
+        "session_id",
+        "endpoint_id",
+        "room_id",
+        "participant_id",
+        "authority_transport",
+        "websocket_transport",
+        "authority_expires_at_unix_ms",
+        "resume_expires_at_unix_ms",
+        "primary_authority_generation",
+        "server_sequence",
+        "pending_command_results"
+      ],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "token": {
+          "$ref": "#/$defs/Token"
+        },
+        "resume_token": {
+          "$ref": "#/$defs/Token",
+          "description": "Replacement endpoint-bound resume credential. Persist atomically in the device-only native credential boundary."
+        },
+        "session_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "endpoint_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "room_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "participant_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "authority_transport": {
+          "const": "bearer"
+        },
+        "websocket_transport": {
+          "const": "authorization_header"
+        },
+        "authority_expires_at_unix_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "resume_expires_at_unix_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "primary_authority_generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "server_sequence": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991
+        },
+        "pending_command_results": {
+          "type": "array",
+          "maxItems": 32,
+          "items": {
+            "$ref": "#/$defs/ResumedCommandStatus"
+          }
+        }
+      },
+      "description": "Rotated same-installation participant authority. A fresh recipient projection is still required before private content or actions return."
     },
     "RemotePackagedStageJoinResponse": {
       "allOf": [

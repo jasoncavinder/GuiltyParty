@@ -2,9 +2,10 @@
 
 ## Status
 
-Implemented for the Rust prototype server and browser Host and Stage surfaces.
-The native iOS Companion remains unimplemented and must prove conformance
-before claiming protocol v1 support.
+Implemented for the Rust prototype server, the Remote Friends Worker and
+browser surfaces, the packaged webOS Stage, and the native iOS/iPadOS
+Companion. Physical resumption evidence remains an acceptance gate rather than
+an unqualified release-support claim.
 
 ## Purpose
 
@@ -47,6 +48,9 @@ The implemented slice provides:
 5. Bounded server-side command idempotency records and primary-authority
    generation checks consistent with ADR 0009. A retry with identical content
    returns the recorded result; identifier reuse with different content fails.
+   Native participant resumption rotates an endpoint-bound credential and
+   resolves the caller's pending idempotency identifiers against the existing
+   endpoint without creating a participant.
 6. Credentials kept out of application envelopes, logs, fixtures, browser
    storage, and URLs where the selected transport-authentication mechanism
    permits. Synthetic fixture token strings are not credentials.
@@ -55,10 +59,10 @@ The implemented slice provides:
 8. Schema conformance, negative, privacy, deterministic replay, and browser
    checks before claiming server/browser v1 compatibility.
 
-The migration should not add account authentication, production pairing,
-HTTPS/WSS certificate trust, service discovery, resumption deltas, Android,
-media, analytics, or retained private communication. Those remain separate
-approved decisions and later slices.
+The migration does not add account authentication, production pairing,
+service discovery, Android application code, media, analytics, or retained
+private communication. Those remain separate approved decisions and later
+slices.
 
 ## Contract Semantics to Preserve
 

@@ -1,0 +1,22 @@
+{
+  "protocol_version": "1.0",
+  "token": "synthetic-memory-only-access-token",
+  "resume_token": "synthetic-device-only-rotated-resume-token",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-player-001",
+  "room_id": "room-synthetic-001",
+  "participant_id": "participant-synthetic-001",
+  "authority_transport": "bearer",
+  "websocket_transport": "authorization_header",
+  "authority_expires_at_unix_ms": 2000000000000,
+  "resume_expires_at_unix_ms": 2000000000000,
+  "primary_authority_generation": 4,
+  "server_sequence": 9,
+  "pending_command_results": [
+    {
+      "idempotency_id": "idempotency-synthetic-001",
+      "status": "accepted",
+      "server_sequence": 9
+    }
+  ]
+}

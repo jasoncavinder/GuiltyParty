@@ -2,11 +2,12 @@ import Foundation
 
 enum CompanionEnvironment {
     static let joinURL = URL(string: "https://api.test.guiltyparty.app/api/v1/join")!
+    static let resumeURL = URL(string: "https://api.test.guiltyparty.app/api/v1/resume")!
     static let webSocketURL = URL(string: "wss://api.test.guiltyparty.app/ws/v1")!
     static let controlSubprotocol = "guiltyparty.control.v1"
     static let applicationID = "companion_ios"
-    static let applicationVersion = "0.1.1"
-    static let buildNumber: Int64 = 2
+    static let applicationVersion = "0.2.0"
+    static let buildNumber: Int64 = 3
     static let maximumResponseBytes = 262_144
 
     static func shortRequestConfiguration() -> URLSessionConfiguration {
@@ -27,6 +28,14 @@ enum CompanionEnvironment {
         configuration.httpShouldSetCookies = false
         configuration.httpCookieAcceptPolicy = .never
         return configuration
+    }
+
+    static func clientBuild() throws -> GPV1ClientBuild {
+        try GPV1ClientBuild(
+            applicationId: GPV1FeatureIdentifier(applicationID),
+            applicationVersion: applicationVersion,
+            buildNumber: buildNumber
+        )
     }
 }
 
@@ -51,17 +60,12 @@ enum JoinClient {
             throw SessionModelError.invalidDisplayName
         }
 
-        let clientBuild = try GPV1ClientBuild(
-            applicationId: GPV1FeatureIdentifier(CompanionEnvironment.applicationID),
-            applicationVersion: CompanionEnvironment.applicationVersion,
-            buildNumber: CompanionEnvironment.buildNumber
-        )
         let endpoint = try GPV1EndpointRegistration(
             capabilities: [
                 GPV1FeatureIdentifier("private_display"),
                 GPV1FeatureIdentifier("touch_input")
             ],
-            clientBuild: clientBuild,
+            clientBuild: CompanionEnvironment.clientBuild(),
             platform: GPV1FeatureIdentifier("ios_companion")
         )
         let body = GPV1JoinRequest.participant(
@@ -88,7 +92,7 @@ enum JoinClient {
         return request
     }
 
-    static func join(invitation: Invitation, displayName: String) async throws -> SessionAuthority {
+    static func join(invitation: Invitation, displayName: String) async throws -> ParticipantSessionAdmission {
         let request = try request(invitation: invitation, displayName: displayName)
         let session = URLSession(
             configuration: CompanionEnvironment.shortRequestConfiguration(),
@@ -103,36 +107,183 @@ enum JoinClient {
             throw SessionModelError.invalidResponse
         }
         guard http.statusCode == 200 else {
-            throw classifyHTTPFailure(status: http.statusCode, data: data)
+            throw HTTPFailureClassifier.classify(status: http.statusCode, data: data)
         }
-        guard http.value(forHTTPHeaderField: "Cache-Control")?.lowercased().contains("no-store") == true,
+        return try decodeResponse(
+            data,
+            invitation: invitation,
+            cacheControl: http.value(forHTTPHeaderField: "Cache-Control")
+        )
+    }
+
+    static func decodeResponse(
+        _ data: Data,
+        invitation: Invitation,
+        cacheControl: String?,
+        nowUnixMilliseconds: Int64 = Int64(Date().timeIntervalSince1970 * 1_000)
+    ) throws -> ParticipantSessionAdmission {
+        guard cacheControl?.lowercased().contains("no-store") == true,
               case .authorizationHeader(let joined) = try JSONDecoder().decode(
                 GPV1RemoteFriendsJoinResponse.self,
                 from: data
               ),
               joined.sessionId.value == invitation.sessionID,
               let participantID = joined.participantId?.value,
-              joined.authorityExpiresAtUnixMs > Int64(Date().timeIntervalSince1970 * 1_000)
+              joined.authorityExpiresAtUnixMs > nowUnixMilliseconds,
+              joined.resumeExpiresAtUnixMs > nowUnixMilliseconds
         else {
             throw SessionModelError.invalidResponse
         }
 
-        return SessionAuthority(
-            sessionID: joined.sessionId.value,
-            endpointID: joined.endpointId.value,
-            participantID: participantID,
-            bearer: joined.token.value,
-            expiresAtUnixMilliseconds: joined.authorityExpiresAtUnixMs,
-            primaryAuthorityGeneration: joined.primaryAuthorityGeneration,
-            gameplayLanguage: invitation.gameplayLanguage
+        return ParticipantSessionAdmission(
+            authority: SessionAuthority(
+                sessionID: joined.sessionId.value,
+                endpointID: joined.endpointId.value,
+                participantID: participantID,
+                bearer: joined.token.value,
+                expiresAtUnixMilliseconds: joined.authorityExpiresAtUnixMs,
+                primaryAuthorityGeneration: joined.primaryAuthorityGeneration,
+                gameplayLanguage: invitation.gameplayLanguage
+            ),
+            resumeCredential: StoredResumeCredential(
+                token: joined.resumeToken.value,
+                sessionID: joined.sessionId.value,
+                endpointID: joined.endpointId.value,
+                participantID: participantID,
+                expiresAtUnixMilliseconds: joined.resumeExpiresAtUnixMs,
+                primaryAuthorityGeneration: joined.primaryAuthorityGeneration,
+                lastServerSequence: joined.serverSequence,
+                pendingIdempotencyIDs: [],
+                gameplayLanguage: invitation.gameplayLanguage
+            )
+        )
+    }
+}
+
+enum ResumeClient {
+    static func request(credential: StoredResumeCredential) throws -> URLRequest {
+        let body = try GPV1ParticipantResumeRequest(
+            clientBuild: CompanionEnvironment.clientBuild(),
+            endpointId: GPV1Identifier(credential.endpointID),
+            lastServerSequence: credential.lastServerSequence,
+            participantId: GPV1Identifier(credential.participantID),
+            pendingIdempotencyIds: try credential.pendingIdempotencyIDs.map(GPV1MessageIdentifier.init),
+            primaryAuthorityGeneration: credential.primaryAuthorityGeneration,
+            protocolVersion: GPV1ProtocolVersion(),
+            sessionId: GPV1Identifier(credential.sessionID)
+        )
+        var request = URLRequest(
+            url: CompanionEnvironment.resumeURL,
+            cachePolicy: .reloadIgnoringLocalAndRemoteCacheData,
+            timeoutInterval: 15
+        )
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue("Resume \(credential.token)", forHTTPHeaderField: "Authorization")
+        request.setValue("no-store", forHTTPHeaderField: "Cache-Control")
+        request.httpBody = try JSONEncoder().encode(body)
+        return request
+    }
+
+    static func resume(_ credential: StoredResumeCredential) async throws -> ParticipantSessionAdmission {
+        let request = try request(credential: credential)
+        let session = URLSession(
+            configuration: CompanionEnvironment.shortRequestConfiguration(),
+            delegate: RejectingRedirectDelegate(),
+            delegateQueue: nil
+        )
+        defer { session.invalidateAndCancel() }
+        let (data, response) = try await session.data(for: request)
+        guard data.count <= CompanionEnvironment.maximumResponseBytes,
+              let http = response as? HTTPURLResponse
+        else {
+            throw SessionModelError.invalidResponse
+        }
+        guard http.statusCode == 200 else {
+            throw HTTPFailureClassifier.classify(status: http.statusCode, data: data)
+        }
+        return try decodeResponse(
+            data,
+            previous: credential,
+            cacheControl: http.value(forHTTPHeaderField: "Cache-Control")
         )
     }
 
-    private static func classifyHTTPFailure(status: Int, data: Data) -> SessionModelError {
+    static func decodeResponse(
+        _ data: Data,
+        previous: StoredResumeCredential,
+        cacheControl: String?,
+        nowUnixMilliseconds: Int64 = Int64(Date().timeIntervalSince1970 * 1_000)
+    ) throws -> ParticipantSessionAdmission {
+        let resumed = try JSONDecoder().decode(GPV1RemoteNativeResumeResponse.self, from: data)
+        let requested = Set(previous.pendingIdempotencyIDs)
+        let normalizedResults = resumed.pendingCommandResults.map { result in
+            switch result {
+            case .accepted(let accepted):
+                return (accepted.idempotencyId.value, Optional(accepted.serverSequence))
+            case .rejected(let rejected):
+                return (rejected.idempotencyId.value, Optional(rejected.serverSequence))
+            case .unknown(let unknown):
+                return (unknown.idempotencyId.value, Optional<Int64>.none)
+            }
+        }
+        let resolved = Set(normalizedResults.map(\.0))
+        let resultsAreNotAhead = normalizedResults.allSatisfy { result in
+            result.1.map { $0 <= resumed.serverSequence } ?? true
+        }
+        guard cacheControl?.lowercased().contains("no-store") == true,
+              resumed.sessionId.value == previous.sessionID,
+              resumed.endpointId.value == previous.endpointID,
+              resumed.participantId.value == previous.participantID,
+              resumed.primaryAuthorityGeneration > previous.primaryAuthorityGeneration,
+              resumed.authorityExpiresAtUnixMs > nowUnixMilliseconds,
+              resumed.resumeExpiresAtUnixMs > nowUnixMilliseconds,
+              resumed.serverSequence >= previous.lastServerSequence,
+              resumed.pendingCommandResults.count == requested.count,
+              resolved == requested,
+              resultsAreNotAhead
+        else {
+            throw SessionModelError.invalidResponse
+        }
+
+        return ParticipantSessionAdmission(
+            authority: SessionAuthority(
+                sessionID: resumed.sessionId.value,
+                endpointID: resumed.endpointId.value,
+                participantID: resumed.participantId.value,
+                bearer: resumed.token.value,
+                expiresAtUnixMilliseconds: resumed.authorityExpiresAtUnixMs,
+                primaryAuthorityGeneration: resumed.primaryAuthorityGeneration,
+                gameplayLanguage: previous.gameplayLanguage
+            ),
+            resumeCredential: StoredResumeCredential(
+                token: resumed.resumeToken.value,
+                sessionID: resumed.sessionId.value,
+                endpointID: resumed.endpointId.value,
+                participantID: resumed.participantId.value,
+                expiresAtUnixMilliseconds: resumed.resumeExpiresAtUnixMs,
+                primaryAuthorityGeneration: resumed.primaryAuthorityGeneration,
+                lastServerSequence: resumed.serverSequence,
+                pendingIdempotencyIDs: [],
+                gameplayLanguage: previous.gameplayLanguage
+            )
+        )
+    }
+}
+
+enum HTTPFailureClassifier {
+    static func classify(status: Int, data: Data) -> SessionModelError {
         let problem = try? JSONDecoder().decode(GPV1ProblemDetails.self, from: data)
         let code = problem?.code ?? ""
-        if status == 410 || code.contains("expired") || code.contains("revoked") || code.contains("invitation") {
+        if code == "session_ended" {
+            return .sessionEnded
+        }
+        if status == 410 || status == 401 || code.contains("expired") || code.contains("revoked") || code.contains("invitation") || code.contains("resume") {
             return .expiredOrRevoked
+        }
+        if status == 429 || status >= 500 {
+            return .connectionUnavailable
         }
         if code == "unsupported_client_build" || code == "upgrade_required" {
             return .commandRejected("This development build is no longer supported by the test service.")

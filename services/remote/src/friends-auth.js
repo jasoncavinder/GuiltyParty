@@ -274,6 +274,15 @@ export async function sha256Hex(value) {
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
+export async function resumeCredentialDigest(value, signingKey) {
+  validateSigningKey(signingKey);
+  if (typeof value !== "string" || value.length < 32 || value.length > 128) {
+    throw new Error("Invalid resume credential");
+  }
+  const digest = await sign(`participant-resume.v1\0${value}`, signingKey);
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 function validateClaims(claims, { allowExpired }) {
   if (
     !claims ||
