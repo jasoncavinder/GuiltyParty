@@ -99,6 +99,8 @@ test("OpenAPI declares the session admission failures returned at runtime", () =
   assert.ok(openapi.paths["/api/v1/stage-pairings"].post.responses["201"]);
   assert.ok(openapi.paths["/api/v1/stage-pairings/{pairing_code}/approve"].post.responses["200"]);
   assert.ok(openapi.paths["/api/v1/stage-pairings/{pairing_code}/redeem"].post.responses["202"]);
+  assert.ok(openapi.paths["/api/v1/session/endpoints"].get.responses["200"]);
+  assert.ok(openapi.paths["/api/v1/session/context"].get.responses["200"]);
 });
 
 test("Host creates a bounded session and receives HttpOnly cookie authority", async () => {
@@ -916,6 +918,143 @@ test("participant authority cannot invoke Host session controls", async () => {
     new Request("https://example.test/api/v1/session/end", {
       method: "POST",
       headers: { Authorization: `Bearer ${token}` },
+    }),
+    env,
+  );
+  assert.equal(response.status, 403);
+  assert.equal((await response.json()).code, "host_authority_required");
+  assert.equal(called, false);
+});
+
+test("Host reads a schema-conformant operational endpoint roster", async () => {
+  let captured;
+  const endpoints = [
+    {
+      endpoint_id: "end_host_0123456789",
+      audience: "host",
+      participant_id: null,
+      display_name: null,
+      platform: "browser",
+      capabilities: ["host_control", "private_display"],
+      authority_generation: 1,
+      revoked: false,
+    },
+    {
+      endpoint_id: "end_guest_012345678",
+      audience: "participant",
+      participant_id: "par_0123456789abcdef",
+      display_name: "Synthetic Guest",
+      platform: "browser",
+      capabilities: ["private_display", "touch_input"],
+      authority_generation: 1,
+      revoked: false,
+    },
+  ];
+  const env = await friendsEnvironment(async (name, request) => {
+    captured = { name, path: new URL(request.url).pathname, method: request.method };
+    return Response.json({ endpoints });
+  });
+  const token = await issueAuthorityToken(
+    {
+      sessionId: "ses_0123456789abcdef",
+      endpointId: "end_host_0123456789",
+      audience: "host",
+      participantId: null,
+      authorityGeneration: 1,
+      expiresAtUnixMs: Date.now() + 60_000,
+      origin: allowedOrigin,
+    },
+    signingKey,
+  );
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/session/endpoints", {
+      headers: { Origin: allowedOrigin, Cookie: `__Host-gp_authority=${token}` },
+    }),
+    env,
+  );
+
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  ajv.addSchema(schema);
+  const validate = ajv.getSchema(`${schema.$id}#/$defs/SessionEndpointRosterResponse`);
+  assert.equal(validate(body), true, JSON.stringify(validate.errors));
+  assert.deepEqual(captured, {
+    name: "ses_0123456789abcdef",
+    path: "/internal/session/endpoints",
+    method: "GET",
+  });
+});
+
+test("browser endpoint recovers validated context without exposing its cookie", async () => {
+  let captured;
+  const env = await friendsEnvironment(async (name, request) => {
+    captured = { name, path: new URL(request.url).pathname, method: request.method };
+    return Response.json({ authorized: true });
+  });
+  const expiresAt = Date.now() + 60_000;
+  const token = await issueAuthorityToken(
+    {
+      sessionId: "ses_0123456789abcdef",
+      endpointId: "end_guest_012345678",
+      audience: "participant",
+      participantId: "par_0123456789abcdef",
+      authorityGeneration: 3,
+      expiresAtUnixMs: expiresAt,
+      origin: allowedOrigin,
+    },
+    signingKey,
+  );
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/session/context", {
+      headers: { Origin: allowedOrigin, Cookie: `__Host-gp_authority=${token}` },
+    }),
+    env,
+  );
+  assert.equal(response.status, 200);
+  const body = await response.json();
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  ajv.addSchema(schema);
+  const validate = ajv.getSchema(`${schema.$id}#/$defs/SessionAuthorityContextResponse`);
+  assert.equal(validate(body), true, JSON.stringify(validate.errors));
+  assert.deepEqual(body, {
+    protocol_version: "1.0",
+    session_id: "ses_0123456789abcdef",
+    endpoint_id: "end_guest_012345678",
+    audience: "participant",
+    participant_id: "par_0123456789abcdef",
+    primary_authority_generation: 3,
+    authority_expires_at_unix_ms: expiresAt,
+  });
+  assert.equal(JSON.stringify(body).includes(token), false);
+  assert.deepEqual(captured, {
+    name: "ses_0123456789abcdef",
+    path: "/internal/session/authorize",
+    method: "POST",
+  });
+});
+
+test("participant authority cannot read the Host endpoint roster", async () => {
+  let called = false;
+  const env = await friendsEnvironment(async () => {
+    called = true;
+    return Response.json({});
+  });
+  const token = await issueAuthorityToken(
+    {
+      sessionId: "ses_0123456789abcdef",
+      endpointId: "end_guest_012345678",
+      audience: "participant",
+      participantId: "par_0123456789abcdef",
+      authorityGeneration: 1,
+      expiresAtUnixMs: Date.now() + 60_000,
+      origin: allowedOrigin,
+    },
+    signingKey,
+  );
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/session/endpoints", {
+      headers: { Origin: allowedOrigin, Cookie: `__Host-gp_authority=${token}` },
     }),
     env,
   );

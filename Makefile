@@ -1,4 +1,4 @@
-.PHONY: setup run-server run-host run-stage build-stage check-contracts generate-mobile-contracts check-mobile-contracts test-remote check-scenario-wasm check-cloudflare rehearse-packaged-stage rehearse-remote-lifecycle test
+.PHONY: setup run-server run-host run-play run-stage build-remote-clients build-stage check-contracts generate-mobile-contracts check-mobile-contracts test-remote check-scenario-wasm check-cloudflare rehearse-packaged-stage rehearse-stage-pairing-boundaries rehearse-remote-lifecycle rehearse-remote-game test
 
 setup:
 	@echo "Checking dependencies..."
@@ -16,8 +16,14 @@ run-server:
 	cd server && cargo run -p gp_server
 
 run-host:
-	@echo "Serving Host Console at http://localhost:8080"
-	@python3 -m http.server 8080 -d clients/host
+	@$(MAKE) build-remote-clients
+	@echo "Serving remote Host Console at http://localhost:8080"
+	@python3 -m http.server 8080 -d .tmp/remote-clients/host
+
+run-play:
+	@$(MAKE) build-remote-clients
+	@echo "Serving browser Companion fallback at http://localhost:8082"
+	@python3 -m http.server 8082 -d .tmp/remote-clients/play
 
 run-stage:
 	@echo "Serving browser-tested Stage at http://localhost:8081"
@@ -27,6 +33,9 @@ build-stage:
 	@command -v ares-package > /dev/null || (echo "LG webOS CLI command ares-package is required." && exit 1)
 	@test -f clients/stage/appinfo.json || (echo "Stage packaging metadata and original placeholder icons are not yet present; see known limitations." && exit 1)
 	@ares-package clients/stage
+
+build-remote-clients:
+	@node tooling/build_remote_clients.mjs
 
 check-contracts:
 	@python3 tooling/check_contract_artifacts.py
@@ -54,8 +63,14 @@ check-cloudflare:
 rehearse-packaged-stage:
 	@node tooling/rehearse_packaged_stage.mjs
 
+rehearse-stage-pairing-boundaries:
+	@node tooling/rehearse_stage_pairing_boundaries.mjs
+
 rehearse-remote-lifecycle:
 	@node tooling/rehearse_remote_lifecycle.mjs
+
+rehearse-remote-game:
+	@node tooling/rehearse_remote_game.mjs
 
 test:
 	@$(MAKE) check-contracts

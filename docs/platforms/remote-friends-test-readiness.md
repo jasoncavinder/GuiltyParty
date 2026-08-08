@@ -7,14 +7,14 @@ invitation until the project owner records the final decision below.
 
 ## Candidate Deployment
 
-- Reviewed source commit: `2501ff021b5a033c1357d9c9cea4f414a233fd6a`
-- Worker version: `9f74107a-d613-4566-91ae-ad6f88d1dcd5`
+- Reviewed source commit: `09ee0c09d5af16fd7275312612be5edcf5ecbeec`
+- Worker version: `a9a70148-51de-47dc-bc0d-5329c9e480a4`
 - Provider script ETag:
-  `1e6df89f84ba45a75a9a9b852a9d477dd8eec0f32be6a543d40371b7efa0055c`
+  `bbb78395675d19eb187f86753b086c9255cb51cbe6facb3ed63fce2bbea4282d`
 - Wrangler 4.119.0 dry-run runtime artifact manifest:
 
   - `worker.js` SHA-256:
-    `6b7ec8358e613ae53501d3042fef14634dca44cf5cb7e09d289528f1f4371f82`
+    `2bf963a6532a9b577671a7b2cf8d82340c7bb77b2a5351ec02983d30f8eeda3c`
   - `85b31fdbd5ef4c5f690c397f89cbbb70b9af79d5-gp_scenario_wasm.wasm`
     SHA-256:
     `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`
@@ -40,27 +40,27 @@ authority, connect tickets, player names, or private scenario content here.
 - [x] `/health` reports `friends-mvp-development` and `test-gated`.
 - [x] Host and participant-join edge limits return safe `429` responses under
       rehearsal.
-- [ ] The Stage pairing edge limit returns safe `429` responses under
+- [x] The Stage pairing edge limit returns safe `429` responses under
       rehearsal.
 - [x] Invalid or unavailable rate-limit bindings fail admission closed.
-- [ ] Invalid Host bootstrap and invalid, expired, rotated, and closed pairing
+- [x] Invalid Host bootstrap and invalid, expired, rotated, and closed pairing
       proofs fail before unauthorized state is created.
 - [x] A packaged Stage obtains bearer authority without a cookie, mints a
       30-second connect ticket, and connects without a URL credential.
-- [ ] A Stage display code alone grants no authority; only the memory-only
+- [x] A Stage display code alone grants no authority; only the memory-only
       polling secret can observe pending state or redeem after Host approval.
-- [ ] Pending Stage pairing discloses no session context, expires after 120
+- [x] Pending Stage pairing discloses no session context, expires after 120
       seconds, and cannot create more than one Stage endpoint when retried.
-- [ ] A Host-approved packaged Stage obtains bearer authority without a cookie,
+- [x] A Host-approved packaged Stage obtains bearer authority without a cookie,
       mints a 30-second connect ticket, and connects without a URL credential.
-- [ ] A consumed, expired, tampered, revoked, or stale-generation connect
+- [x] A consumed, expired, tampered, revoked, or stale-generation connect
       ticket fails.
-- [ ] Durable Object hibernation and reactivation preserve the authorized
+- [x] Durable Object hibernation and reactivation preserve the authorized
       connection and journal-derived projection.
-- [ ] Disconnect and reconnect issue a new connect ticket and restore only the
+- [x] Disconnect and reconnect issue a new connect ticket and restore only the
       Stage projection.
 - [x] Explicit session end revokes all authority and schedules deletion.
-- [ ] Alarm expiry and active-storage deletion are observed in the deployed
+- [x] Alarm expiry and active-storage deletion are observed in the deployed
       environment within the approved lifecycle.
 - [x] Emergency disable, restoration, rollback, and redeployment succeed.
 
@@ -74,6 +74,23 @@ authority, connect tickets, player names, or private scenario content here.
 - [ ] Two physical iOS Companions join as distinct participants and reconnect.
 - [ ] The four surfaces complete the full original scenario and deterministic
       outcome.
+
+## Automated Deployed-Environment Evidence
+
+- [x] A browser Host, two distinct browser fallback participants, and one
+      Host-approved packaged Stage completed the full deterministic scenario
+      through the deployed API using synthetic aliases.
+- [x] The rehearsal covered character assignment, both scenes, public and
+      recipient-authorized private clues, voting, deterministic outcome,
+      idempotent retry, forbidden participant mutation, reconnect, and
+      recipient-projection privacy.
+- [x] Stage transaction expiry, pending-response privacy, display-code-only
+      rejection, idempotent redemption, and live edge throttling passed.
+- [x] Fixed-window invitation, ticket, hibernation, reconnect, explicit-end,
+      alarm-expiry, and active-storage-deletion paths passed.
+
+These automated checks do not satisfy the unchecked physical-client evidence
+or authorize named-friend traffic.
 
 ## Draft Named-Tester Notice
 

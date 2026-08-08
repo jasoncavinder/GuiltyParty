@@ -476,6 +476,49 @@
         }
       }
     },
+    "/api/v1/session/endpoints": {
+      "get": {
+        "operationId": "listRemoteFriendsSessionEndpoints",
+        "summary": "List the current Host's operational endpoint roster",
+        "description": "Requires current browser Host authority. Returns endpoint identity and revocation metadata needed for Host support controls, never private gameplay content or credentials.",
+        "responses": {
+          "200": {
+            "description": "Current session endpoint roster",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/SessionEndpointRosterResponse"
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "503": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
+    "/api/v1/session/context": {
+      "get": {
+        "operationId": "getRemoteFriendsSessionContext",
+        "summary": "Recover the current validated browser endpoint context",
+        "description": "Requires current cookie authority and its exact browser origin. Returns no credential or gameplay projection.",
+        "responses": {
+          "200": {
+            "description": "Current endpoint context",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "../../control-plane/v1/control-plane.schema.json#/$defs/SessionAuthorityContextResponse"
+                }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Problem" },
+          "403": { "$ref": "#/components/responses/Problem" },
+          "503": { "$ref": "#/components/responses/Problem" }
+        }
+      }
+    },
     "/api/v1/session/endpoints/{endpoint_id}/revoke": {
       "post": {
         "operationId": "revokeRemoteFriendsEndpoint",

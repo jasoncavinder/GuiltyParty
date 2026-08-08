@@ -61,7 +61,8 @@ control-plane models with `make check-mobile-contracts`. Regenerate them only
 through `make generate-mobile-contracts`; generated sources are never edited by
 hand.
 
-The server requires a process-local host credential and does not load `.env` files automatically:
+The legacy LAN server requires a process-local Host credential and does not
+load `.env` files automatically:
 
 ```sh
 GP_HOST_TOKEN='replace-with-a-random-value-at-least-24-characters' make run-server
@@ -69,7 +70,14 @@ GP_HOST_TOKEN='replace-with-a-random-value-at-least-24-characters' make run-serv
 
 Copy the variable names from `.env.example` into your own ignored local configuration if desired; never commit real tokens. The AI adapter is disabled unless both `GP_AI_ENDPOINT` and `GP_AI_MODEL` are set, and it rejects public/remote endpoints.
 
-Browser clients receive the server address and Host credential at runtime. The server uses an exact browser-origin allowlist and persists its synthetic session journal under `server/data/` by default. See the [browser prototype runbook](docs/platforms/browser-prototype.md) for setup, replay, and reset instructions.
+The active Remote Friends MVP uses an exact-origin Cloudflare API, a static
+Browser Host, and a static Browser Companion fallback. Neither browser client
+stores credentials, invitations, or private content in browser-readable
+persistent storage. See the
+[remote client delivery runbook](docs/platforms/remote-client-delivery.md) for
+the review and manual deployment procedure. The earlier local browser
+prototype is archived as implementation history and deterministic-engine
+evidence.
 
 The Stage has only been exercised as a browser proof of concept. It is not yet packageable because approved original icon assets and `appinfo.json` are not present. The native iOS project and physical-device workflows also remain incomplete; see the [iOS setup status](docs/platforms/ios-setup.md).
 

@@ -322,6 +322,34 @@ export class SqliteSessionStore {
     return { ok: true };
   }
 
+  listHostEndpoints(authority, nowUnixMs) {
+    const validation = this.validateAuthority(authority, nowUnixMs);
+    if (!validation.ok || authority.audience !== "host") {
+      return { ok: false, status: 403, code: "host_authority_required", title: "Host authority required" };
+    }
+    const endpoints = Array.from(
+      this.sql.exec(
+        `SELECT e.endpoint_id, e.audience, e.participant_id, p.display_name,
+                e.platform, e.capabilities_json, e.authority_generation,
+                e.revoked_at_unix_ms
+         FROM endpoint_authorities e
+         LEFT JOIN guest_participants p ON p.participant_id = e.participant_id
+         ORDER BY CASE e.audience WHEN 'host' THEN 0 WHEN 'stage' THEN 1 ELSE 2 END,
+                  COALESCE(p.display_name, ''), e.endpoint_id`,
+      ),
+    ).map((row) => ({
+      endpoint_id: row.endpoint_id,
+      audience: row.audience,
+      participant_id: row.participant_id ?? null,
+      display_name: row.display_name ?? null,
+      platform: row.platform,
+      capabilities: JSON.parse(row.capabilities_json),
+      authority_generation: Number(row.authority_generation),
+      revoked: row.revoked_at_unix_ms !== null,
+    }));
+    return { ok: true, endpoints };
+  }
+
   registerWebSocketTicket({
     authority,
     ticketDigest,

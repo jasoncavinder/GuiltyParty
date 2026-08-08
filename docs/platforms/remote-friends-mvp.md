@@ -119,6 +119,12 @@ control operations:
 - `DELETE /api/v1/session/invitation` closes pairing
 - `POST /api/v1/session/endpoints/{endpoint_id}/revoke` increments and revokes a
   non-Host endpoint's authority and closes its current sockets
+- `GET /api/v1/session/endpoints` returns a Host-only operational roster needed
+  to identify and revoke a lost or duplicate endpoint; it contains no
+  credential or private gameplay content
+- `GET /api/v1/session/context` revalidates the current endpoint and lets a
+  browser recover its opaque session, endpoint, participant, and authority
+  generation after reload without exposing its HttpOnly cookie
 - `POST /api/v1/session/end` closes pairing, revokes every endpoint, closes
   sockets, and schedules active-storage deletion within seven days of that
   earlier end
@@ -159,15 +165,14 @@ both runtimes, compares their Stage projection, and asserts that private clue,
 objective, and individual-vote fields are absent. The Worker dry run bundles
 the resulting first-party module.
 
-## App Integration Blockers
+## Remaining Client Integration Blockers
 
 Before physical-client rehearsal, finish and document:
 
-- Host UI integration for invitation rotation, pairing close, endpoint
-  revocation, and explicit session end
-- deploy the API at `api.test.guiltyparty.app` and verify the approved Host and
-  browser Companion origins; deploy the Host and browser Companion fallback
-  separately at `host.test.guiltyparty.app` and `play.test.guiltyparty.app`
+- merge and manually deploy the reviewed Browser Host and Browser Companion
+  fallback to their separate approved Pages projects, then complete the
+  browser rehearsal in
+  [remote-client-delivery.md](remote-client-delivery.md)
 - iOS bearer injection, memory clearing, reconnect, and conformance fixtures
 - packaged webOS `null`-Origin CORS, ticket-subprotocol, memory clearing,
   reconnect, physical-device transport evidence, and private-field-negative

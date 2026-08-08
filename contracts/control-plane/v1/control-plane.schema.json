@@ -80,6 +80,117 @@
         }
       }
     },
+    "SessionEndpointRecord": {
+      "type": "object",
+      "required": [
+        "endpoint_id",
+        "audience",
+        "participant_id",
+        "display_name",
+        "platform",
+        "capabilities",
+        "authority_generation",
+        "revoked"
+      ],
+      "properties": {
+        "endpoint_id": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "audience": {
+          "type": "string",
+          "pattern": "^(host|stage|participant)$"
+        },
+        "participant_id": {
+          "oneOf": [
+            { "$ref": "#/$defs/Identifier" },
+            { "type": "null" }
+          ]
+        },
+        "display_name": {
+          "oneOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 80,
+              "pattern": "^[^\\u0000-\\u001F\\u007F-\\u009F]+$"
+            },
+            { "type": "null" }
+          ]
+        },
+        "platform": {
+          "$ref": "#/$defs/FeatureIdentifier"
+        },
+        "capabilities": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/FeatureIdentifier"
+          }
+        },
+        "authority_generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "revoked": {
+          "type": "boolean"
+        }
+      },
+      "description": "Host-only operational endpoint metadata. It is not scenario truth and contains no private gameplay content or credentials."
+    },
+    "SessionEndpointRosterResponse": {
+      "type": "object",
+      "required": ["protocol_version", "endpoints"],
+      "properties": {
+        "protocol_version": {
+          "$ref": "#/$defs/ProtocolVersion"
+        },
+        "endpoints": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SessionEndpointRecord"
+          }
+        }
+      }
+    },
+    "SessionAuthorityContextResponse": {
+      "type": "object",
+      "required": [
+        "protocol_version",
+        "session_id",
+        "endpoint_id",
+        "audience",
+        "participant_id",
+        "primary_authority_generation",
+        "authority_expires_at_unix_ms"
+      ],
+      "properties": {
+        "protocol_version": { "$ref": "#/$defs/ProtocolVersion" },
+        "session_id": { "$ref": "#/$defs/Identifier" },
+        "endpoint_id": { "$ref": "#/$defs/Identifier" },
+        "audience": {
+          "type": "string",
+          "pattern": "^(host|stage|participant)$"
+        },
+        "participant_id": {
+          "oneOf": [
+            { "$ref": "#/$defs/Identifier" },
+            { "type": "null" }
+          ]
+        },
+        "primary_authority_generation": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        },
+        "authority_expires_at_unix_ms": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9007199254740991
+        }
+      },
+      "description": "Current validated endpoint context used to recover a browser session after reload. It contains no credential or gameplay projection."
+    },
     "CompatibilityResponse": {
       "type": "object",
       "required": [

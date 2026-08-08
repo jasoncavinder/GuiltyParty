@@ -25,6 +25,10 @@ remains blocked by the operational and client acceptance gates below.
 - `POST /api/v1/websocket-tickets` lets only a current packaged Stage exchange
   its memory-only bearer for a registered, 30-second, single-use secondary
   WebSocket subprotocol credential.
+- `GET /api/v1/session/context` revalidates a browser cookie and returns only
+  the caller's opaque endpoint context for reload recovery.
+- `GET /api/v1/session/endpoints` gives only the Host a credential-free
+  operational roster for endpoint support and revocation.
 - `/ws/v1` validates the exact control subprotocol, origin, signed authority,
   endpoint generation, expiry, and current Durable Object authority record.
 - Credentialed browser API preflight and responses echo only an exact allowed
@@ -105,6 +109,23 @@ hibernatable connection and projection after reactivation, fresh-ticket
 reconnect, explicit end, alarm expiry, and active-session data deletion. It never accepts
 caller-selected lifetimes and does not change ordinary session defaults.
 
+Exercise the Stage transaction privacy and edge boundary separately:
+
+```sh
+GP_REMOTE_BASE_URL='https://api.test.guiltyparty.app' \
+GP_HOST_BOOTSTRAP_PROOF='<read from the protected operator store>' \
+make rehearse-stage-pairing-boundaries
+```
+
+Exercise the entire deterministic session with a browser Host, two browser
+fallback participants, and a Host-approved packaged Stage:
+
+```sh
+GP_REMOTE_BASE_URL='https://api.test.guiltyparty.app' \
+GP_HOST_BOOTSTRAP_PROOF='<read from the protected operator store>' \
+make rehearse-remote-game
+```
+
 ## Configuration Safety
 
 `wrangler.jsonc` declares the approved synthetic development Worker
@@ -123,6 +144,8 @@ The Remote Friends MVP boundary expects:
   operator-controlled Host creation proof
 - `ALLOWED_ORIGINS`, an exact comma-separated HTTPS allowlist for the browser
   Host and Companion fallback origins
+- `CLIENT_BUILD_POLICY_JSON`, the committed minimum-build policy for the four
+  approved external-test application identifiers
 - `SESSION_CREATE_RATE_LIMITER`, ten authenticated Host attempts per minute per
   Cloudflare location, and `SESSION_JOIN_RATE_LIMITER`, sixty validated-shape
   attempts per opaque session-resource digest per minute per location; both
@@ -153,11 +176,10 @@ responses contain it only in the non-cacheable HTTPS response.
 
 ## Remaining External-Test Gates
 
-- reconnect acceptance across real Durable Object hibernation
-- automated alarm expiry and deletion evidence
-- physical Host, webOS Stage, and two-iOS-Companion conformance
-- the approved `api.test.guiltyparty.app` deployment, packaged Stage Origin and
-  subprotocol evidence, named-tester notice, and explicit final owner approval
+- reviewed Browser Host and Companion fallback Pages deployment and browser UI
+  rehearsal
+- physical packaged webOS Stage and two-iOS-Companion conformance
+- named-tester notice and explicit final owner approval
 
 Until those pass, local runtime tests use synthetic aliases and the committed
 original scenario only.

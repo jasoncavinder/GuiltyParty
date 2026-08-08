@@ -48,6 +48,12 @@ export class GameSession extends DurableObject {
     if (url.pathname === `${INTERNAL_PREFIX}authorize-stage-pairing`) {
       return this.authorizeStagePairing(request);
     }
+    if (url.pathname === `${INTERNAL_PREFIX}authorize`) {
+      return this.authorizeEndpoint(request);
+    }
+    if (url.pathname === `${INTERNAL_PREFIX}endpoints`) {
+      return this.listEndpoints(request);
+    }
     if (url.pathname === `${INTERNAL_PREFIX}control`) {
       return this.controlSession(request);
     }
@@ -201,6 +207,36 @@ export class GameSession extends DurableObject {
       return internalProblem(401, validation.code, "Invalid authority");
     }
     return internalJson({ authorized: true });
+  }
+
+  async authorizeEndpoint(request) {
+    if (request.method !== "POST") {
+      return internalProblem(405, "method_not_allowed", "Method not allowed");
+    }
+    const authority = authorityFromInternalRequest(request);
+    if (!authority) {
+      return internalProblem(400, "invalid_authority_context", "Invalid authority context");
+    }
+    const validation = this.store.validateAuthority(authority, Date.now());
+    if (!validation.ok) {
+      return internalProblem(401, validation.code, "Invalid authority");
+    }
+    return internalJson({ authorized: true });
+  }
+
+  async listEndpoints(request) {
+    if (request.method !== "GET") {
+      return internalProblem(405, "method_not_allowed", "Method not allowed");
+    }
+    const authority = authorityFromInternalRequest(request);
+    if (!authority) {
+      return internalProblem(400, "invalid_authority_context", "Invalid authority context");
+    }
+    const result = this.store.listHostEndpoints(authority, Date.now());
+    if (!result.ok) {
+      return internalProblem(result.status, result.code, result.title);
+    }
+    return internalJson({ endpoints: result.endpoints });
   }
 
   async acceptWebSocket(request) {

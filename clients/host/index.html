@@ -1,63 +1,76 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Guilty Party - Host Console</title>
-    <style>
-        body { font-family: system-ui, sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
-        button, input { font: inherit; }
-        button { margin: 4px; padding: 8px 12px; }
-        label { display: block; margin: 10px 0; }
-        input { box-sizing: border-box; display: block; margin-top: 4px; max-width: 100%; padding: 8px; width: 32rem; }
-        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .controls { margin-top: 20px; padding-top: 20px; border-top: 1px solid #ccc; }
-        .ai-box { background: #e0f7fa; padding: 10px; border-radius: 4px; margin-top: 20px; }
-        .participant { border: 1px solid #ddd; border-radius: 4px; list-style: none; margin: 8px 0; padding: 10px; }
-        .status-error { color: #9b1c1c; }
-        .status-ok { color: #176b2c; }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.test.guiltyparty.app wss://api.test.guiltyparty.app http://127.0.0.1:* ws://127.0.0.1:* http://localhost:* ws://localhost:*; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+  <title>Guilty Party — Host</title>
+  <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <main class="container">
-        <h1>Host Console (MVP)</h1>
+  <header class="masthead">
+    <a class="brand" href="/" aria-label="Guilty Party Host home"><span>G</span> Guilty Party</a>
+    <div><span class="eyebrow">Host Console</span><span id="connection-badge" class="badge">Offline</span></div>
+  </header>
 
-        <form id="connection-form">
-            <label>
-                Server address
-                <input id="server-url" type="url" required autocomplete="url" aria-describedby="server-help">
-            </label>
-            <small id="server-help">Use the Mac's LAN address when opening this page from another device.</small>
-            <label>
-                Host token
-                <input id="host-token" type="password" required minlength="24" autocomplete="off">
-            </label>
-            <button type="submit">Connect as Host</button>
-        </form>
+  <main>
+    <section id="setup-panel" class="hero panel" aria-labelledby="setup-title">
+      <div>
+        <p class="kicker">Remote Friends MVP</p>
+        <h1 id="setup-title">Set the scene.</h1>
+        <p class="lede">Create one private, invitation-only test session. The operator proof is sent once and immediately cleared.</p>
+      </div>
+      <form id="create-form" class="stack">
+        <label>Operator proof<input id="bootstrap-proof" type="password" required minlength="24" autocomplete="off" spellcheck="false"></label>
+        <label>Game language<input id="gameplay-language" value="en" required pattern="[A-Za-z]{2,8}(-[A-Za-z0-9]{1,8})*" autocomplete="off"></label>
+        <button class="primary" type="submit">Create private session</button>
+      </form>
+      <p id="setup-status" class="status" role="status">Checking for an active Host session…</p>
+    </section>
 
-        <p id="status" role="status">Not connected.</p>
-        <section id="data" aria-live="polite"></section>
+    <div id="console" class="console hidden">
+      <section class="session-bar panel" aria-labelledby="session-title">
+        <div><p class="kicker">Live session</p><h1 id="session-title">The Stolen Artifact</h1><p id="session-meta" class="muted"></p></div>
+        <button id="end-session" class="danger" type="button">End session</button>
+      </section>
 
-        <section class="controls" aria-labelledby="host-actions-title">
-            <h2 id="host-actions-title">Host Actions</h2>
-            <button id="scene-1" type="button">Scene 1: The Gala</button>
-            <button id="scene-2" type="button">Scene 2: The Discovery</button>
-            <button id="clue-1" type="button">Reveal Footprints</button>
-            <button id="clue-2" type="button">Reveal Security Badge</button>
-            <button id="open-voting" type="button">Open Voting</button>
-            <button id="close-voting" type="button">Close Voting</button>
-            <h3>Synthetic Browser Simulation</h3>
-            <p>This creates identities for UI testing; it does not emulate a private Companion.</p>
-            <button id="join-alice" type="button">Join Synthetic Alice</button>
-            <button id="join-bob" type="button">Join Synthetic Bob</button>
-        </section>
+      <section class="grid two">
+        <article class="panel" aria-labelledby="invite-title">
+          <div class="section-head"><div><p class="kicker">Players</p><h2 id="invite-title">Invitation</h2></div><span id="invite-state" class="badge">Unavailable</span></div>
+          <p>Share this transfer text privately. It expires and is never placed in a link or browser storage.</p>
+          <textarea id="invitation-payload" rows="4" readonly aria-label="Player invitation transfer"></textarea>
+          <div class="button-row"><button id="copy-invitation" type="button">Copy invitation</button><button id="rotate-invitation" type="button">Rotate</button><button id="close-invitation" class="quiet" type="button">Close joining</button></div>
+        </article>
+        <article class="panel" aria-labelledby="stage-title">
+          <p class="kicker">Room display</p><h2 id="stage-title">Approve Stage</h2>
+          <p>Enter the eight-character code shown by the packaged LG TV app. A display code alone grants no access.</p>
+          <form id="stage-form" class="inline-form"><label class="grow">Stage code<input id="stage-code" placeholder="ABCD-2345" pattern="[A-HJ-NP-Z2-9]{4}-[A-HJ-NP-Z2-9]{4}" maxlength="9" required autocomplete="off" spellcheck="false"></label><button type="submit">Approve</button></form>
+          <p id="stage-status" class="status" role="status"></p>
+        </article>
+      </section>
 
-        <section class="ai-box" aria-labelledby="ai-title">
-            <h2 id="ai-title">AI Stage Manager</h2>
-            <button id="request-ai" type="button">Request Suggestion</button>
-            <p id="ai">Standing by.</p>
-        </section>
-    </main>
-    <script type="module" src="app.js"></script>
+      <section class="grid main-grid">
+        <div class="stack">
+          <article class="panel" aria-labelledby="flow-title">
+            <div class="section-head"><div><p class="kicker">Story control</p><h2 id="flow-title">Run of show</h2></div><span id="sequence" class="badge">Sequence —</span></div>
+            <div class="control-group"><h3>Scenes</h3><div class="button-row"><button data-command='{"type":"advance_scene","scene_id":"scene_1"}' type="button">1 · The Gala</button><button data-command='{"type":"advance_scene","scene_id":"scene_2"}' type="button">2 · The Discovery</button></div></div>
+            <div class="control-group"><h3>Clues</h3><div class="button-row"><button data-command='{"type":"reveal_clue","clue_id":"clue_1"}' type="button">Reveal muddy footprints</button><button data-command='{"type":"reveal_clue","clue_id":"clue_2"}' type="button">Reveal security badge</button></div></div>
+            <div class="control-group"><h3>Vote</h3><div class="button-row"><button data-command='{"type":"open_voting"}' type="button">Open voting</button><button data-command='{"type":"close_voting"}' type="button">Close & resolve</button></div></div>
+            <p id="action-status" class="status" role="status"></p>
+          </article>
+          <article class="panel" aria-labelledby="participants-title"><div class="section-head"><div><p class="kicker">Cast</p><h2 id="participants-title">Participants</h2></div><button id="refresh-roster" class="quiet" type="button">Refresh devices</button></div><div id="participants" class="empty">Waiting for players.</div></article>
+        </div>
+        <aside class="stack">
+          <article class="panel evidence" aria-labelledby="scene-title"><p class="kicker">Now playing</p><h2 id="scene-title">Awaiting first scene</h2><p id="scene-copy" class="lede-small">Assign the cast, then open the gala.</p></article>
+          <article class="panel" aria-labelledby="clues-title"><p class="kicker">Host evidence</p><h2 id="clues-title">Revealed clues</h2><div id="clues" class="empty">No clues revealed.</div></article>
+          <article class="panel" aria-labelledby="devices-title"><p class="kicker">Support</p><h2 id="devices-title">Connected devices</h2><div id="devices" class="empty">No roster loaded.</div></article>
+        </aside>
+      </section>
+    </div>
+  </main>
+  <script type="module" src="app.js"></script>
 </body>
 </html>

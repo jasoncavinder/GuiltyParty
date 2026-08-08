@@ -246,8 +246,17 @@ corresponding authentication-transport redesign recorded in ADR 0035.
 
 ### Completion Notes
 
-To be completed with PR links, test evidence, deployment version, test hostname,
-known limitations, deletion evidence, and the explicit external-test decision.
+The reviewed remote backend through PR #23 is deployed at
+`api.test.guiltyparty.app`; automated full-game, Stage-boundary, hibernation,
+reconnect, expiry, and active-storage-deletion rehearsals pass with synthetic
+actors. Browser Host and Companion fallback implementation and deployment
+preparation are in progress as a separate reviewed slice.
+
+MVP completion still requires deployment and browser rehearsal of those two
+static surfaces, physical packaged-webOS and iOS/iPadOS app implementation and
+conformance, the tester notice decision, and the explicit external-test
+go/no-go. Record final PR links, Pages and Worker versions, physical-device
+evidence, known limitations, and the owner decision here when those gates pass.
 
 ---
 
