@@ -26,14 +26,14 @@ function plain(value) {
 test("packaged Stage metadata is pinned to the approved development build", async () => {
   const appinfo = JSON.parse(await readFile(path.join(stageDirectory, "appinfo.json"), "utf8"));
   assert.equal(appinfo.id, "com.guiltyparty.stage");
-  assert.equal(appinfo.version, "0.1.0");
+  assert.equal(appinfo.version, "0.1.1");
   assert.equal(appinfo.type, "web");
   assert.equal(appinfo.main, "index.html");
   assert.equal(appinfo.icon, "icon.png");
   assert.deepEqual(plain(core.STAGE_BUILD), {
     application_id: "stage_webos",
-    application_version: "0.1.0",
-    build_number: 1,
+    application_version: "0.1.1",
+    build_number: 2,
   });
   assert.equal(core.API_ORIGIN, "https://api.test.guiltyparty.app");
   assert.equal(core.CONTROL_SUBPROTOCOL, "guiltyparty.control.v1");
@@ -274,16 +274,26 @@ test("envelope validation binds projection to the Stage context", () => {
   }), /Unsupported critical/u);
 });
 
-test("sequence tracker accepts continuity and reconnect refresh but resyncs gaps", () => {
+test("sequence tracker accepts monotonic complete projections and resyncs regressions", () => {
   const tracker = new core.SequenceTracker();
   assert.equal(tracker.accept(7), "apply");
   assert.equal(tracker.accept(7), "duplicate");
   assert.equal(tracker.accept(8), "apply");
-  assert.equal(tracker.accept(10), "resync");
+  assert.equal(tracker.accept(10), "apply");
   tracker.startConnection();
   assert.equal(tracker.accept(10), "apply");
   tracker.startConnection();
   assert.equal(tracker.accept(9), "resync");
+});
+
+test("connection health follows the documented 30 and 45 second boundaries", () => {
+  assert.equal(core.HEARTBEAT_INTERVAL_MS, 15_000);
+  assert.equal(core.connectionHealthAction(10_000, 39_999), "healthy");
+  assert.equal(core.connectionHealthAction(10_000, 40_000), "uncertain");
+  assert.equal(core.connectionHealthAction(10_000, 54_999), "uncertain");
+  assert.equal(core.connectionHealthAction(10_000, 55_000), "disconnect");
+  assert.equal(core.connectionHealthAction(10_000, 9_999), "disconnect");
+  assert.equal(core.connectionHealthAction(null, 55_000), "disconnect");
 });
 
 test("lifecycle reset overwrites every in-memory authority category", () => {

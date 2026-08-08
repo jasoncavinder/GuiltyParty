@@ -15,6 +15,10 @@
   var countdownTimer = null;
   var reconnectTimer = null;
   var stableTimer = null;
+  var heartbeatTimer = null;
+  var healthTimer = null;
+  var lastAuthenticatedActivityUnixMs = null;
+  var connectionIsUncertain = false;
   var reconnectAttempt = 0;
   var suspended = document.visibilityState === "hidden";
   var shuttingDown = false;
@@ -190,9 +194,12 @@
       }
       setConnectionState("Connected", "connected");
       hideReconnect();
+      startConnectionHealth(socket, generation);
       clearTimeout(stableTimer);
       stableTimer = setTimeout(function () { reconnectAttempt = 0; }, 60000);
-      requestProjection(socket);
+      if (!requestProjection(socket)) {
+        restartConnection("Refreshing public state", "The Stage could not request the current session state.");
+      }
     };
     socket.onmessage = function (event) {
       if (generation !== connectionGeneration || connection !== socket) return;
@@ -200,12 +207,14 @@
     };
     socket.onerror = function () {
       if (generation !== connectionGeneration || connection !== socket) return;
+      connectionIsUncertain = true;
       setConnectionState("Connection uncertain", "uncertain");
       showReconnect("Connection uncertain", "The Stage is waiting for a confirmed server connection.");
     };
     socket.onclose = function (event) {
       if (generation !== connectionGeneration || connection !== socket) return;
       connection = null;
+      stopConnectionHealth();
       clearTimeout(stableTimer);
       stableTimer = null;
       if (shuttingDown || suspended) return;
@@ -220,15 +229,20 @@
 
   function requestProjection(socket) {
     var authority = state.authority;
-    if (!authority || socket.readyState !== WebSocket.OPEN) return;
-    socket.send(JSON.stringify({
-      protocol_version: core.PROTOCOL_VERSION,
-      type: "get_projection",
-      message_id: messageIdentifier(),
-      session_id: authority.session_id,
-      endpoint_id: authority.endpoint_id,
-      payload: {}
-    }));
+    if (!authority || socket.readyState !== WebSocket.OPEN) return false;
+    try {
+      socket.send(JSON.stringify({
+        protocol_version: core.PROTOCOL_VERSION,
+        type: "get_projection",
+        message_id: messageIdentifier(),
+        session_id: authority.session_id,
+        endpoint_id: authority.endpoint_id,
+        payload: {}
+      }));
+      return true;
+    } catch (error) {
+      return false;
+    }
   }
 
   function receiveMessage(socket, encoded) {
@@ -254,15 +268,65 @@
       }
       return;
     }
+    recordAuthenticatedActivity();
     sequenceResult = state.sequence.accept(envelope.sequence);
     if (sequenceResult === "duplicate") return;
     if (sequenceResult === "resync") {
-      socket.close(1011, "Projection sequence requires resynchronization");
-      showReconnect("Refreshing public state", "The Stage detected a sequence gap and will request a complete projection.");
+      restartConnection("Refreshing public state", "The Stage rejected a regressed sequence and will request a complete projection.");
       return;
     }
     state.projection = envelope.projection;
     renderProjection(envelope.projection);
+  }
+
+  function startConnectionHealth(socket, generation) {
+    stopConnectionHealth();
+    lastAuthenticatedActivityUnixMs = Date.now();
+    connectionIsUncertain = false;
+    heartbeatTimer = setInterval(function () {
+      if (generation !== connectionGeneration || connection !== socket) return;
+      if (!requestProjection(socket)) {
+        restartConnection("Refreshing public state", "The Stage could not confirm the current session state.");
+      }
+    }, core.HEARTBEAT_INTERVAL_MS);
+    healthTimer = setInterval(function () {
+      var action;
+      if (generation !== connectionGeneration || connection !== socket) return;
+      action = core.connectionHealthAction(lastAuthenticatedActivityUnixMs, Date.now());
+      if (action === "disconnect") {
+        restartConnection("Reconnecting", "The Stage did not receive authenticated activity and will request fresh public state.");
+        return;
+      }
+      if (action === "uncertain" && !connectionIsUncertain) {
+        connectionIsUncertain = true;
+        setConnectionState("Connection uncertain", "uncertain");
+        showReconnect("Connection uncertain", "The last public view remains visible while the Stage verifies current state.");
+      }
+    }, 1000);
+  }
+
+  function recordAuthenticatedActivity() {
+    lastAuthenticatedActivityUnixMs = Date.now();
+    if (!connectionIsUncertain) return;
+    connectionIsUncertain = false;
+    setConnectionState("Connected", "connected");
+    hideReconnect();
+  }
+
+  function stopConnectionHealth() {
+    clearInterval(heartbeatTimer);
+    clearInterval(healthTimer);
+    heartbeatTimer = null;
+    healthTimer = null;
+    lastAuthenticatedActivityUnixMs = null;
+    connectionIsUncertain = false;
+  }
+
+  function restartConnection(title, message) {
+    setConnectionState("Reconnecting", "uncertain");
+    showReconnect(title, message);
+    closeSocket(1011, "Fresh public state required");
+    scheduleReconnect();
   }
 
   function renderProjection(projection) {
@@ -442,6 +506,7 @@
     clearInterval(countdownTimer);
     clearTimeout(reconnectTimer);
     clearTimeout(stableTimer);
+    stopConnectionHealth();
     pairingTimer = null;
     countdownTimer = null;
     reconnectTimer = null;
@@ -473,6 +538,7 @@
 
   function closeSocket(code, reason) {
     var socket = connection;
+    stopConnectionHealth();
     connectionGeneration += 1;
     connection = null;
     if (socket && (socket.readyState === WebSocket.OPEN || socket.readyState === WebSocket.CONNECTING)) {
