@@ -306,6 +306,14 @@ objective separation, individual-vote privacy, reconnect, and deterministic
 outcome. This evidence used synthetic aliases and does not substitute for the
 remaining physical-client checks.
 
+For that PR #23 promotion, the provider script ETag was
+`bbb78395675d19eb187f86753b086c9255cb51cbe6facb3ed63fce2bbea4282d`.
+A Wrangler 4.119.0 dry run of exact reviewed commit
+`09ee0c09d5af16fd7275312612be5edcf5ecbeec` produced `worker.js` SHA-256
+`2bf963a6532a9b577671a7b2cf8d82340c7bb77b2a5351ec02983d30f8eeda3c`
+and the existing WebAssembly SHA-256
+`3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`.
+
 The reviewed PR #25 promotion advanced the API to Worker version
 `603165d6-001a-4de4-98e6-faad5e78c426` from exact `dev` commit
 `e85b486b1928704382329bbd73d4fa0a4ae28539`. The provider script ETag is
@@ -324,14 +332,6 @@ packaged-Stage, pairing-boundary, and lifecycle rehearsals passed against the
 promoted API. The lifecycle rehearsal required a follow-up correction so its
 synthetic Host and fallback-participant requests declare the supported build
 metadata enforced by PR #25; the deployed service itself was unchanged.
-
-The deployed version's provider script ETag is
-`bbb78395675d19eb187f86753b086c9255cb51cbe6facb3ed63fce2bbea4282d`.
-A fresh Wrangler 4.119.0 dry run of exact reviewed commit
-`09ee0c09d5af16fd7275312612be5edcf5ecbeec` produced `worker.js` SHA-256
-`2bf963a6532a9b577671a7b2cf8d82340c7bb77b2a5351ec02983d30f8eeda3c`
-and the existing WebAssembly SHA-256
-`3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`.
 
 The first-party WebAssembly module and original scenario are bundled with the
 Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
