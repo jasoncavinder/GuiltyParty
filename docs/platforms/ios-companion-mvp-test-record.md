@@ -30,7 +30,13 @@ device identifier, or signing-team identifier.
 | App build | iPad Pro 13-inch (M5), iOS 26.5 simulator, Release | Passed |
 | Launch/layout inspection | iPhone 17 Pro and iPad Pro 13-inch (M5) simulators | Passed for the account-free join flow |
 | Test service health | `https://api.test.guiltyparty.app/health` | Passed: reported the test-gated Remote Friends profile |
-| Physical iPhone build/run | iPhone 12 Pro Max on iOS 27 developer beta | Blocked before build: Xcode timed out twice while the destination remained `Device is busy (Preparing …)` |
+| Physical iPhone build/install/launch | iPhone 12 Pro Max on iOS 27 developer beta | Passed: compatible development services mounted, signed app installed, launch succeeded, and the process remained running |
+| XCTest | iPhone 12 Pro Max on iOS 27 developer beta, Debug | Passed: 23 tests |
+
+Physical validation initially reported a missing interface-orientation
+declaration for a non-full-screen universal target. Debug and Release now
+declare all four orientations; the clean physical rebuild completed without
+that warning.
 
 The XCTest suite covers GP1 acceptance/rejection, generated-model JSON
 round trips, shared positive and negative fixtures, additive fields, unknown
@@ -77,11 +83,9 @@ fresh-projection reconnect gate.
 - The current v1 participant projection does not include vote-target character
   identifiers. The synthetic test UI accepts an identifier supplied by the test
   coordinator; canonical validation remains server-side.
-- The physical iPhone was paired and visible to Apple device tools, but Xcode
-  26.6 remained in `Preparing` for the iOS 27 beta device and timed out twice.
-  The owner must keep the phone unlocked and connected and let Xcode finish
-  preparing beta device support. A subsequent signed run will also require a
-  local development-team selection. These settings must remain uncommitted.
+- Physical signing used the owner's existing local Apple Development account
+  only through command-line build overrides. No development team, profile,
+  certificate, or device identifier is stored in the project or committed.
 - There is no physical iPad, so this record will include simulator evidence only
   for iPadOS and will not claim physical-iPad evidence.
 - A live synthetic join requires an active GP1 invitation issued through the
