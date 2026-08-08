@@ -2,10 +2,11 @@
 
 ## Record Metadata
 
-- Date: 2026-08-07 (Pacific/Honolulu)
+- Date: 2026-08-07 through 2026-08-08 (Pacific/Honolulu)
 - Branch: `feature/ios-companion-mvp`
 - Target branch: `dev`
-- Product: `GuiltyPartyCompanion` 0.1.0 (1)
+- Initial product: `GuiltyPartyCompanion` 0.1.0 (1)
+- Post-remediation product: `GuiltyPartyCompanion` 0.1.1 (2)
 - Minimum OS: iOS/iPadOS 18.0
 - Host: macOS 26.6 Tahoe
 - IDE: Xcode 26.6 (17F113)
@@ -101,8 +102,18 @@ the Companion awaited a WebSocket ping. A read-only process sample showed
 again from the URL-session completion path. Xcode stopped on the resulting
 runtime assertion, which also stopped UI actions and privacy timers. Companion
 `0.1.1 (2)` gates that completion atomically so only its first invocation may
-resume the continuation. The live end-session and timeout checks remain pending
-until that candidate build is installed and rehearsed.
+resume the continuation.
+
+After PR #33 merged, exact merged `dev` source at `697e540` was built and
+installed on the physical iPhone and the iPad (A16), iOS 26.5 simulator. Both
+Companions joined a fresh synthetic session with the Browser Host and packaged
+LG Stage. After more than 60 seconds of steady connectivity—at least four
+15-second ping intervals—the iPad privacy-view control still responded
+immediately. Ending the session then cleared private content and reported the
+ended state on both Companions; the Host and Stage also reported the end, and
+the iPad remained responsive. This closes the observed duplicate-completion
+freeze and live session-end privacy check. It does not establish persistent
+participant identity or automatic recovery after application termination.
 
 The XCTest suite covers GP1 acceptance/rejection, generated-model JSON
 round trips, shared positive and negative fixtures, additive fields, unknown
@@ -129,10 +140,11 @@ clearing, and the fresh-projection reconnect gate.
 | --- | --- | --- |
 | Background, lock, or inactive scene | Immediate app-switcher shield, projection discarded, actions disabled | Unit covered; source inspected |
 | Connection uncertainty | At 30 seconds without authenticated activity the projection is discarded and actions are disabled; at 45 seconds the socket closes and reconnect begins | Unit covered; live timing check pending |
+| Repeated WebSocket ping | A completion callback may settle each async ping only once | Unit covered; live steady-connection check passed across at least four ping intervals on physical iPhone and iPad simulator |
 | Reconnection | Full authorized projection required before reveal | Unit covered |
 | Screen recording or mirroring | Capture trait shields content and disables actions until capture ends and a fresh projection arrives | Unit covered; source inspected; live private projection unavailable |
 | Screenshot | Honest post-capture warning; no prevention/deletion claim | Source inspected; live private projection unavailable |
-| Revocation or session end | Authority and projection discarded; no private actions | Unit covered; live synthetic check pending availability of an authorized invitation |
+| Revocation or session end | Authority and projection discarded; no private actions | Unit covered; live synthetic session-end check passed on physical iPhone and iPad simulator |
 | Persistence review | No UserDefaults, Keychain, file cache, logs, analytics, or diagnostics upload | Source inspection passed |
 
 ## Generated Contract and Dependency Evidence
@@ -159,3 +171,8 @@ clearing, and the fresh-projection reconnect gate.
 - A live synthetic join requires an active GP1 invitation issued through the
   authorized Host flow. No credential is sourced from logs, environment dumps,
   pasteboard inspection, or repository content.
+- Participant authority remains memory-only in this MVP. If automatic socket
+  recovery is no longer possible and the player manually joins again, the
+  server creates a new participant while the prior participant remains in the
+  roster. Persistent device-bound resume and Host-assisted participant cleanup
+  remain future work.

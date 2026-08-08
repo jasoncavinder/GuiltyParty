@@ -91,10 +91,18 @@ simulator does not satisfy that claim.
 
 The rehearsal found that the deployed worker did not broadcast admission state
 to already-connected endpoints and that an unwritable stale socket could stop
-fan-out before later recipients. A Host reload and Stage fresh-ticket reconnect
-retrieved complete current projections. The candidate fix is locally verified
-but must be reviewed, merged, deployed, and rehearsed again before this record
-can treat live fan-out as closed.
+fan-out before later recipients. After the fan-out remediation was reviewed,
+merged, and deployed, a repeat physical rehearsal showed the Browser Host
+update immediately when a Companion joined and the packaged Stage update
+without a manual restart when participant state changed. The Stage liveness
+remediation was also reviewed, merged, packaged as 0.1.1 (2), installed on the
+physical LG television, and exercised against the deployed service.
+
+The same repeat rehearsal exposed a duplicate WebSocket-ping completion that
+froze the iPad simulator Companion under Xcode. After PR #33 merged, Companion
+0.1.1 (2) remained responsive for more than 60 seconds of steady connectivity
+and all four active surfaces reported explicit session end. Both Companions
+cleared private content; the iPad result remains simulator evidence.
 
 ## Automated Deployed-Environment Evidence
 
@@ -140,6 +148,9 @@ the contact method, before the first invitation.
 ## Known Limitations
 
 - Guest authority is temporary and does not provide account recovery.
+- Companion authority is memory-only. When automatic recovery is unavailable,
+  a manual rejoin currently creates a new participant and leaves the prior
+  participant in the session roster until session end.
 - Restarting the packaged Stage requires pairing again.
 - Reconnect restores a full authorized projection; delta replay is not yet
   implemented.
