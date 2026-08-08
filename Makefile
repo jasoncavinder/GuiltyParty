@@ -27,12 +27,15 @@ run-play:
 
 run-stage:
 	@echo "Serving browser-tested Stage at http://localhost:8081"
-	@python3 -m http.server 8081 -d clients/stage
+	@python3 -m http.server 8081 -d apps/tv/lg-webos
 
 build-stage:
 	@command -v ares-package > /dev/null || (echo "LG webOS CLI command ares-package is required." && exit 1)
-	@test -f clients/stage/appinfo.json || (echo "Stage packaging metadata and original placeholder icons are not yet present; see known limitations." && exit 1)
-	@ares-package clients/stage
+	@test -f apps/tv/lg-webos/appinfo.json || (echo "LG webOS Stage packaging metadata is required." && exit 1)
+	@node tooling/build_webos_stage.mjs
+	@mkdir -p .tmp/webos-packages
+	@ares-package --check .tmp/lg-webos-stage-app
+	@ares-package -o .tmp/webos-packages .tmp/lg-webos-stage-app
 
 build-remote-clients:
 	@node tooling/build_remote_clients.mjs

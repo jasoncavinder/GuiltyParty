@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.test.guiltyparty.app wss://api.test.guiltyparty.app; img-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Guilty Party Stage</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app" class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="brand">Guilty Party</p>
+        <p class="surface-label">Public Stage</p>
+      </div>
+      <p id="connection-state" class="connection-state" role="status">Starting</p>
+    </header>
+
+    <section id="setup-view" class="setup-view" aria-labelledby="setup-title">
+      <p class="eyebrow">Connect this television</p>
+      <h1 id="setup-title">Preparing a Stage code…</h1>
+      <p id="setup-message" class="setup-message">This display receives public story information only.</p>
+      <p id="pairing-code" class="pairing-code" hidden aria-label="Stage pairing code"></p>
+      <p id="pairing-expiry" class="pairing-expiry"></p>
+      <div class="setup-actions">
+        <button id="retry-button" class="primary-button focusable" type="button" hidden>Try again</button>
+      </div>
+      <p class="privacy-note">The code is not a credential. Approval and authority remain with the Host and server.</p>
+    </section>
+
+    <section id="stage-view" class="stage-view" hidden aria-live="polite">
+      <div class="story-heading">
+        <div>
+          <p id="scenario-version" class="eyebrow"></p>
+          <h1 id="scenario-title"></h1>
+        </div>
+        <div id="voting-status" class="voting-status"></div>
+      </div>
+
+      <section class="scene-panel" aria-labelledby="scene-title">
+        <h2 id="scene-title"></h2>
+        <p id="scene-narrative" class="scene-narrative"></p>
+      </section>
+
+      <div class="public-columns">
+        <section class="public-panel clues-panel" aria-labelledby="clues-title">
+          <h2 id="clues-title">Public clues</h2>
+          <ul id="clues-list" class="public-list"></ul>
+        </section>
+        <section class="public-panel cast-panel" aria-labelledby="cast-title">
+          <h2 id="cast-title">Cast</h2>
+          <ul id="cast-list" class="cast-list"></ul>
+        </section>
+      </div>
+
+      <section id="outcome-panel" class="outcome-panel" hidden aria-labelledby="outcome-title">
+        <p class="eyebrow">Public outcome</p>
+        <h2 id="outcome-title">The story concludes</h2>
+        <p id="outcome-resolution"></p>
+      </section>
+    </section>
+
+    <div id="connection-overlay" class="connection-overlay" hidden>
+      <div class="overlay-card">
+        <p class="eyebrow">Connection update</p>
+        <h2 id="overlay-title">Reconnecting…</h2>
+        <p id="overlay-message">The last public view remains visible while a fresh connection is established.</p>
+      </div>
+    </div>
+
+    <div id="exit-dialog" class="dialog-backdrop" hidden role="dialog" aria-modal="true" aria-labelledby="exit-title">
+      <div class="dialog-card">
+        <p class="eyebrow">Leave the Stage?</p>
+        <h2 id="exit-title">Exit Guilty Party</h2>
+        <p>Exiting clears this Stage’s in-memory authority. Pair again the next time the app opens.</p>
+        <div class="dialog-actions">
+          <button id="stay-button" class="secondary-button focusable" type="button">Stay</button>
+          <button id="exit-button" class="primary-button focusable" type="button">Exit</button>
+        </div>
+      </div>
+    </div>
+  </main>
+  <script src="stage-core.js"></script>
+  <script src="stage.js"></script>
+</body>
+</html>

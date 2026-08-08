@@ -6,13 +6,15 @@ on:
     paths:
       - "server/**"
       - "apps/web/**"
-      - "clients/**"
+      - "apps/mobile/**"
+      - "apps/tv/lg-webos/**"
       - "services/remote/**"
       - "contracts/**"
       - "tests/contracts/**"
       - "tooling/check_contract_artifacts.py"
       - "tooling/check_contract_schema.mjs"
       - "tooling/check_scenario_wasm.mjs"
+      - "tooling/build_webos_stage.mjs"
       - "tooling/build_remote_clients.mjs"
       - "tooling/remote_rehearsal_websocket.mjs"
       - "tooling/rehearse_remote_game.mjs"
@@ -30,13 +32,15 @@ on:
     paths:
       - "server/**"
       - "apps/web/**"
-      - "clients/**"
+      - "apps/mobile/**"
+      - "apps/tv/lg-webos/**"
       - "services/remote/**"
       - "contracts/**"
       - "tests/contracts/**"
       - "tooling/check_contract_artifacts.py"
       - "tooling/check_contract_schema.mjs"
       - "tooling/check_scenario_wasm.mjs"
+      - "tooling/build_webos_stage.mjs"
       - "tooling/build_remote_clients.mjs"
       - "tooling/remote_rehearsal_websocket.mjs"
       - "tooling/rehearse_remote_game.mjs"
@@ -89,7 +93,7 @@ jobs:
       - name: Test
         run: cargo test --locked --workspace --all-targets
       - name: Check browser JavaScript syntax
-        run: node --check ../apps/web/shared/control-client.js && node --check ../apps/web/host/app.js && node --check ../apps/web/companion/app.js && node --check ../clients/stage/stage.js
+        run: node --check ../apps/web/shared/control-client.js && node --check ../apps/web/host/app.js && node --check ../apps/web/companion/app.js && node --check ../apps/tv/lg-webos/shell.js && node --check ../apps/tv/lg-webos/stage-core.js && node --check ../apps/tv/lg-webos/stage.js && node --check ../tooling/build_webos_stage.mjs
 
   mobile-contracts:
     runs-on: macos-26
@@ -109,3 +113,21 @@ jobs:
         run: cargo fetch --locked --manifest-path server/Cargo.toml
       - name: Check generated mobile contracts
         run: make check-mobile-contracts
+      - name: Test native iPhone Companion
+        run: >-
+          xcodebuild
+          -project apps/mobile/GuiltyPartyCompanion.xcodeproj
+          -scheme GuiltyPartyCompanion
+          -configuration Debug
+          -destination 'platform=iOS Simulator,name=iPhone 17 Pro,OS=26.5'
+          -derivedDataPath "$RUNNER_TEMP/guiltyparty-ios-derived-data"
+          test
+      - name: Test native iPad Companion
+        run: >-
+          xcodebuild
+          -project apps/mobile/GuiltyPartyCompanion.xcodeproj
+          -scheme GuiltyPartyCompanion
+          -configuration Debug
+          -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M5),OS=26.5'
+          -derivedDataPath "$RUNNER_TEMP/guiltyparty-ios-derived-data"
+          test

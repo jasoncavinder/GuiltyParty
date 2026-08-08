@@ -252,10 +252,13 @@ reconnect, expiry, and active-storage-deletion rehearsals pass with synthetic
 actors. The Browser Host and Companion fallback are manually deployed as
 separate Cloudflare Pages projects from the same exact reviewed `dev` commit.
 
-MVP completion still requires physical packaged-webOS and iOS/iPadOS app
-implementation and conformance, the tester notice decision, and the explicit
-external-test go/no-go. Record final physical-device evidence, known
-limitations, and the owner decision here when those gates pass.
+MVP completion still requires physical packaged-webOS validation, a live
+authorized multi-client rehearsal with the native iOS/iPadOS Companion,
+physical-iPad validation, the tester notice decision, and the explicit
+external-test go/no-go. The universal native Companion implementation,
+simulator conformance suite, and physical preview-iPhone build/test evidence are
+recorded in the iOS platform documentation; they do not satisfy the remaining
+live-room or physical-iPad gates.
 
 ---
 
