@@ -71,14 +71,30 @@ authority, connect tickets, player names, or private scenario content here.
 
 ## Physical Client Evidence
 
-- [ ] Browser Host completes session creation and every Host control.
-- [ ] Fully packaged LG webOS Stage confirms its actual Origin header, CORS
-      behavior, subprotocol support, memory clearing, and reconnect behavior.
-- [ ] Stage receives no private objective, private clue, individual vote, bearer
+- [x] Browser Host completes session creation and every Host control.
+- [x] Fully packaged LG webOS Stage confirms its opaque sandbox boundary, CORS
+      behavior, subprotocol support, memory clearing, and fresh-ticket reconnect
+      behavior on webOS 5.6.2-21.
+- [x] Stage receives no private objective, private clue, individual vote, bearer
       credential belonging to another endpoint, or participant-only state.
 - [ ] Two physical iOS Companions join as distinct participants and reconnect.
-- [ ] The four surfaces complete the full original scenario and deterministic
-      outcome.
+- [x] The four active surfaces complete the full original scenario and
+      deterministic outcome.
+
+The 2026-08-08 physical rehearsal used a Browser Host, a packaged LG Stage, one
+physical iPhone Companion, and one iPad simulator Companion. Both participant
+endpoints joined independently, received only their authorized objectives and
+clues, voted privately, and recovered after backgrounding. The public Stage
+showed only aggregate voting and the deterministic resolution. The remaining
+unchecked item deliberately requires a second physical iOS/iPadOS device; a
+simulator does not satisfy that claim.
+
+The rehearsal found that the deployed worker did not broadcast admission state
+to already-connected endpoints and that an unwritable stale socket could stop
+fan-out before later recipients. A Host reload and Stage fresh-ticket reconnect
+retrieved complete current projections. The candidate fix is locally verified
+but must be reviewed, merged, deployed, and rehearsed again before this record
+can treat live fan-out as closed.
 
 ## Automated Deployed-Environment Evidence
 

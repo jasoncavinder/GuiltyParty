@@ -44,6 +44,57 @@ rejection, connection-health deadlines, stable-connectivity backoff reset, and
 native CI execution. No new physical-device result is claimed for those
 follow-up changes.
 
+## 2026-08-08 Remediation and Live Rehearsal
+
+- Branch: `bugfix/native-companion-rehearsal`
+- Physical destination: iPhone 12 Pro Max on iOS 27 developer beta
+- Tablet destination: iPad Pro 13-inch (M5), iOS 26.5 simulator
+- Packaged public display: LG 65NANO85UNA on webOS 5.6.2-21
+- Remote surfaces: deployed Browser Host and Cloudflare Remote Friends service
+
+The first live native join exposed two defects. The Companion encoded JSON
+control messages as WebSocket binary frames while the server intentionally
+accepts text frames only. The iPad simulator also produced repeatable UIKit
+keyboard/autocorrection crashes when the focused invitation `SecureField` was
+cleared and replaced during the join transition. The remediation sends only
+UTF-8 text control frames, rejects non-UTF-8 payloads, resigns sensitive field
+focus before replacing the join view, yields one main-actor turn for keyboard
+removal, and prevents duplicate join submission while the request is pending.
+
+Verification after remediation:
+
+| Check | Destination/configuration | Result |
+| --- | --- | --- |
+| XCTest | iPhone 12 Pro Max, iOS 27 developer beta | Passed: 31 tests |
+| XCTest | iPhone simulator | Passed: 31 tests |
+| XCTest | iPad Pro 13-inch (M5), iOS 26.5 simulator | Passed: 31 tests |
+| `make test` | repository host | Passed: contract checks, 69 Remote Friends tests, native/WebAssembly parity, and all Rust unit/doc tests |
+| `make check-mobile-contracts` | repository host | Passed: Swift and Kotlin fixture suites each passed 28 cases |
+| `make check-cloudflare` | repository host | Passed: scenario parity and Wrangler dry-run |
+
+One physical Companion and one simulated tablet Companion then joined a fresh
+synthetic session as distinct participants. The Browser Host, packaged LG
+Stage, and both Companions completed assignment, two scenes, a public clue, a
+recipient-authorized private clue, voting, aggregate vote display, and the
+expected deterministic outcome. Each Companion received only its own objective
+and authorized clues; the Stage received neither private objective, the private
+clue, nor individual vote choices. Backgrounding and foregrounding both native
+destinations hid private content, recovered a fresh projection, and restored
+the completed session without a crash.
+
+The rehearsal also exposed a server fan-out defect: admission did not notify
+already-connected endpoints, and one stale socket could terminate a projection
+broadcast before later recipients. The live Stage recovered through its
+fresh-ticket reconnect path. This branch schedules projection broadcast after
+successful admission and isolates each socket delivery so a failed endpoint
+cannot starve another recipient. Those server changes passed local tests and a
+Cloudflare dry-run but were not deployed during this rehearsal.
+
+No invitation, authority, operator proof, WebSocket ticket, participant alias,
+private scenario text, device identifier, or signing-team identifier is
+recorded here. The iPad result remains simulator evidence; no physical-iPad
+claim is made.
+
 The XCTest suite covers GP1 acceptance/rejection, generated-model JSON
 round trips, shared positive and negative fixtures, additive fields, unknown
 critical variants, portable numeric limits, privacy fixtures, participant

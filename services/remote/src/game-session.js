@@ -15,6 +15,7 @@ import { offeredSubprotocols } from "./friends-auth.js";
 import { scenarioEngine } from "./scenario-engine.js";
 import { SessionCore, SessionFault } from "./session-core.js";
 import { SqliteSessionStore } from "./sqlite-session-store.js";
+import { fanOutWebSockets } from "./websocket-fanout.js";
 
 const INTERNAL_PREFIX = "/internal/session/";
 
@@ -152,6 +153,10 @@ export class GameSession extends DurableObject {
     if (!result.ok) {
       return internalProblem(result.status, result.code, result.title);
     }
+    // Admission is canonical scenario state. Notify already-connected Host,
+    // Stage, and participant endpoints without making a successful join
+    // response depend on any one existing socket remaining writable.
+    this.ctx.waitUntil(this.broadcastProjections());
     return internalJson({
       audience: result.audience,
       endpoint_id: result.endpointId,
@@ -505,21 +510,21 @@ export class GameSession extends DurableObject {
 
   async broadcastProjections() {
     const journal = await this.store.loadJournal();
-    for (const socket of this.ctx.getWebSockets()) {
+    await fanOutWebSockets(this.ctx.getWebSockets(), async (socket) => {
       const attachment = socket.deserializeAttachment();
       if (!validAttachment(attachment)) {
         socket.close(1011, "Connection context unavailable");
-        continue;
+        return;
       }
       const authority = authorityFromAttachment(attachment);
       if (!this.store.validateAuthority(authority, Date.now()).ok) {
         socket.close(1008, "Authority no longer valid");
-        continue;
+        return;
       }
       const result = scenarioEngine.project(journal, attachment);
       if (!result.ok) {
         socket.close(1011, "Projection unavailable");
-        continue;
+        return;
       }
       socket.send(JSON.stringify({
         protocol_version: PROTOCOL_VERSION,
@@ -530,7 +535,7 @@ export class GameSession extends DurableObject {
         server_sequence: result.server_sequence,
         payload: { projection: projectionWithLanguage(result.projection, this.store.gameplayLanguage()) },
       }));
-    }
+    });
   }
 
   serializeOperation(operation) {

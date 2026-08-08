@@ -72,3 +72,21 @@ test("CI gates remote-only changes with the pinned Node runtime and offline chec
   assert.match(workflow, /run: make test-remote/);
   assert.match(workflow, /run: make check-cloudflare/);
 });
+
+test("participant admission schedules a fresh projection for connected endpoints", async () => {
+  const source = await readFile(
+    new URL("../src/game-session.js", import.meta.url),
+    "utf8",
+  );
+  const joinStart = source.indexOf("async joinSession(request)");
+  const notify = source.indexOf(
+    "this.ctx.waitUntil(this.broadcastProjections());",
+    joinStart,
+  );
+  const response = source.indexOf("return internalJson({", notify);
+
+  assert.notEqual(joinStart, -1);
+  assert.notEqual(notify, -1);
+  assert.notEqual(response, -1);
+  assert.ok(joinStart < notify && notify < response);
+});
