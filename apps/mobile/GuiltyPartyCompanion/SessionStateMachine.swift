@@ -85,6 +85,17 @@ struct SessionStateMachine: Equatable, Sendable {
         }
     }
 
+    mutating func markConnectionUncertain(socketID eventSocketID: UUID) throws {
+        guard eventSocketID == socketID else {
+            throw SessionModelError.staleSocketEvent
+        }
+        projection = nil
+        privacyInterruption = .connectionUncertain
+        needsFreshProjection = true
+        currentConnectionIsRejoin = true
+        phase = .reconnecting
+    }
+
     mutating func expireOrRevoke() {
         clearPrivateState()
         phase = .expiredOrRevoked

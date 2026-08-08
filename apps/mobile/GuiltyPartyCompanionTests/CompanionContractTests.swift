@@ -303,6 +303,29 @@ final class SessionStateMachineTests: XCTestCase {
         XCTAssertTrue(machine.needsFreshProjection)
         XCTAssertEqual(machine.phase, .reconnecting)
     }
+
+    func testAuthenticatedInactivityShieldRetainsSocketForFreshProjection() throws {
+        let socket = UUID()
+        var machine = SessionStateMachine()
+        machine.beginJoin()
+        machine.beginSocket(id: socket, isRejoin: false)
+        try machine.applyProjection(projection(assigned: true), sequence: 4, socketID: socket)
+
+        try machine.markConnectionUncertain(socketID: socket)
+
+        XCTAssertNil(machine.projection)
+        XCTAssertTrue(machine.needsFreshProjection)
+        XCTAssertEqual(machine.privacyInterruption, .connectionUncertain)
+        XCTAssertEqual(machine.socketID, socket)
+        XCTAssertNoThrow(
+            try machine.applyProjection(
+                projection(assigned: true),
+                sequence: 9,
+                socketID: socket
+            )
+        )
+        XCTAssertEqual(machine.phase, .rejoined)
+    }
 }
 
 final class CommandAndRequestTests: XCTestCase {
@@ -466,6 +489,22 @@ final class ReconnectBackoffTests: XCTestCase {
 
         XCTAssertEqual(backoff.attempt, 0)
         XCTAssertEqual(backoff.nextMaximumDelaySeconds(), 1)
+    }
+}
+
+final class ConnectionHealthPolicyTests: XCTestCase {
+    func testNegotiationAndStabilityDurationsMatchAcceptedPolicy() {
+        XCTAssertEqual(ConnectionHealthPolicy.negotiationTimeout, .seconds(5))
+        XCTAssertEqual(ConnectionHealthPolicy.privacyShieldDelay, .seconds(30))
+        XCTAssertEqual(ConnectionHealthPolicy.disconnectDelay, .seconds(45))
+        XCTAssertEqual(ConnectionHealthPolicy.stableConnectionDuration, .seconds(60))
+    }
+
+    func testAuthenticatedInactivityTransitionsFromHealthyToShieldedToDisconnected() {
+        XCTAssertEqual(ConnectionHealthPolicy.action(after: .seconds(29)), .healthy)
+        XCTAssertEqual(ConnectionHealthPolicy.action(after: .seconds(30)), .shield)
+        XCTAssertEqual(ConnectionHealthPolicy.action(after: .seconds(44)), .shield)
+        XCTAssertEqual(ConnectionHealthPolicy.action(after: .seconds(45)), .disconnect)
     }
 }
 

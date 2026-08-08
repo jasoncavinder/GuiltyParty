@@ -87,6 +87,17 @@ the transport with control-frame pings, rejects an unexpected subprotocol or
 critical variant, and applies only validated participant projections for the
 issued session, endpoint, and participant.
 
+Connection establishment uses the accepted ten-second transport deadline and a
+five-second post-open deadline for the first authorized projection. Control-
+plane v1 does not yet define a dedicated heartbeat envelope, so this bounded
+MVP client pairs its 15-second control-frame ping with an authenticated
+`get_projection` request. A valid recipient projection or other validated
+server envelope refreshes authenticated activity. At 30 seconds without such
+activity the app clears and shields private content while leaving the socket a
+final recovery window; at 45 seconds it closes the connection and enters full-
+jitter reconnect. Backoff resets only after 60 uninterrupted seconds with a
+current private projection.
+
 After every connection or reconnection the client asks for a complete fresh
 projection. Private content and actions remain unavailable until that projection
 passes protocol, context, recipient-boundary, portable-integer, and sequence

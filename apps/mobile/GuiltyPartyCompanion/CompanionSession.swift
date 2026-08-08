@@ -12,8 +12,13 @@ final class CompanionSession: ObservableObject {
     private var socket: FirstPartyWebSocket?
     private var receiveTask: Task<Void, Never>?
     private var heartbeatTask: Task<Void, Never>?
+    private var connectionHealthTask: Task<Void, Never>?
+    private var negotiationTask: Task<Void, Never>?
+    private var stableConnectionTask: Task<Void, Never>?
     private var reconnectTask: Task<Void, Never>?
     private var socketID: UUID?
+    private var lastAuthenticatedActivity: ContinuousClock.Instant?
+    private var connectionIsShieldedForInactivity = false
     private var reconnectBackoff = ReconnectBackoff()
     private var hasOpenedConnection = false
     private var appIsActive = true
@@ -175,6 +180,7 @@ final class CompanionSession: ObservableObject {
                 : "Connected. Requesting your private view…"
             startReceiveLoop(socketID: eventSocketID)
             startHeartbeatLoop(socketID: eventSocketID)
+            startNegotiationDeadline(socketID: eventSocketID)
             Task { [weak self] in
                 await self?.requestFreshProjection(socketID: eventSocketID)
             }
@@ -236,6 +242,7 @@ final class CompanionSession: ObservableObject {
                     try await Task.sleep(for: .seconds(15))
                     guard eventSocketID == socketID, let socket else { return }
                     try await socket.ping()
+                    await requestFreshProjection(socketID: eventSocketID)
                 } catch is CancellationError {
                     return
                 } catch {
@@ -244,6 +251,98 @@ final class CompanionSession: ObservableObject {
                     return
                 }
             }
+        }
+    }
+
+    private func startNegotiationDeadline(socketID eventSocketID: UUID) {
+        negotiationTask?.cancel()
+        negotiationTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: ConnectionHealthPolicy.negotiationTimeout)
+            } catch {
+                return
+            }
+            guard let self,
+                  eventSocketID == socketID,
+                  state.needsFreshProjection
+            else {
+                return
+            }
+            protectAndReconnect(reason: .connectionUncertain)
+        }
+    }
+
+    private func recordAuthenticatedActivity(
+        socketID eventSocketID: UUID,
+        establishesPrivateView: Bool = false
+    ) {
+        guard eventSocketID == socketID else { return }
+        lastAuthenticatedActivity = ContinuousClock.now
+        if establishesPrivateView {
+            negotiationTask?.cancel()
+            negotiationTask = nil
+            connectionIsShieldedForInactivity = false
+            startConnectionHealthMonitoring(socketID: eventSocketID)
+            startStableConnectionTimerIfNeeded(socketID: eventSocketID)
+        }
+    }
+
+    private func startConnectionHealthMonitoring(socketID eventSocketID: UUID) {
+        guard connectionHealthTask == nil else { return }
+        connectionHealthTask = Task { [weak self] in
+            guard let self else { return }
+            while !Task.isCancelled {
+                do {
+                    try await Task.sleep(for: .seconds(1))
+                } catch {
+                    return
+                }
+                guard eventSocketID == socketID,
+                      let lastAuthenticatedActivity
+                else {
+                    return
+                }
+                let elapsed = lastAuthenticatedActivity.duration(to: ContinuousClock.now)
+                switch ConnectionHealthPolicy.action(after: elapsed) {
+                case .healthy:
+                    continue
+                case .shield:
+                    guard !connectionIsShieldedForInactivity else { continue }
+                    do {
+                        try state.markConnectionUncertain(socketID: eventSocketID)
+                    } catch {
+                        return
+                    }
+                    connectionIsShieldedForInactivity = true
+                    stableConnectionTask?.cancel()
+                    stableConnectionTask = nil
+                    statusMessage = PrivacyInterruption.connectionUncertain.message
+                    await requestFreshProjection(socketID: eventSocketID)
+                case .disconnect:
+                    protectAndReconnect(reason: .connectionUncertain)
+                    return
+                }
+            }
+        }
+    }
+
+    private func startStableConnectionTimerIfNeeded(socketID eventSocketID: UUID) {
+        guard stableConnectionTask == nil else { return }
+        stableConnectionTask = Task { [weak self] in
+            do {
+                try await Task.sleep(for: ConnectionHealthPolicy.stableConnectionDuration)
+            } catch {
+                return
+            }
+            guard let self,
+                  eventSocketID == socketID,
+                  !state.needsFreshProjection,
+                  !connectionIsShieldedForInactivity
+            else {
+                return
+            }
+            reconnectBackoff.reset()
+            stableConnectionTask = nil
         }
     }
 
@@ -262,7 +361,7 @@ final class CompanionSession: ObservableObject {
                 sequence: envelope.serverSequence,
                 socketID: eventSocketID
             )
-            reconnectBackoff.reset()
+            recordAuthenticatedActivity(socketID: eventSocketID, establishesPrivateView: true)
             advertisedGameplayLanguage = nextProjection.gameplayLanguage
             statusMessage = state.phase == .rejoined
                 ? "Rejoined with a fresh server-authorized private view."
@@ -279,10 +378,12 @@ final class CompanionSession: ObservableObject {
         case .commandResult(let envelope):
             try state.acceptServerSequence(envelope.serverSequence, socketID: eventSocketID)
             try handleCommandResult(envelope)
+            recordAuthenticatedActivity(socketID: eventSocketID)
         case .error(let envelope):
             if let sequence = envelope.serverSequence {
                 try state.acceptServerSequence(sequence, socketID: eventSocketID)
             }
+            recordAuthenticatedActivity(socketID: eventSocketID)
             if let correlationID = envelope.correlationId?.value {
                 pendingCommands.removeValue(forKey: correlationID)
             }
@@ -365,9 +466,17 @@ final class CompanionSession: ObservableObject {
         receiveTask = nil
         heartbeatTask?.cancel()
         heartbeatTask = nil
+        connectionHealthTask?.cancel()
+        connectionHealthTask = nil
+        negotiationTask?.cancel()
+        negotiationTask = nil
+        stableConnectionTask?.cancel()
+        stableConnectionTask = nil
         socket?.cancel()
         socket = nil
         socketID = nil
+        lastAuthenticatedActivity = nil
+        connectionIsShieldedForInactivity = false
     }
 
     private func failProtocol() {
@@ -411,6 +520,29 @@ final class CompanionSession: ObservableObject {
         guard authority.expiresAtUnixMilliseconds > now else {
             throw SessionModelError.expiredOrRevoked
         }
+    }
+}
+
+enum ConnectionHealthAction: Equatable, Sendable {
+    case healthy
+    case shield
+    case disconnect
+}
+
+enum ConnectionHealthPolicy {
+    static let negotiationTimeout: Duration = .seconds(5)
+    static let privacyShieldDelay: Duration = .seconds(30)
+    static let disconnectDelay: Duration = .seconds(45)
+    static let stableConnectionDuration: Duration = .seconds(60)
+
+    static func action(after elapsed: Duration) -> ConnectionHealthAction {
+        if elapsed >= disconnectDelay {
+            return .disconnect
+        }
+        if elapsed >= privacyShieldDelay {
+            return .shield
+        }
+        return .healthy
     }
 }
 

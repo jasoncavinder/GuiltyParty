@@ -5,6 +5,7 @@
 - [Remote Friends MVP service contract](remote-friends-mvp.md)
 - [Remote MVP client delivery preparation](remote-client-delivery.md)
 - [webOS packaged Stage transport spike](webos-transport-spike.md)
+- [Packaged LG webOS Stage build and test runbook](webos-stage-build-and-test.md)
 
 This directory will hold platform-specific constraints and integration notes.
 It does not commit the project to a framework or shared implementation strategy.
