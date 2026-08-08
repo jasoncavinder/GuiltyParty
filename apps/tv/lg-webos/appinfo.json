@@ -1,0 +1,9 @@
+{
+  "id": "com.guiltyparty.stage",
+  "version": "0.1.0",
+  "vendor": "Guilty Party",
+  "type": "web",
+  "main": "index.html",
+  "title": "Guilty Party Stage",
+  "icon": "icon.png"
+}
