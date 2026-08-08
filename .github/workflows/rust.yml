@@ -5,8 +5,8 @@ on:
     branches: [dev, main]
     paths:
       - "server/**"
+      - "apps/web/**"
       - "apps/mobile/**"
-      - "clients/**"
       - "apps/tv/lg-webos/**"
       - "services/remote/**"
       - "contracts/**"
@@ -31,8 +31,8 @@ on:
     branches: [dev, main]
     paths:
       - "server/**"
+      - "apps/web/**"
       - "apps/mobile/**"
-      - "clients/**"
       - "apps/tv/lg-webos/**"
       - "services/remote/**"
       - "contracts/**"
@@ -93,7 +93,7 @@ jobs:
       - name: Test
         run: cargo test --locked --workspace --all-targets
       - name: Check browser JavaScript syntax
-        run: node --check ../clients/shared/control-client.js && node --check ../clients/host/app.js && node --check ../clients/companion-web/app.js && node --check ../clients/stage/stage.js && node --check ../apps/tv/lg-webos/shell.js && node --check ../apps/tv/lg-webos/stage-core.js && node --check ../apps/tv/lg-webos/stage.js && node --check ../tooling/build_webos_stage.mjs
+        run: node --check ../apps/web/shared/control-client.js && node --check ../apps/web/host/app.js && node --check ../apps/web/companion/app.js && node --check ../apps/tv/lg-webos/shell.js && node --check ../apps/tv/lg-webos/stage-core.js && node --check ../apps/tv/lg-webos/stage.js && node --check ../tooling/build_webos_stage.mjs
 
   mobile-contracts:
     runs-on: macos-26

@@ -63,9 +63,9 @@ constraint: local external stylesheets and scripts are rejected inside the
 sandbox, and the app-scoped `file://` shell makes CSP `'self'` unreliable for
 those files. The package build therefore inlines only the repository's
 first-party CSS and JavaScript into the two packaged documents. Source remains
-split under `apps/tv/lg-webos` for review and tests; the legacy
-`clients/stage` scaffold is not packaged. The networking child remains sandboxed without
-`allow-same-origin`; its generated CSP has `default-src 'none'`, permits inline
+split under `apps/tv/lg-webos` for review and tests; the earlier browser-only
+Stage scaffold has been superseded. The networking child remains sandboxed
+without `allow-same-origin`; its generated CSP has `default-src 'none'`, permits inline
 first-party style/script required by the runtime, and limits connections to the
 exact HTTPS API and WSS endpoint. No credential or private data is embedded.
 

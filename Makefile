@@ -27,7 +27,7 @@ run-play:
 
 run-stage:
 	@echo "Serving browser-tested Stage at http://localhost:8081"
-	@python3 -m http.server 8081 -d clients/stage
+	@python3 -m http.server 8081 -d apps/tv/lg-webos
 
 build-stage:
 	@command -v ares-package > /dev/null || (echo "LG webOS CLI command ares-package is required." && exit 1)

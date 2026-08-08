@@ -23,12 +23,14 @@ Reviewed source-of-truth files:
 - `server/crates/gp_scenario_wasm/Cargo.toml`
 - `server/crates/gp_session/Cargo.toml`
 - `server/crates/gp_server/Cargo.toml`
-- browser client HTML, CSS, and JavaScript under `clients/`
+- browser application HTML, CSS, and JavaScript under `apps/web/`
 
-The browser Host and Stage currently have no package-manager manifest and load
-no third-party script, stylesheet, font, or media asset from an external origin.
-Their application visuals are first-party HTML and CSS. This statement must be
-rechecked from the built artifact before external distribution.
+The browser Host and Companion fallback under `apps/web/`, and the packaged LG
+Stage source under `apps/tv/lg-webos/`, currently have no package-manager
+manifest and load no third-party script, stylesheet, font, or media asset from
+an external origin. Their application visuals are first-party HTML and CSS.
+This statement must be rechecked from the built artifacts before external
+distribution.
 
 ## Direct Prototype Components Awaiting Retrospective Review
 
