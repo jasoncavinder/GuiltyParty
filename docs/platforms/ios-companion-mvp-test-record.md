@@ -95,6 +95,15 @@ private scenario text, device identifier, or signing-team identifier is
 recorded here. The iPad result remains simulator evidence; no physical-iPad
 claim is made.
 
+The post-PR #32 physical rehearsal later exposed an iPad-simulator freeze while
+the Companion awaited a WebSocket ping. A read-only process sample showed
+`FirstPartyWebSocket.ping()` attempting to resume the same checked continuation
+again from the URL-session completion path. Xcode stopped on the resulting
+runtime assertion, which also stopped UI actions and privacy timers. Companion
+`0.1.1 (2)` gates that completion atomically so only its first invocation may
+resume the continuation. The live end-session and timeout checks remain pending
+until that candidate build is installed and rehearsed.
+
 The XCTest suite covers GP1 acceptance/rejection, generated-model JSON
 round trips, shared positive and negative fixtures, additive fields, unknown
 critical variants, portable numeric limits, privacy fixtures, participant
