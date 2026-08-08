@@ -142,6 +142,21 @@ test("browser client sources avoid persistent storage, URL credentials, and thir
   }
 });
 
+test("Host session end uses an accessible in-page confirmation", async () => {
+  const [html, application] = await Promise.all([
+    readFile(path.join(repository, "apps/web/host/index.html"), "utf8"),
+    readFile(path.join(repository, "apps/web/host/app.js"), "utf8"),
+  ]);
+
+  assert.match(html, /<dialog id="end-session-dialog"[^>]+aria-labelledby="end-session-title"[^>]+aria-describedby="end-session-description">/u);
+  assert.match(html, /id="cancel-end-session"[^>]+type="button"/u);
+  assert.match(html, /id="confirm-end-session"[^>]+type="submit"/u);
+  assert.match(application, /endSessionDialog\.showModal\(\)/u);
+  assert.match(application, /if \(endingSession\) event\.preventDefault\(\)/u);
+  assert.match(application, /if \(endSessionDialog\.open\) endSessionDialog\.close\(\)/u);
+  assert.equal(/\bconfirm\s*\(/u.test(application), false, "browser-native confirmation can be invisible in embedded browser surfaces");
+});
+
 test("browser client build produces isolated Cloudflare Pages artifacts", async () => {
   await execFileAsync(process.execPath, ["tooling/build_remote_clients.mjs"], { cwd: repository });
   for (const surface of ["host", "play"]) {
