@@ -8,8 +8,8 @@ import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
-const stageDirectory = path.join(repository, "clients/stage");
-const packagedStageDirectory = path.join(repository, ".tmp/webos-stage-app");
+const stageDirectory = path.join(repository, "apps/tv/lg-webos");
+const packagedStageDirectory = path.join(repository, ".tmp/lg-webos-stage-app");
 const execFileAsync = promisify(execFile);
 const coreSource = await readFile(path.join(stageDirectory, "stage-core.js"), "utf8");
 const context = vm.createContext({});

@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; frame-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Guilty Party Stage</title>
+  <link rel="stylesheet" href="shell.css">
+</head>
+<body>
+  <!--
+    A packaged webOS file document emits Origin: file:// on older runtimes.
+    The sandbox gives the networking document the opaque Origin serialization
+    required by ADR 0035 without granting it access to the file-origin shell.
+  -->
+  <iframe id="stage-frame" title="Guilty Party Stage" src="stage.html" sandbox="allow-scripts"></iframe>
+  <script src="shell.js"></script>
+</body>
+</html>

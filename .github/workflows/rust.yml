@@ -87,7 +87,7 @@ jobs:
       - name: Test
         run: cargo test --locked --workspace --all-targets
       - name: Check browser JavaScript syntax
-        run: node --check ../clients/shared/control-client.js && node --check ../clients/host/app.js && node --check ../clients/companion-web/app.js && node --check ../clients/stage/stage.js
+        run: node --check ../clients/shared/control-client.js && node --check ../clients/host/app.js && node --check ../clients/companion-web/app.js && node --check ../clients/stage/stage.js && node --check ../apps/tv/lg-webos/stage-core.js && node --check ../apps/tv/lg-webos/stage.js && node --check ../tooling/build_webos_stage.mjs
 
   mobile-contracts:
     runs-on: macos-26

@@ -37,9 +37,11 @@ make check-cloudflare
 make build-stage
 ```
 
-The build keeps reviewable source split under `clients/stage`, generates the
-older-webOS-compatible inline package tree at `.tmp/webos-stage-app`, validates
-that generated app, and writes:
+The packaged television application lives under `apps/tv/lg-webos`; the
+separate `clients/stage` browser prototype remains legacy scaffold and is not a
+package input. The build keeps reviewable webOS source split under the app
+directory, generates the older-runtime-compatible inline package tree at
+`.tmp/lg-webos-stage-app`, validates that generated app, and writes:
 
 ```text
 .tmp/webos-packages/com.guiltyparty.stage_0.1.0_all.ipk
@@ -62,11 +64,11 @@ directory rather than assuming a global simulator search path:
 
 ```sh
 LG_WEBOS_TV_SDK_HOME="$HOME/Projects/webOS-SDK/TV" \
-ares-launch -s 6.0 clients/stage \
+ares-launch -s 6.0 apps/tv/lg-webos \
   -sp "$HOME/Projects/webOS-SDK/TV/Simulator/webOS_TV_6.0_Simulator_1.4.1"
 
 LG_WEBOS_TV_SDK_HOME="$HOME/Projects/webOS-SDK/TV" \
-ares-launch -s 26 clients/stage \
+ares-launch -s 26 apps/tv/lg-webos \
   -sp "$HOME/Projects/webOS-SDK/TV/Simulator/webOS_TV_26_Simulator_1.5.0"
 ```
 

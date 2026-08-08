@@ -3,8 +3,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const sourceDirectory = path.join(repositoryRoot, "clients", "stage");
-const outputDirectory = path.join(repositoryRoot, ".tmp", "webos-stage-app");
+const sourceDirectory = path.join(repositoryRoot, "apps", "tv", "lg-webos");
+const outputDirectory = path.join(repositoryRoot, ".tmp", "lg-webos-stage-app");
 
 async function source(name) {
   return readFile(path.join(sourceDirectory, name), "utf8");
