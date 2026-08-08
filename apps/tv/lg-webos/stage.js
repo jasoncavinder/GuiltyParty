@@ -114,10 +114,7 @@
         return;
       }
       join = core.validateJoin(result.body, Date.now());
-      pairing.polling_secret = null;
-      state.pairing = null;
-      clearInterval(countdownTimer);
-      countdownTimer = null;
+      clearPairing();
       state.authority = {
         token: join.token,
         session_id: join.session_id,

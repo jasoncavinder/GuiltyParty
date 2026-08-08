@@ -111,6 +111,109 @@ test("deallocated and expired pairing responses render as code expiry", async ()
   assert.match(stageScript, /expirePairing\(\)/u);
 });
 
+test("successful Stage approval clears the consumed pairing code", async () => {
+  const stageScript = await readFile(path.join(stageDirectory, "stage.js"), "utf8");
+  const elements = new Map();
+  const timeouts = [];
+  const now = Date.now();
+  const responses = [
+    {
+      status: 201,
+      body: {
+        protocol_version: "1.0",
+        pairing_code: "ABCD-EFGH",
+        polling_secret: "synthetic-polling-secret-0123456789",
+        redeem_path: "/api/v1/stage-pairings/ABCD-EFGH/redeem",
+        expires_at_unix_ms: now + 120_000,
+        poll_after_ms: 500,
+      },
+    },
+    {
+      status: 200,
+      body: {
+        protocol_version: "1.0",
+        token: "synthetic-stage-authority",
+        session_id: "session-synthetic",
+        endpoint_id: "endpoint-stage-synthetic",
+        room_id: "room-synthetic",
+        participant_id: null,
+        authority_transport: "bearer",
+        authority_expires_at_unix_ms: now + 3_600_000,
+        primary_authority_generation: 1,
+        websocket_transport: "ticket_subprotocol",
+        websocket_ticket_endpoint: "/api/v1/websocket-tickets",
+      },
+    },
+  ];
+
+  function element(id) {
+    if (!elements.has(id)) {
+      elements.set(id, {
+        addEventListener() {},
+        appendChild() {},
+        className: "",
+        firstChild: null,
+        focus() {},
+        hidden: false,
+        textContent: "",
+      });
+    }
+    return elements.get(id);
+  }
+
+  const stageContext = vm.createContext({
+    clearInterval() {},
+    clearTimeout(timer) {
+      if (timer) timer.cleared = true;
+    },
+    document: {
+      activeElement: null,
+      addEventListener() {},
+      createElement: () => element("created"),
+      getElementById: element,
+      querySelectorAll: () => [],
+      visibilityState: "visible",
+    },
+    fetch() {
+      if (responses.length === 0) return new Promise(() => {});
+      const response = responses.shift();
+      return Promise.resolve({
+        headers: { get: () => null },
+        json: () => Promise.resolve(response.body),
+        ok: true,
+        status: response.status,
+      });
+    },
+    navigator: { onLine: true },
+    setInterval: () => ({ interval: true }),
+    setTimeout(callback) {
+      const timer = { callback, cleared: false };
+      timeouts.push(timer);
+      return timer;
+    },
+    WebSocket: { CONNECTING: 0, OPEN: 1 },
+    window: {
+      GuiltyPartyStageCore: core,
+      addEventListener() {},
+      parent: { postMessage() {} },
+    },
+  });
+
+  vm.runInContext(stageScript, stageContext, { filename: "stage.js" });
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(element("pairing-code").textContent, "ABCD-EFGH");
+  assert.equal(element("pairing-code").hidden, false);
+
+  const pollTimer = timeouts.find((timer) => !timer.cleared);
+  assert.ok(pollTimer);
+  pollTimer.callback();
+  await new Promise((resolve) => setImmediate(resolve));
+
+  assert.equal(element("pairing-code").textContent, "");
+  assert.equal(element("pairing-code").hidden, true);
+  assert.equal(element("pairing-expiry").textContent, "");
+});
+
 test("Stage projection is copied into a public-only retained shape", () => {
   const projection = core.sanitizeProjection(publicEnvelope.payload.projection);
   assert.deepEqual(Object.keys(plain(projection)).sort(), [
