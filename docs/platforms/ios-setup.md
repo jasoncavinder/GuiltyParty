@@ -12,7 +12,7 @@ factor.
 
 ## Project Configuration
 
-- Project: `clients/companion/GuiltyPartyCompanion.xcodeproj`
+- Project: `apps/mobile/GuiltyPartyCompanion.xcodeproj`
 - Shared scheme and application target: `GuiltyPartyCompanion`
 - Unit-test target: `GuiltyPartyCompanionTests`
 - Product name: `GuiltyPartyCompanion`
@@ -154,14 +154,14 @@ Then build and test the shared scheme on one iPhone and one iPad destination:
 
 ```sh
 xcodebuild \
-  -project clients/companion/GuiltyPartyCompanion.xcodeproj \
+  -project apps/mobile/GuiltyPartyCompanion.xcodeproj \
   -scheme GuiltyPartyCompanion \
   -configuration Debug \
   -destination 'platform=iOS Simulator,name=SELECTED_IPHONE' \
   test
 
 xcodebuild \
-  -project clients/companion/GuiltyPartyCompanion.xcodeproj \
+  -project apps/mobile/GuiltyPartyCompanion.xcodeproj \
   -scheme GuiltyPartyCompanion \
   -configuration Debug \
   -destination 'platform=iOS Simulator,name=SELECTED_IPAD' \
