@@ -5,8 +5,8 @@ enum CompanionEnvironment {
     static let webSocketURL = URL(string: "wss://api.test.guiltyparty.app/ws/v1")!
     static let controlSubprotocol = "guiltyparty.control.v1"
     static let applicationID = "companion_ios"
-    static let applicationVersion = "0.1.0"
-    static let buildNumber: Int64 = 1
+    static let applicationVersion = "0.1.1"
+    static let buildNumber: Int64 = 2
     static let maximumResponseBytes = 262_144
 
     static func shortRequestConfiguration() -> URLSessionConfiguration {
@@ -264,7 +264,9 @@ final class FirstPartyWebSocket: @unchecked Sendable {
 
     func ping() async throws {
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            let completionGate = OneShotCompletionGate()
             task.sendPing { error in
+                guard completionGate.claim() else { return }
                 if let error {
                     continuation.resume(throwing: error)
                 } else {
@@ -277,6 +279,19 @@ final class FirstPartyWebSocket: @unchecked Sendable {
     func cancel() {
         task.cancel(with: .goingAway, reason: nil)
         session.invalidateAndCancel()
+    }
+}
+
+final class OneShotCompletionGate: @unchecked Sendable {
+    private let lock = NSLock()
+    private var claimed = false
+
+    func claim() -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !claimed else { return false }
+        claimed = true
+        return true
     }
 }
 

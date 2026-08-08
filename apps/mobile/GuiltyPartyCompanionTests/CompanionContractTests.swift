@@ -369,8 +369,8 @@ final class CommandAndRequestTests: XCTestCase {
             ["private_display", "touch_input"]
         )
         XCTAssertEqual(participant.endpoint.clientBuild?.applicationId.value, "companion_ios")
-        XCTAssertEqual(participant.endpoint.clientBuild?.applicationVersion, "0.1.0")
-        XCTAssertEqual(participant.endpoint.clientBuild?.buildNumber, 1)
+        XCTAssertEqual(participant.endpoint.clientBuild?.applicationVersion, "0.1.1")
+        XCTAssertEqual(participant.endpoint.clientBuild?.buildNumber, 2)
     }
 
     func testWebSocketRequestKeepsBearerOutOfURLAndOffersProtocol() {
@@ -399,6 +399,20 @@ final class CommandAndRequestTests: XCTestCase {
         XCTAssertThrowsError(try WebSocketControlFrame.message(from: Data([0xFF]))) { error in
             XCTAssertEqual(error as? SessionModelError, .protocolViolation)
         }
+    }
+
+    func testPingCompletionCanBeClaimedOnlyOnceAcrossConcurrentCallbacks() {
+        let gate = OneShotCompletionGate()
+        let counter = LockedClaimCounter()
+
+        DispatchQueue.concurrentPerform(iterations: 100) { _ in
+            if gate.claim() {
+                counter.increment()
+            }
+        }
+
+        XCTAssertEqual(counter.value, 1)
+        XCTAssertFalse(gate.claim())
     }
 
     func testShortRequestAndWebSocketUseDistinctResourceTimeouts() {
@@ -572,6 +586,23 @@ private final class SocketEventRecorder: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         events.append(event)
+    }
+}
+
+private final class LockedClaimCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var count = 0
+
+    var value: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return count
+    }
+
+    func increment() {
+        lock.lock()
+        count += 1
+        lock.unlock()
     }
 }
 

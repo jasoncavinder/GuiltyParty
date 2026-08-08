@@ -18,8 +18,8 @@ factor.
 - Product name: `GuiltyPartyCompanion`
 - Development bundle identifier: `com.guiltyparty.companion`
 - Minimum deployment target: iOS/iPadOS 18.0
-- Marketing version: `0.1.0`
-- Build number: `1`
+- Marketing version: `0.1.1`
+- Build number: `2`
 - Swift language mode: Swift 6
 - Supported device families: iPhone and iPad
 
@@ -68,8 +68,8 @@ browser `Origin`, a participant endpoint with `private_display` and
 ```json
 {
   "application_id": "companion_ios",
-  "application_version": "0.1.0",
-  "build_number": 1
+  "application_version": "0.1.1",
+  "build_number": 2
 }
 ```
 
