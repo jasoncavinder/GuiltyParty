@@ -59,11 +59,11 @@ test("development Wrangler configuration is narrowly scoped and contains no acco
 
 test("CI gates remote-only changes with the pinned Node runtime and offline checks", async () => {
   const workflow = await readFile(
-    new URL("../../../.github/workflows/rust.yml", import.meta.url),
+    new URL("../../../../.github/workflows/rust.yml", import.meta.url),
     "utf8",
   );
 
-  assert.equal(workflow.match(/- "services\/remote\/\*\*"/g)?.length, 2);
+  assert.equal(workflow.match(/- "apps\/server\/\*\*"/g)?.length, 2);
   assert.match(
     workflow,
     /actions\/setup-node@820762786026740c76f36085b0efc47a31fe5020/,

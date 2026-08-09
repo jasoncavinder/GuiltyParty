@@ -89,8 +89,8 @@ Browser origins are an exact operator-configured allowlist, applied to HTTP CORS
 **Decision:**
 ```
 /
-├── server/           # Rust Cargo workspace (backend & engine)
 ├── apps/
+│   ├── server/       # Rust workspace and Cloudflare adapter
 │   ├── web/
 │   │   ├── host/     # Vanilla JS Host Console
 │   │   └── companion/ # Browser Companion fallback
@@ -101,10 +101,10 @@ Browser origins are an exact operator-configured allowlist, applied to HTTP CORS
 └── Makefile          # Root developer commands
 ```
 
-The source tree was corrected to use the repository's existing `apps/`
-platform taxonomy. This is an organizational correction only; it does not
-change the selected languages, runtimes, application roles, or security
-boundaries.
+The source tree uses the repository's `apps/` platform taxonomy. ADR 0039
+consolidated the native and Cloudflare backend implementations under
+`apps/server/`. This is an organizational correction only; it does not change
+the selected languages, runtimes, application roles, or security boundaries.
 
 **Developer Commands (Makefile):**
 - `make setup`: Check the dependencies required by the current slice and report optional platform tooling.
@@ -136,7 +136,7 @@ The following dependencies are approved for the MVP. All have permissive license
 | **GitHub: `actions/checkout`** | Read-only CI checkout | GitHub Marketplace | MIT |
 | **GitHub: `actions/setup-node` v7.0.0** | Select the required Node.js 22 CI runtime; action pinned to commit `820762786026740c76f36085b0efc47a31fe5020` | GitHub Marketplace | MIT |
 
-*Note: Transitive Rust dependencies remain locked in `server/Cargo.lock`. Model weights and local-model runtimes are operator-supplied and must be license-reviewed separately before distribution or commercial use. No model artifact is committed. No third-party AI orchestration or frontend framework is included.*
+*Note: Transitive Rust dependencies remain locked in `apps/server/Cargo.lock`. Model weights and local-model runtimes are operator-supplied and must be license-reviewed separately before distribution or commercial use. No model artifact is committed. No third-party AI orchestration or frontend framework is included.*
 
 ---
 

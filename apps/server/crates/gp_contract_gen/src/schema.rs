@@ -821,7 +821,7 @@ mod tests {
 
     fn production_schema() -> Contract {
         Contract::parse(include_str!(
-            "../../../../contracts/control-plane/v1/control-plane.schema.json"
+            "../../../../../contracts/control-plane/v1/control-plane.schema.json"
         ))
         .expect("production schema must parse")
     }

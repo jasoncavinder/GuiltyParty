@@ -1,5 +1,5 @@
-import engineModule from "../../../server/target/wasm32-unknown-unknown/release/gp_scenario_wasm.wasm";
-import scenario from "../../../server/scenarios/the-stolen-artifact-v1.json";
+import engineModule from "../../target/wasm32-unknown-unknown/release/gp_scenario_wasm.wasm";
+import scenario from "../../scenarios/the-stolen-artifact-v1.json";
 
 const ENGINE_ABI_VERSION = 1;
 const MAXIMUM_ENGINE_RESPONSE_BYTES = 1024 * 1024;

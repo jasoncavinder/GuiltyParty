@@ -4,11 +4,10 @@ on:
   pull_request:
     branches: [dev, main]
     paths:
-      - "server/**"
+      - "apps/server/**"
       - "apps/web/**"
       - "apps/mobile/**"
       - "apps/tv/lg-webos/**"
-      - "services/remote/**"
       - "contracts/**"
       - "tests/contracts/**"
       - "tooling/check_contract_artifacts.py"
@@ -30,11 +29,10 @@ on:
   push:
     branches: [dev, main]
     paths:
-      - "server/**"
+      - "apps/server/**"
       - "apps/web/**"
       - "apps/mobile/**"
       - "apps/tv/lg-webos/**"
-      - "services/remote/**"
       - "contracts/**"
       - "tests/contracts/**"
       - "tooling/check_contract_artifacts.py"
@@ -62,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: server
+        working-directory: apps/server
     steps:
       - uses: actions/checkout@v7
       - name: Use Node.js 22
@@ -93,7 +91,7 @@ jobs:
       - name: Test
         run: cargo test --locked --workspace --all-targets
       - name: Check browser JavaScript syntax
-        run: node --check ../apps/web/shared/control-client.js && node --check ../apps/web/host/app.js && node --check ../apps/web/companion/app.js && node --check ../apps/tv/lg-webos/shell.js && node --check ../apps/tv/lg-webos/stage-core.js && node --check ../apps/tv/lg-webos/stage.js && node --check ../tooling/build_webos_stage.mjs
+        run: node --check ../web/shared/control-client.js && node --check ../web/host/app.js && node --check ../web/companion/app.js && node --check ../tv/lg-webos/shell.js && node --check ../tv/lg-webos/stage-core.js && node --check ../tv/lg-webos/stage.js && node --check ../../tooling/build_webos_stage.mjs
 
   mobile-contracts:
     runs-on: macos-26
@@ -110,7 +108,7 @@ jobs:
       - name: Install contract validation tooling
         run: npm ci --ignore-scripts --cache .cache/npm
       - name: Hydrate locked Rust dependencies
-        run: cargo fetch --locked --manifest-path server/Cargo.toml
+        run: cargo fetch --locked --manifest-path apps/server/Cargo.toml
       - name: Check generated mobile contracts
         run: make check-mobile-contracts
       - name: Test native iPhone Companion

@@ -7,7 +7,7 @@ import { promisify } from "node:util";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
-const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const stageDirectory = path.join(repository, "apps/tv/lg-webos");
 const packagedStageDirectory = path.join(repository, ".tmp/lg-webos-stage-app");
 const execFileAsync = promisify(execFile);

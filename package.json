@@ -7,9 +7,9 @@
   },
   "scripts": {
     "check:contracts:standard": "node tooling/check_contract_schema.mjs",
-    "test:remote": "node --test services/remote/test/*.test.mjs",
-    "cloudflare:check": "node tooling/check_scenario_wasm.mjs && wrangler deploy --dry-run --config services/remote/wrangler.jsonc --outdir .tmp/cloudflare-bundle",
-    "cloudflare:dev": "node tooling/check_scenario_wasm.mjs && wrangler dev --config services/remote/wrangler.jsonc"
+    "test:remote": "node --test apps/server/cloudflare/test/*.test.mjs",
+    "cloudflare:check": "node tooling/check_scenario_wasm.mjs && wrangler deploy --dry-run --config apps/server/cloudflare/wrangler.jsonc --outdir .tmp/cloudflare-bundle",
+    "cloudflare:dev": "node tooling/check_scenario_wasm.mjs && wrangler dev --config apps/server/cloudflare/wrangler.jsonc"
   },
   "devDependencies": {
     "ajv": "8.20.0",

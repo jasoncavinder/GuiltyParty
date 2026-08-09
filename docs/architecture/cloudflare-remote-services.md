@@ -38,8 +38,8 @@ future heavy adapter and are not on the live-game authority path.
 
 ## Repository Boundary
 
-The remote service lives under `services/remote/`. It is deliberately separate
-from the native Axum server under `server/`:
+The remote service lives under `apps/server/cloudflare/`, beside the native
+Axum workspace rooted at `apps/server/` while remaining runtime-separate:
 
 - `src/worker.js` is the Cloudflare transport and binding adapter.
 - `src/game-session.js` is the per-session Durable Object adapter.

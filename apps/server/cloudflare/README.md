@@ -1,8 +1,8 @@
 # Guilty Party Remote Service
 
 This directory contains the test-gated Remote Friends MVP Cloudflare service
-described by [ADR 0033](../../docs/adr/0033-cloudflare-remote-services.md) and
-[PLANS.md](../../PLANS.md).
+described by [ADR 0033](../../../docs/adr/0033-cloudflare-remote-services.md) and
+[PLANS.md](../../../PLANS.md).
 
 It is not yet ready for named friends, private or licensed scenario content,
 production identity, or public traffic. The pairing, authority, deterministic
@@ -72,7 +72,7 @@ project-built first-party module.
 
 Install the locked tooling with scripts disabled through `make setup`. Do not
 use an unpinned `npx` command as a development, release, or CI path. See the
-[tooling evaluation](../../docs/architecture/cloudflare-tooling-evaluation.md)
+[tooling evaluation](../../../docs/architecture/cloudflare-tooling-evaluation.md)
 for the exact exception and review triggers.
 
 ## Local Verification

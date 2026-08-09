@@ -21,8 +21,8 @@ import {
   sha256Hex,
 } from "../src/friends-auth.js";
 import { decodeInvitationTransfer } from "../src/invitation-transfer.js";
-import schema from "../../../contracts/control-plane/v1/control-plane.schema.json" with { type: "json" };
-import openapi from "../../../contracts/http/v1/openapi.json" with { type: "json" };
+import schema from "../../../../contracts/control-plane/v1/control-plane.schema.json" with { type: "json" };
+import openapi from "../../../../contracts/http/v1/openapi.json" with { type: "json" };
 
 globalThis.crypto ??= webcrypto;
 

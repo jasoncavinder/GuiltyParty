@@ -1,7 +1,7 @@
 # Applications
 
-First-party user-facing applications live under this directory, grouped by
-surface and platform:
+First-party applications and deployable service implementations live under
+this directory, grouped by surface and platform:
 
 - `web/` contains the browser Host Console, browser Companion fallback, and
   their shared browser control-plane client.
@@ -10,6 +10,6 @@ surface and platform:
   application.
 - `tv/` contains Stage applications grouped by television platform.
 - `desktop/` is reserved for the future desktop Host application.
-- `server/` is reserved for a future distributable local-server application;
-  backend services and deterministic engine crates remain in their documented
-  top-level service directories.
+- `server/` is the canonical backend application boundary. It contains the
+  native Rust workspace and deterministic engine, with the official Cloudflare
+  adapter under `server/cloudflare/`.

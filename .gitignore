@@ -33,7 +33,7 @@ __pycache__/
 
 # Rust
 target/
-server/data/
+apps/server/data/
 
 # Swift and Xcode
 .build/
