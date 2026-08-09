@@ -10,9 +10,11 @@ feature, platform claim, beta promotion, or release by itself.
 
 The long-term native iOS/iPadOS and Android Companions are not yet generally
 supported products. The Remote Friends MVP remains iOS/iPadOS-only, and Android
-begins at the checkpoint and narrow scope defined by ADR 0017. The live
-[checkpoint evidence](android-entry-checkpoint-evidence.md) remains the
-authoritative readiness record. Empty cells are not evidence of parity.
+has reached the narrow development baseline defined by ADR 0017. The
+[checkpoint evidence](android-entry-checkpoint-evidence.md) and
+[Android test record](android-companion-mvp-test-record.md) are the authoritative
+readiness records. Android has no physical-device or external-test approval.
+Empty cells are not evidence of parity.
 
 ## Classification Vocabulary
 
@@ -40,7 +42,10 @@ logs, or participant content into this document.
 
 | ID | Capability or guarantee | Classification | Scope or scenario requirement | iOS/iPadOS status and evidence | Android status and evidence | Gap, disclosure, and fallback | Owner | Next review |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| | | | | | | | | |
+| MC-PARITY-001 | Generated control-plane v1 and recipient-authorized private projection | Core parity gate | Account-free Remote Friends synthetic session | Development; generated Swift, native projection boundary, automated and live evidence in the iOS test record | Development; generated Kotlin attached directly, recipient/language tests and emulator evidence in the Android test record | Android live handshake and physical devices remain open; browser fallback remains available | Project owner | Before Android external test |
+| MC-PARITY-002 | Endpoint-bound resume and idempotent participant action | Core parity gate | Temporary disconnect/process restart during synthetic session | Development; physical-iPhone restart and interrupted-vote evidence passed | Development; rotating resume, identity substitution, sequence, and idempotency tests passed; live restart exercise pending | Android cannot be promoted until same-participant/endpoint and no-duplicate action are exercised live | Project owner | After reviewed Android policy deployment |
+| MC-PARITY-003 | First-class phone and tablet layouts | Platform adaptation | Native Companion session UI | Development; deliberate SwiftUI compact/split layouts, physical iPhone and iPad simulator | Development; real Compose compact 411dp and expanded 1707dp emulator branches passed | No physical iPad, Android phone, or Android tablet evidence | Project owner | Before platform external test |
+| MC-PARITY-004 | Active-session private-screen protection | Platform adaptation | Private projection visible | Development; lifecycle/capture shields with Apple screenshot limitation disclosed | Development; `FLAG_SECURE`, recents protection, projection purge, and no-backup credential boundary; live application-boundary check pending | Browser fallback cannot promise native capture prevention; Android physical verification remains open | Project owner | Android live handshake |
 
 ## Core Release Gate Checklist
 

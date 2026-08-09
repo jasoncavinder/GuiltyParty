@@ -3,8 +3,10 @@
 ## Status
 
 The first-party control-plane v1 generator is integrated. Its Swift and Kotlin
-outputs are committed under `contracts/generated/control-plane/v1/` and are not
-yet attached to an iOS or Android application project.
+outputs are committed under `contracts/generated/control-plane/v1/` and are
+attached directly to both native application projects. The Swift output is part
+of the iOS/iPadOS target, and the Kotlin output is an Android built-in Kotlin
+source directory. Neither application copies or edits the generated file.
 
 ## Authority and Scope
 

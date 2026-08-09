@@ -129,3 +129,19 @@ jobs:
           -destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M5),OS=26.5'
           -derivedDataPath "$RUNNER_TEMP/guiltyparty-ios-derived-data"
           test
+
+  android-companion:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Build, lint, and test native Android Companion
+        working-directory: apps/mobile/android
+        run: >-
+          ./gradlew
+          --no-daemon
+          --dependency-verification strict
+          assembleDebug
+          assembleRelease
+          assembleDebugAndroidTest
+          testDebugUnitTest
+          lintDebug
