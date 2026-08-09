@@ -103,7 +103,7 @@ class KeystoreResumeCredentialStore(context: Context) : ResumeCredentialStore {
 
     companion object {
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
-        private const val KEY_ALIAS = "com.guiltyparty.companion.participant_resume.v1"
+        private const val KEY_ALIAS = "app.guiltyparty.companion.participant_resume.v1"
         private const val FILE_NAME = "participant-resume-v1.bin"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val FORMAT_VERSION: Byte = 1

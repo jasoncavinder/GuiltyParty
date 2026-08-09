@@ -8,8 +8,8 @@ or store-ready release.
 
 ## Baseline
 
-- application ID: `com.guiltyparty.companion`
-- debug application ID: `com.guiltyparty.companion.debug`
+- application ID: `app.guiltyparty.companion`
+- debug application ID: `app.guiltyparty.companion.debug`
 - version: `0.1.0` (1)
 - minimum Android: Android 13/API 33
 - compile and target SDK: API 36
@@ -18,6 +18,12 @@ or store-ready release.
 - Android Gradle Plugin: 9.2.1
 - UI: Kotlin 2.3.21 and Jetpack Compose BOM 2026.06.00
 - transport: OkHttp 5.3.0 over HTTPS/WSS
+
+The Kotlin source namespace remains `com.guiltyparty.companion`; it is an
+internal code namespace, not the store-facing application ID. Pre-store builds
+using the former application ID occupy a different Android sandbox. Remove
+them explicitly when no longer needed; no resume credential or private state
+is migrated between the two identities.
 
 The exact approved dependency intake and resolved behavior are recorded in
 [`docs/legal/third-party-components.md`](../../../docs/legal/third-party-components.md).

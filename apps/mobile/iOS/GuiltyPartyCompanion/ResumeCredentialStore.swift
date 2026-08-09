@@ -97,7 +97,7 @@ enum ResumeCredentialStoreError: Error, Equatable {
 }
 
 struct KeychainResumeCredentialStore: ResumeCredentialStoring {
-    static let service = "com.guiltyparty.companion.participant-resume.v1"
+    static let service = "app.guiltyparty.companion.participant-resume.v1"
     static let account = "current-endpoint"
 
     static func baseQuery() -> [String: Any] {

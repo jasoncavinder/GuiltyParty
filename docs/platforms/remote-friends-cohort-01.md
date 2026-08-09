@@ -46,9 +46,9 @@ human review.
 Store records, signing identities, upload keys, tester groups, and artifacts are
 configured outside this public repository. No credential, tester address,
 certificate, key identifier, invitation, or private feedback belongs here.
-Both native projects currently use `com.guiltyparty.companion`; the owner must
-approve that value as the durable store application identity before either
-store record is created.
+The owner approved `app.guiltyparty.companion` as the durable iOS/iPadOS bundle
+identifier and Android application ID on 2026-08-09. Neither store record has
+been created, and this public record contains no account or signing details.
 
 ## Permitted Data and Features
 
