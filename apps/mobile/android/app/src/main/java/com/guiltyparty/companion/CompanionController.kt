@@ -242,11 +242,7 @@ class CompanionController(
         override fun onOpen(socketId: String) = onMain { handleSocketOpen(socketId) }
         override fun onText(socketId: String, text: String) = onMain { handleServerText(socketId, text) }
         override fun onClosed(socketId: String, code: Int) = onMain { handleSocketClosed(socketId, code) }
-        override fun onFailure(socketId: String) = onMain {
-            if (socketId == this@CompanionController.socketId) {
-                protectAndReconnect(PrivacyInterruption.CONNECTION_UNCERTAIN)
-            }
-        }
+        override fun onFailure(socketId: String) = onMain { handleSocketFailure(socketId) }
     }
 
     private fun handleSocketOpen(eventSocketId: String) {
@@ -421,10 +417,20 @@ class CompanionController(
 
     private fun handleSocketClosed(eventSocketId: String, code: Int) {
         if (eventSocketId != socketId) return
-        when (code) {
-            1000 -> transitionToSessionEnded()
-            1008 -> recoverWithResumeCredentialOrExpire()
-            else -> protectAndReconnect(PrivacyInterruption.CONNECTION_UNCERTAIN)
+        handleSocketInterruption(SocketInterruptionPolicy.closed(code))
+    }
+
+    private fun handleSocketFailure(eventSocketId: String) {
+        if (eventSocketId != socketId) return
+        handleSocketInterruption(SocketInterruptionPolicy.failed())
+    }
+
+    private fun handleSocketInterruption(action: SocketInterruptionAction) {
+        when (action) {
+            SocketInterruptionAction.END_SESSION -> transitionToSessionEnded()
+            SocketInterruptionAction.REFRESH_AUTHORITY -> recoverWithResumeCredentialOrExpire()
+            SocketInterruptionAction.RECONNECT_EXISTING_AUTHORITY ->
+                protectAndReconnect(PrivacyInterruption.CONNECTION_UNCERTAIN)
         }
     }
 

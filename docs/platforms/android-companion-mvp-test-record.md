@@ -27,7 +27,7 @@ material, or account information.
 | `make check-mobile-contracts` | repository host | Passed: canonical schema and 29 fixtures; deterministic Swift/Kotlin outputs; 33 fixtures passed in each generated language |
 | `npm run --silent test:remote` | repository host | Passed: 79 tests, including Android build admission |
 | `cargo test --locked --workspace --all-targets` | `apps/server` Rust workspace | Passed: 47 unit tests |
-| `testDebugUnitTest` | host JVM, strict offline verification | Passed: 9 state, sequence, privacy, endpoint, health, and backoff tests |
+| `testDebugUnitTest` | host JVM, strict offline verification | Passed: 10 state, sequence, privacy, endpoint, socket-interruption, health, and backoff tests |
 | Debug APK build | API 36, strict offline verification | Passed |
 | Unsigned release APK build and lint-vital | API 36, strict offline verification | Passed |
 | Instrumented-test APK build | API 36, strict offline verification | Passed |
@@ -86,15 +86,46 @@ The only configured first-party application origin in release is
 has no disk cache, cookie jar, redirect following, implicit retry, logging
 interceptor, analytics, or other network recipient.
 
+## Live Remote Emulator Acceptance
+
+The reviewed Android build-admission policy from PR #40 was promoted manually
+from exact merged `dev` commit `c9a8b91` to the existing synthetic Cloudflare
+test Worker on 2026-08-08 HST. No secret, binding, schema, route, or new
+Cloudflare resource changed. Both the Worker hostname and
+`api.test.guiltyparty.app` admitted `companion_android` build 1 after the
+Custom Domain converged.
+
+The Medium Phone AVD then completed a live synthetic control-plane session:
+
+- native join and Host roster update;
+- character assignment and fresh recipient-authorized projection;
+- public-clue delivery, rejection of a clue unauthorized for the first
+  character, and positive delivery of that clue after a deliberate manual
+  rejoin as its authorized character;
+- scene advancement, one server-authoritative vote, deterministic resolution,
+  and post-vote process restart with one retained vote;
+- process-restart resumption of the same participant and endpoint without a
+  duplicate roster entry;
+- a fully black active-session ADB screenshot under `FLAG_SECURE`, with the
+  temporary screenshot deleted after inspection;
+- manual private-view purge, fail-closed rejection of an expired invitation,
+  Host rotation, and successful use of the fresh invitation; and
+- explicit Host session end, private-projection purge, terminal credential
+  rejection, and return to the join surface.
+
+The first end-session pass exposed an Android transport distinction: Cloudflare
+sent a normal session close, but OkHttp delivered it through the ambiguous
+failure callback. Private content was purged, but the UI remained in protected
+reconnection until process restart forced authoritative HTTP resumption. The
+focused remediation makes ambiguous socket failure revalidate through the
+rotating resume credential instead of retrying the existing bearer. Unit,
+lint, build, and 10-test instrumented gates passed. A second live session then
+moved from an active private projection to `Session ended` through the bounded
+resume-validation round trip, without restart, stale private content, or an
+uncertain-connection state.
+
 ## Remaining Gates
 
-- Merge and deploy the reviewed Android client-build admission policy before a
-  live test-service join.
-- Perform a synthetic live handshake through join, assignment, projection,
-  vote, temporary disconnect/process restart, same endpoint/participant resume,
-  and session end.
-- Exercise active-session screenshot/recents protection and lifecycle behavior
-  at the application boundary during that handshake.
 - Test at least one representative physical Android phone and one physical
   tablet-class Android device before approving Android external distribution.
 - A stable minimum API 33 image and current stable Google-reference/Samsung

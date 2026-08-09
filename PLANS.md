@@ -267,12 +267,13 @@ Android a requirement for the existing Remote Friends MVP gate.
 
 ### Status
 
-In Progress. The owner approved the third-party dependency intake in PR #39 on
-2026-08-08 HST. The native Android implementation, locked and checksum-verified
-build, local tests, release inspection, and compact/expanded emulator checks are
-complete on `feature/android-companion-mvp`. A reviewed merge/deployment and the
-live synthetic remote-service handshake remain. Physical Android phone and
-tablet checks remain mandatory before Android external testing.
+Complete in the bounded development scope. The owner approved the third-party
+dependency intake in PR #39 and merged the native Android implementation in PR
+#40 on 2026-08-08 HST. The locked and checksum-verified build, release
+inspection, compact/expanded emulator suites, reviewed build-policy deployment,
+and live join/projection/resume/vote/session-end path have passed. Physical
+Android phone and tablet checks remain mandatory before Android external
+testing.
 
 ### Objective
 

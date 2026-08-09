@@ -27,6 +27,26 @@ class PolicyTest {
     }
 
     @Test
+    fun ambiguousSocketFailureRefreshesAuthorityBeforeReconnect() {
+        assertEquals(
+            SocketInterruptionAction.END_SESSION,
+            SocketInterruptionPolicy.closed(1000),
+        )
+        assertEquals(
+            SocketInterruptionAction.REFRESH_AUTHORITY,
+            SocketInterruptionPolicy.closed(1008),
+        )
+        assertEquals(
+            SocketInterruptionAction.RECONNECT_EXISTING_AUTHORITY,
+            SocketInterruptionPolicy.closed(1001),
+        )
+        assertEquals(
+            SocketInterruptionAction.REFRESH_AUTHORITY,
+            SocketInterruptionPolicy.failed(),
+        )
+    }
+
+    @Test
     fun productionEndpointRequiresSecureOriginWithoutPathOrCredentials() {
         val endpoint = ServerEndpoint.parse("https://api.test.guiltyparty.app/", false)
         assertEquals("https://api.test.guiltyparty.app/api/v1/join", endpoint.joinUrl)
