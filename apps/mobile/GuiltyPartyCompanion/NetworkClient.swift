@@ -162,6 +162,11 @@ enum JoinClient {
 
 enum ResumeClient {
     static func request(credential: StoredResumeCredential) throws -> URLRequest {
+        guard let replacementToken = credential.pendingReplacementToken,
+              replacementToken != credential.token
+        else {
+            throw SessionModelError.protocolViolation
+        }
         let body = try GPV1ParticipantResumeRequest(
             clientBuild: CompanionEnvironment.clientBuild(),
             endpointId: GPV1Identifier(credential.endpointID),
@@ -181,6 +186,7 @@ enum ResumeClient {
         request.setValue("application/json", forHTTPHeaderField: "Accept")
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Resume \(credential.token)", forHTTPHeaderField: "Authorization")
+        request.setValue(replacementToken, forHTTPHeaderField: "X-GP-Replacement-Resume")
         request.setValue("no-store", forHTTPHeaderField: "Cache-Control")
         request.httpBody = try JSONEncoder().encode(body)
         return request
@@ -217,6 +223,9 @@ enum ResumeClient {
         nowUnixMilliseconds: Int64 = Int64(Date().timeIntervalSince1970 * 1_000)
     ) throws -> ParticipantSessionAdmission {
         let resumed = try JSONDecoder().decode(GPV1RemoteNativeResumeResponse.self, from: data)
+        guard let replacementToken = previous.pendingReplacementToken else {
+            throw SessionModelError.invalidResponse
+        }
         let requested = Set(previous.pendingIdempotencyIDs)
         let normalizedResults = resumed.pendingCommandResults.map { result in
             switch result {
@@ -236,6 +245,7 @@ enum ResumeClient {
               resumed.sessionId.value == previous.sessionID,
               resumed.endpointId.value == previous.endpointID,
               resumed.participantId.value == previous.participantID,
+              resumed.resumeToken.value == replacementToken,
               resumed.primaryAuthorityGeneration > previous.primaryAuthorityGeneration,
               resumed.authorityExpiresAtUnixMs > nowUnixMilliseconds,
               resumed.resumeExpiresAtUnixMs > nowUnixMilliseconds,

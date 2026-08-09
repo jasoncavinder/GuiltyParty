@@ -436,6 +436,10 @@ final class CommandAndRequestTests: XCTestCase {
             request.value(forHTTPHeaderField: "Authorization"),
             "Resume synthetic-device-only-resume-token"
         )
+        XCTAssertEqual(
+            request.value(forHTTPHeaderField: "X-GP-Replacement-Resume"),
+            "synthetic-device-only-rotated-resume-token"
+        )
         let body = try XCTUnwrap(request.httpBody)
         let text = try XCTUnwrap(String(data: body, encoding: .utf8))
         XCTAssertFalse(text.contains(credential.token))
@@ -448,6 +452,21 @@ final class CommandAndRequestTests: XCTestCase {
         XCTAssertEqual(decoded.pendingIdempotencyIds.map(\.value), credential.pendingIdempotencyIDs)
         XCTAssertEqual(decoded.clientBuild.applicationVersion, "0.2.0")
         XCTAssertEqual(decoded.clientBuild.buildNumber, 3)
+    }
+
+    func testResumeRequestRequiresDurablyStagedReplacement() throws {
+        let credential = StoredResumeCredential(
+            token: "synthetic-device-only-resume-token",
+            sessionID: "session-synthetic-001",
+            endpointID: "endpoint-synthetic-player-001",
+            participantID: "participant-synthetic-001",
+            expiresAtUnixMilliseconds: 2_000_000_000_000,
+            primaryAuthorityGeneration: 3,
+            lastServerSequence: 8,
+            pendingIdempotencyIDs: [],
+            gameplayLanguage: "en"
+        )
+        XCTAssertThrowsError(try ResumeClient.request(credential: credential))
     }
 
     func testResumeResponseRotatesAuthorityWithoutChangingIdentity() throws {
@@ -510,6 +529,7 @@ final class CommandAndRequestTests: XCTestCase {
                 "token", "sessionID", "endpointID", "participantID",
                 "expiresAtUnixMilliseconds", "primaryAuthorityGeneration",
                 "lastServerSequence", "pendingIdempotencyIDs", "gameplayLanguage",
+                "pendingReplacementToken",
             ])
         )
         let text = try XCTUnwrap(String(data: data, encoding: .utf8))
@@ -765,7 +785,8 @@ private func resumeCredential() -> StoredResumeCredential {
         primaryAuthorityGeneration: 3,
         lastServerSequence: 8,
         pendingIdempotencyIDs: ["idempotency-synthetic-001"],
-        gameplayLanguage: "en"
+        gameplayLanguage: "en",
+        pendingReplacementToken: "synthetic-device-only-rotated-resume-token"
     )
 }
 

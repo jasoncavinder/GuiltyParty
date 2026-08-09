@@ -11,6 +11,31 @@ struct StoredResumeCredential: Codable, Equatable, Sendable {
     let lastServerSequence: Int64
     let pendingIdempotencyIDs: [String]
     let gameplayLanguage: String
+    let pendingReplacementToken: String?
+
+    init(
+        token: String,
+        sessionID: String,
+        endpointID: String,
+        participantID: String,
+        expiresAtUnixMilliseconds: Int64,
+        primaryAuthorityGeneration: Int64,
+        lastServerSequence: Int64,
+        pendingIdempotencyIDs: [String],
+        gameplayLanguage: String,
+        pendingReplacementToken: String? = nil
+    ) {
+        self.token = token
+        self.sessionID = sessionID
+        self.endpointID = endpointID
+        self.participantID = participantID
+        self.expiresAtUnixMilliseconds = expiresAtUnixMilliseconds
+        self.primaryAuthorityGeneration = primaryAuthorityGeneration
+        self.lastServerSequence = lastServerSequence
+        self.pendingIdempotencyIDs = pendingIdempotencyIDs
+        self.gameplayLanguage = gameplayLanguage
+        self.pendingReplacementToken = pendingReplacementToken
+    }
 
     func updating(
         lastServerSequence: Int64? = nil,
@@ -25,8 +50,38 @@ struct StoredResumeCredential: Codable, Equatable, Sendable {
             primaryAuthorityGeneration: primaryAuthorityGeneration,
             lastServerSequence: lastServerSequence ?? self.lastServerSequence,
             pendingIdempotencyIDs: pendingIdempotencyIDs ?? self.pendingIdempotencyIDs,
-            gameplayLanguage: gameplayLanguage
+            gameplayLanguage: gameplayLanguage,
+            pendingReplacementToken: pendingReplacementToken
         )
+    }
+
+    func stagingReplacementToken(_ replacementToken: String) -> StoredResumeCredential {
+        StoredResumeCredential(
+            token: token,
+            sessionID: sessionID,
+            endpointID: endpointID,
+            participantID: participantID,
+            expiresAtUnixMilliseconds: expiresAtUnixMilliseconds,
+            primaryAuthorityGeneration: primaryAuthorityGeneration,
+            lastServerSequence: lastServerSequence,
+            pendingIdempotencyIDs: pendingIdempotencyIDs,
+            gameplayLanguage: gameplayLanguage,
+            pendingReplacementToken: replacementToken
+        )
+    }
+}
+
+enum ResumeCredentialToken {
+    static func generate() throws -> String {
+        var bytes = [UInt8](repeating: 0, count: 32)
+        let status = SecRandomCopyBytes(kSecRandomDefault, bytes.count, &bytes)
+        guard status == errSecSuccess else {
+            throw ResumeCredentialStoreError.keychain(status)
+        }
+        return Data(bytes).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
     }
 }
 

@@ -504,7 +504,16 @@ async function resumeParticipant(request, env) {
     return edgeLimit.response;
   }
 
-  const replacementResumeToken = randomSecret(32);
+  const replacementResumeToken = request.headers.get("X-GP-Replacement-Resume") ?? "";
+  if (
+    replacementResumeToken.length < 32 ||
+    replacementResumeToken.length > 128 ||
+    replacementResumeToken === resumeToken
+  ) {
+    return problemResponse(400, "invalid_replacement_resume_credential", "Invalid replacement resume credential", {
+      retryable: false,
+    });
+  }
   const response = await sessionStub(env, parsed.value.session_id).fetch(
     "https://session.internal/internal/session/resume",
     {

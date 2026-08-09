@@ -286,17 +286,6 @@ export class SqliteSessionStore {
       if (!credential) {
         return { ok: false, status: 401, code: "invalid_resume_credential", title: "Invalid resume credential" };
       }
-      if (credential.consumed_at_unix_ms !== null) {
-        this.revokeResumeFamily(credential.family_id, credential.endpoint_id, nowUnixMs);
-        return {
-          ok: false,
-          status: 401,
-          code: "resume_credential_reused",
-          title: "Resume credential reuse detected",
-          endpointId: credential.endpoint_id,
-          closeEndpoint: true,
-        };
-      }
       if (credential.revoked_at_unix_ms !== null) {
         return { ok: false, status: 401, code: "resume_credential_revoked", title: "Resume credential revoked" };
       }
@@ -317,6 +306,61 @@ export class SqliteSessionStore {
           endpointId,
         ),
       )[0];
+      if (credential.consumed_at_unix_ms !== null) {
+        const exactReplacement = Array.from(
+          this.sql.exec(
+            `SELECT credential_digest, authority_generation, consumed_at_unix_ms, revoked_at_unix_ms
+             FROM participant_resume_credentials
+             WHERE credential_digest = ? AND family_id = ? AND endpoint_id = ?
+               AND participant_id = ?`,
+            replacementCredentialDigest,
+            credential.family_id,
+            credential.endpoint_id,
+            credential.participant_id,
+          ),
+        )[0];
+        const retryGeneration = authorityGeneration + 1;
+        if (
+          endpoint &&
+          endpoint.audience === "participant" &&
+          endpoint.participant_id === participantId &&
+          endpoint.endpoint_id === credential.endpoint_id &&
+          participantId === credential.participant_id &&
+          Number(credential.authority_generation) === authorityGeneration &&
+          Number(endpoint.authority_generation) === retryGeneration &&
+          endpoint.revoked_at_unix_ms === null &&
+          exactReplacement &&
+          Number(exactReplacement.authority_generation) === retryGeneration &&
+          exactReplacement.consumed_at_unix_ms === null &&
+          exactReplacement.revoked_at_unix_ms === null
+        ) {
+          const currentSequence = this.currentSequence();
+          if (lastServerSequence > currentSequence) {
+            return { ok: false, status: 409, code: "resume_sequence_ahead", title: "Invalid resume sequence" };
+          }
+          return {
+            ok: true,
+            endpointId,
+            participantId,
+            roomId: endpoint.room_id,
+            authorityGeneration: retryGeneration,
+            expiresAtUnixMs: Number(endpoint.expires_at_unix_ms),
+            resumeExpiresAtUnixMs: Number(credential.expires_at_unix_ms),
+            serverSequence: currentSequence,
+            pendingCommandResults: this.pendingCommandResults(endpointId, pendingIdempotencyIds),
+            closeEndpoint: false,
+          };
+        }
+        this.revokeResumeFamily(credential.family_id, credential.endpoint_id, nowUnixMs);
+        return {
+          ok: false,
+          status: 401,
+          code: "resume_credential_reused",
+          title: "Resume credential reuse detected",
+          endpointId: credential.endpoint_id,
+          closeEndpoint: true,
+        };
+      }
       if (
         !endpoint ||
         endpoint.audience !== "participant" ||

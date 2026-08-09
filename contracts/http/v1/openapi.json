@@ -257,7 +257,20 @@
       "post": {
         "operationId": "resumeRemoteFriendsParticipant",
         "summary": "Resume the same native participant endpoint after application restart",
-        "description": "Requires the rotating endpoint-bound credential as Authorization: Resume. The credential is native-device-only, never placed in the request body, URL, logs, or browser storage. A successful response rotates it and issues memory-only access authority; private content remains unavailable until a fresh authorized WebSocket projection arrives.",
+        "description": "Requires the current rotating endpoint-bound credential as Authorization: Resume and a distinct, client-generated replacement in X-GP-Replacement-Resume. Both credentials are native-device-only and never placed in the request body, URL, logs, or browser storage. The client durably stages the replacement before sending; an exact retry of the same transition is safe, while a different replacement for a consumed credential revokes the family. A successful response confirms the replacement and issues memory-only access authority; private content remains unavailable until a fresh authorized WebSocket projection arrives.",
+        "parameters": [
+          {
+            "name": "X-GP-Replacement-Resume",
+            "in": "header",
+            "required": true,
+            "description": "A distinct high-entropy replacement credential generated and stored by the native client before the request. Exact retries must reuse the same value.",
+            "schema": {
+              "type": "string",
+              "minLength": 32,
+              "maxLength": 128
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -270,7 +283,7 @@
         },
         "responses": {
           "200": {
-            "description": "The existing participant endpoint was recovered and its resume authority rotated",
+            "description": "The existing participant endpoint was recovered and its staged resume authority confirmed",
             "headers": {
               "Cache-Control": {
                 "description": "Credential-bearing responses must not be cached.",

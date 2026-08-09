@@ -24,8 +24,12 @@ Native participant admission returns a device-bound rotating resume credential
 in addition to the memory-only access bearer. `POST /api/v1/resume` binds that
 credential to the existing session, participant, endpoint, authority
 generation, last accepted sequence, and unresolved idempotency identifiers.
-Resume never accepts client state as canonical and never substitutes raw
-journal events for a fresh authorized projection.
+Before each request, the native client durably stages a distinct replacement
+credential and carries it only in `X-GP-Replacement-Resume`. An exact retry of
+the same old-to-replacement transition is idempotent; changing the replacement
+after the old credential was consumed triggers family revocation. Resume never
+accepts client state as canonical and never substitutes raw journal events for
+a fresh authorized projection.
 
 Unknown optional object members are intentionally permitted within protocol
 major 1. A receiver must still reject unknown message discriminators and

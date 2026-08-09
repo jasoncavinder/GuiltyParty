@@ -321,7 +321,7 @@
           "$ref": "#/$defs/ClientBuild"
         }
       },
-      "description": "Same-installation participant recovery metadata. The endpoint-bound resume credential is carried only in Authorization and is not part of this payload."
+      "description": "Same-installation participant recovery metadata. The current credential is carried only in Authorization and the durably staged replacement only in X-GP-Replacement-Resume; neither is part of this payload."
     },
     "ResumedCommandStatus": {
       "oneOf": [
@@ -859,7 +859,7 @@
         },
         "resume_token": {
           "$ref": "#/$defs/Token",
-          "description": "Replacement endpoint-bound resume credential. Persist atomically in the device-only native credential boundary."
+          "description": "Confirmation of the client-generated replacement endpoint-bound resume credential that was durably staged before the request."
         },
         "session_id": {
           "$ref": "#/$defs/Identifier"

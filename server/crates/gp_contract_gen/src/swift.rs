@@ -585,6 +585,7 @@ fn needs_inline_validation(schema: &Schema) -> bool {
         Schema::Integer(rules) => rules.minimum.is_some() || rules.maximum.is_some(),
         Schema::Array(rules) => {
             rules.minimum_items.is_some()
+                || rules.maximum_items.is_some()
                 || rules.unique_items
                 || needs_inline_validation(&rules.items)
         }
@@ -689,3 +690,19 @@ private func gpValidateUnique<T: Encodable>(_ values: [T]) throws {
 }
 
 "#;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn max_items_alone_requires_inline_validation() {
+        let schema = Schema::Nullable(Box::new(Schema::Array(ArrayRules {
+            items: Box::new(Schema::String(StringRules::default())),
+            minimum_items: None,
+            maximum_items: Some(3),
+            unique_items: false,
+        })));
+        assert!(needs_inline_validation(&schema));
+    }
+}

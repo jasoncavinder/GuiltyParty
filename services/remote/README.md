@@ -21,8 +21,10 @@ remains blocked by the operational and client acceptance gates below.
   proof. The packaged Stage does not receive or redeem that shared proof.
 - `POST /api/v1/resume` lets a native participant recover the same participant
   and endpoint after restart. The device-only credential rotates on every
-  successful use, reuse revokes its credential family, and the response carries
-  a fresh short-lived bearer plus the current journal sequence.
+  successful use through a client-staged replacement. An exact retry of the
+  same transition is idempotent, a different replacement for a consumed
+  credential revokes its family, and the response carries a fresh short-lived
+  bearer plus the current journal sequence.
 - `POST /api/v1/stage-pairings` creates a 120-second packaged Stage transaction;
   an authenticated Host approves its non-secret display code, and the Stage
   redeems with a separate high-entropy memory-only polling secret.

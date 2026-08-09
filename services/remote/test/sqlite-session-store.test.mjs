@@ -162,9 +162,23 @@ test("participant resume preserves identity, rotates generation, and resolves pe
   );
 });
 
-test("consumed resume credential reuse revokes the endpoint credential family", () => {
+test("an exact resume rotation retry succeeds while a different replacement revokes the family", () => {
   const { store, expires } = configuredStore();
   assert.equal(resume(store).ok, true);
+
+  const exactRetry = resume(store, { nowUnixMs: 2_050 });
+  assert.equal(exactRetry.ok, true);
+  assert.equal(exactRetry.authorityGeneration, 2);
+  assert.equal(exactRetry.closeEndpoint, false);
+  assert.equal(store.validateAuthority({
+    sessionId: "ses_0123456789abcdef",
+    endpointId: "end_player_0123456789abcdef",
+    audience: "participant",
+    participantId: "par_0123456789abcdef",
+    authorityGeneration: 2,
+    expiresAtUnixMs: expires,
+    origin: null,
+  }, 2_051).ok, true);
 
   const reused = resume(store, {
     replacementCredentialDigest: "c".repeat(64),

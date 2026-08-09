@@ -288,11 +288,13 @@ test("native participant resume rotates endpoint authority without forwarding ra
     });
   });
   const originalResumeToken = "synthetic-device-only-resume-token-0001";
+  const replacementResumeToken = "synthetic-device-only-resume-token-0002";
   const response = await worker.fetch(
     new Request("https://example.test/api/v1/resume", {
       method: "POST",
       headers: {
         Authorization: `Resume ${originalResumeToken}`,
+        "X-GP-Replacement-Resume": replacementResumeToken,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -316,7 +318,7 @@ test("native participant resume rotates endpoint authority without forwarding ra
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("Cache-Control"), "no-store");
   const body = await response.json();
-  assert.notEqual(body.resume_token, originalResumeToken);
+  assert.equal(body.resume_token, replacementResumeToken);
   assert.ok(body.token.startsWith("gp1."));
   assert.equal(body.primary_authority_generation, 4);
   assert.equal(body.server_sequence, 9);
@@ -339,11 +341,45 @@ test("native participant resume rotates endpoint authority without forwarding ra
   );
   assert.equal(
     captured.body.replacement_credential_digest,
-    await resumeCredentialDigest(body.resume_token, signingKey),
+    await resumeCredentialDigest(replacementResumeToken, signingKey),
   );
   const forwarded = JSON.stringify(captured);
   assert.equal(forwarded.includes(originalResumeToken), false);
-  assert.equal(forwarded.includes(body.resume_token), false);
+  assert.equal(forwarded.includes(replacementResumeToken), false);
+});
+
+test("participant resume requires a distinct client-staged replacement credential", async () => {
+  let routed = false;
+  const env = await friendsEnvironment(async () => {
+    routed = true;
+    return Response.json({});
+  });
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/resume", {
+      method: "POST",
+      headers: {
+        Authorization: "Resume synthetic-device-only-resume-token-0001",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        session_id: "ses_0123456789abcdef",
+        endpoint_id: "end_0123456789abcdef",
+        participant_id: "par_0123456789abcdef",
+        last_server_sequence: 8,
+        primary_authority_generation: 3,
+        pending_idempotency_ids: [],
+        client_build: {
+          application_id: "companion_ios",
+          application_version: "0.2.0",
+          build_number: 3,
+        },
+      }),
+    }),
+    env,
+  );
+  assert.equal(response.status, 400);
+  assert.equal(routed, false);
 });
 
 test("participant resume rejects browser contexts before session routing", async () => {

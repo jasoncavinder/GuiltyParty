@@ -87,16 +87,21 @@ After an app restart or expired in-memory access bearer, the Companion sends:
 ```text
 POST https://api.test.guiltyparty.app/api/v1/resume
 Authorization: Resume <device-only credential>
+X-GP-Replacement-Resume: <staged device-only replacement>
 ```
 
-The resume token is absent from the URL and JSON body. The request includes the
-same participant and endpoint identifiers, authority generation, last accepted
-server sequence, and unresolved idempotency identifiers. A successful response
-rotates the resume credential and access generation. The replacement is saved
-before transport resumes, and all private content remains covered until a full,
-fresh recipient-specific projection passes validation. Expiry, revocation,
-session end, protocol failure, or an explicit manual rejoin clears the local
-resume record.
+Both resume credentials are absent from the URL and JSON body. Before sending,
+the app generates and durably stages the replacement in the same device-only
+Keychain record. An exact retry reuses that staged value, allowing a lost
+response or interrupted Keychain update to complete without revoking the
+endpoint; a different replacement for a consumed credential still fails
+closed. The request includes the same participant and endpoint identifiers,
+authority generation, last accepted server sequence, and unresolved
+idempotency identifiers. A successful response confirms the staged credential
+and rotates the access generation. All private content remains covered until a
+full, fresh recipient-specific projection passes validation. Expiry,
+revocation, session end, protocol failure, or an explicit manual rejoin clears
+the local resume record.
 
 The long-lived first-party `URLSessionWebSocketTask` connects to:
 

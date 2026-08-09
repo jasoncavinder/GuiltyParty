@@ -551,7 +551,7 @@ final class CompanionSession: ObservableObject {
 
     private func resumeStoredSession() async {
         defer { credentialResumeTask = nil }
-        guard let credential = resumeCredential else { return }
+        guard var credential = resumeCredential else { return }
         let now = Int64(Date().timeIntervalSince1970 * 1_000)
         guard credential.expiresAtUnixMilliseconds > now else {
             transitionToExpiredOrRevoked()
@@ -560,6 +560,10 @@ final class CompanionSession: ObservableObject {
         state.beginJoin()
         statusMessage = "Recovering this device's private session…"
         do {
+            if credential.pendingReplacementToken == nil {
+                credential = credential.stagingReplacementToken(try ResumeCredentialToken.generate())
+                try persistResumeCredential(credential)
+            }
             let admission = try await ResumeClient.resume(credential)
             try persistResumeCredential(admission.resumeCredential)
             authority = admission.authority
