@@ -13,7 +13,7 @@ setup:
 	@echo "Core dependencies OK."
 
 run-server:
-	cd server && cargo run -p gp_server
+	cd apps/server && cargo run -p gp_server
 
 run-host:
 	@$(MAKE) build-remote-clients
@@ -79,4 +79,4 @@ test:
 	@$(MAKE) check-contracts
 	@$(MAKE) test-remote
 	@$(MAKE) check-scenario-wasm
-	cd server && cargo test --locked
+	cd apps/server && cargo test --locked

@@ -24,7 +24,7 @@ locked Rust graph before working offline:
 
 ```sh
 make setup
-cargo fetch --locked --manifest-path server/Cargo.toml
+cargo fetch --locked --manifest-path apps/server/Cargo.toml
 ```
 
 Regenerate both committed outputs:

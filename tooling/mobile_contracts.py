@@ -15,7 +15,7 @@ from pathlib import Path
 
 
 REPOSITORY = Path(__file__).resolve().parent.parent
-SERVER = REPOSITORY / "server"
+SERVER = REPOSITORY / "apps" / "server"
 SCHEMA = REPOSITORY / "contracts" / "control-plane" / "v1" / "control-plane.schema.json"
 MANIFEST = REPOSITORY / "tests" / "contracts" / "v1" / "manifest.json"
 GENERATOR = SERVER / "target" / "debug" / "gp_contract_gen"

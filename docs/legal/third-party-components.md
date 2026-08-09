@@ -16,13 +16,13 @@ distribution, or a new purpose. Complete the review before external beta.
 
 Reviewed source-of-truth files:
 
-- `server/Cargo.toml`
-- `server/Cargo.lock`
-- `server/crates/gp_contract_gen/Cargo.toml`
-- `server/crates/gp_scenario/Cargo.toml`
-- `server/crates/gp_scenario_wasm/Cargo.toml`
-- `server/crates/gp_session/Cargo.toml`
-- `server/crates/gp_server/Cargo.toml`
+- `apps/server/Cargo.toml`
+- `apps/server/Cargo.lock`
+- `apps/server/crates/gp_contract_gen/Cargo.toml`
+- `apps/server/crates/gp_scenario/Cargo.toml`
+- `apps/server/crates/gp_scenario_wasm/Cargo.toml`
+- `apps/server/crates/gp_session/Cargo.toml`
+- `apps/server/crates/gp_server/Cargo.toml`
 - browser application HTML, CSS, and JavaScript under `apps/web/`
 
 The browser Host and Companion fallback under `apps/web/`, and the packaged LG
@@ -36,7 +36,8 @@ distribution.
 
 The Rust workspace currently declares these direct third-party crates. Version
 constraints are shown from the manifests; actual resolved versions and
-transitives are in `server/Cargo.lock` and must be reconciled during review.
+transitives are in `apps/server/Cargo.lock` and must be reconciled during
+review.
 
 | Component | Declared constraint | Current purpose | Review status |
 | --- | --- | --- | --- |
@@ -108,7 +109,8 @@ distribution purpose requires renewed ADR 0025 review.
 - **License and provenance evidence:** The exact package manifest identifies
   the canonical `serde-rs/json` repository and declares `MIT OR Apache-2.0`;
   both license texts are present in the resolved crate source. The package is
-  resolved through the crates.io index and pinned by `server/Cargo.lock`.
+  resolved through the crates.io index and pinned by
+  `apps/server/Cargo.lock`.
 - **Platform and distribution impact:** Developer and CI generation only. The
   crate and generator are not linked into Swift or Kotlin applications and are
   not required by ordinary Xcode or Gradle builds. Committed generated output

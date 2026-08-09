@@ -13,12 +13,12 @@ import {
   HOST_BUILD,
   decodeInvitationTransfer,
   normalizeApiOrigin,
-} from "../../../apps/web/shared/control-client.js";
-import { privateViewShouldBeHidden } from "../../../apps/web/companion/private-view.js";
+} from "../../../web/shared/control-client.js";
+import { privateViewShouldBeHidden } from "../../../web/companion/private-view.js";
 import { encodeInvitationTransfer } from "../src/invitation-transfer.js";
 
 const execFileAsync = promisify(execFile);
-const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
+const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 
 test("browser client configuration is pinned to approved MVP origins and builds", () => {
   assert.equal(DEFAULT_API_ORIGIN, "https://api.test.guiltyparty.app");

@@ -74,7 +74,7 @@ Before any Cloudflare authentication or resource mutation:
 
 1. Confirm the branch is not `main` or `dev` and is current with `origin/dev`.
 2. Run `make test` from a clean dependency install.
-3. Confirm `services/remote/wrangler.jsonc` has the exact
+3. Confirm `apps/server/cloudflare/wrangler.jsonc` has the exact
    `guilty-party-remote-dev` name, `workers_dev: true`, `preview_urls: false`,
    `send_metrics: false`, dependency instrumentation disabled, persisted
    observability disabled, and only the
@@ -230,9 +230,11 @@ Promotion evidence:
     SHA-256:
     `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`.
 
-  These are the runtime files generated under
-  `services/remote/.tmp/cloudflare-bundle/` by `make check-cloudflare`. The
-  local source map is excluded because source-map upload is not enabled.
+  At promotion time these runtime files were generated under the former
+  `services/remote/.tmp/cloudflare-bundle/` path. After ADR 0039, the same
+  `make check-cloudflare` command writes current artifacts under
+  `apps/server/cloudflare/.tmp/cloudflare-bundle/`. The local source map is
+  excluded because source-map upload is not enabled.
 - `api.test.guiltyparty.app` is an active proxied Worker record with an active
   managed edge certificate. Both advertised edge addresses negotiated TLS 1.3,
   and the default HTTPS/HTTP2 health request succeeded after initial edge

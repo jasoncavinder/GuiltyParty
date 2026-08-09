@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
-const serverRoot = fileURLToPath(new URL("../server/", import.meta.url));
+const serverRoot = fileURLToPath(new URL("../apps/server/", import.meta.url));
 
 run("cargo", [
   "build",

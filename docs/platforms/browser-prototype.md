@@ -15,10 +15,11 @@ control-plane behavior is in
 ## Preserved local evidence
 
 The local server persists its synthetic journal under
-`server/data/mvp-session.jsonl` by default and replays it against the embedded
-scenario version on restart. Its original unit and integration coverage still
-proves deterministic scenario behavior, recipient projections, and journal
-replay. `make test` remains the supported way to exercise that evidence.
+`apps/server/data/mvp-session.jsonl` by default and replays it against the
+embedded scenario version on restart. Its original unit and integration
+coverage still proves deterministic scenario behavior, recipient projections,
+and journal replay. `make test` remains the supported way to exercise that
+evidence.
 
 The legacy server uses process-local authority and plain HTTP suitable only for
 isolated development. It does not represent the accepted Cloudflare cookie,
