@@ -9,11 +9,13 @@ conversation or task is interrupted.
 
 ## Current Status
 
-**Hands-on exercise passed; explicit owner acceptance pending.**
+**Accepted for the bounded Android vertical slice.**
 
-This status does not authorize Android application scaffolding, dependencies,
-UI, transport adapters, or source code. Committed generated Kotlin DTOs are
-language-neutral contract output, not an Android application.
+The owner accepted this checkpoint on 2026-08-08 HST after PR #38 merged. This
+authorizes only the first Android vertical slice in ADR 0017. Every new
+third-party component still requires its separate ADR 0025 intake and explicit
+owner approval before it enters the repository. Committed generated Kotlin DTOs
+remain language-neutral contract output rather than an Android application.
 
 ## Checkpoint
 
@@ -23,7 +25,7 @@ language-neutral contract output, not an Android application.
 | Reproducible Swift and Kotlin generation | `make check-mobile-contracts` verifies deterministic first-party output, compilation, fixtures, and worktree drift | Met |
 | Deterministic iOS/iPadOS session loop and journal replay | Remote-service, scenario-engine, contract, and native Companion evidence plus the completed physical MVP rehearsal | Met for the current synthetic scenario |
 | Temporary disconnect and same-endpoint resumption without duplicate participant or action | Endpoint-bound rotating resume contract, Worker/Durable Object tests, native Keychain boundary, automated tests, and the deployed physical-iPhone restart exercise recorded below | Met |
-| Owner hands-on acceptance of the full iOS/server baseline | The owner completed and reported every required resumption exercise condition as passing; explicit acceptance of this Android entry checkpoint is still required | Pending explicit decision |
+| Owner hands-on acceptance of the full iOS/server baseline | The owner completed and reported every required resumption exercise condition as passing, merged the evidence in PR #38, and explicitly confirmed readiness to begin the Android app on 2026-08-08 HST | Met |
 | Accepted Android minimum and capability baseline | Android 13/API 33 minimum and the capability policy are recorded in MC-DEL-001 and ADR 0019 | Met |
 
 ## Required Hands-On Exercise
@@ -78,14 +80,20 @@ invitation and join. The owner reported every exercise condition as passing.
 This operational evidence contains no invitation, authority, participant or
 endpoint identifier, private scenario text, or signing identifier.
 
-The exercise satisfies the technical and hands-on evidence requirements. It
-does not itself record the separate explicit owner decision required by ADR
-0017 to authorize Android application work.
+The exercise satisfies the technical and hands-on evidence requirements.
+
+## Owner Decision
+
+On 2026-08-08 HST, after PR #38 merged, the project owner explicitly stated
+that they were ready to work on the Android app. That decision accepts the ADR
+0017 checkpoint as a sufficiently stable cross-platform baseline. It does not
+approve a public or named-friend Android release, expand the slice into
+production accounts, media, notifications, analytics, or distribution, or
+pre-approve any third-party component.
 
 ## Stop Boundary
 
-Do not create an Android Studio project or modify an Android application until
-the physical restart exercise passes and the owner explicitly accepts this
-checkpoint. When accepted, begin only the bounded vertical slice described by
-ADR 0017; do not expand it into accounts, media, notifications, distribution,
-or unrelated parity work.
+The Android entry checkpoint is satisfied. Begin only the bounded vertical
+slice described by ADR 0017, and keep its dependency approval, privacy,
+contract, and test gates explicit. Do not expand it into accounts, media,
+notifications, distribution, or unrelated parity work.
