@@ -64,6 +64,145 @@ development environment prerequisites rather than redistributed components.
 Plugins, extensions, templates, generated artifacts, or runtimes copied from
 those tools into a release still require review.
 
+## Proposed Android Companion Baseline
+
+### Status and Owner Decision
+
+**Approved by the project owner on 2026-08-08 HST in PR #39.** The approval is
+limited to the first Android vertical slice in ADR 0017 and the exact versions,
+repositories, features, scopes, data behavior, and controls below. The
+disposable, synthetic-data compatibility build described below did not modify
+the repository. Android build manifests and application source may adopt this
+set after PR #39 merges.
+
+| Component | Exact proposed version | Scope | License |
+| --- | --- | --- | --- |
+| Gradle binary distribution and Wrapper | 9.4.1 | Developer/CI build tool | Apache-2.0 |
+| Android Gradle Plugin | 9.2.1 | Developer/CI build plugin | Apache-2.0 |
+| Kotlin Compose compiler Gradle plugin and Kotlin standard library | 2.3.21 | Build plugin and application language runtime | Apache-2.0 |
+| Jetpack Compose stable BOM | 2026.06.00 | Version alignment only | Apache-2.0 components |
+| Compose UI, Foundation, and Material 3 | BOM-resolved UI/Foundation 1.11.3; Material 3 1.4.0 | Application UI runtime | Apache-2.0 |
+| AndroidX Activity Compose | 1.13.0 | Application/activity integration | Apache-2.0 |
+| OkHttp / OkHttp Android | 5.3.0 | HTTPS/WSS transport | Apache-2.0 |
+| Okio / Okio JVM | 3.16.2, transitive through OkHttp | Transport I/O | Apache-2.0 |
+| JUnit 4 | 4.13.2, test only | Local tests | EPL-1.0 |
+| AndroidX Test runner / ext JUnit | 1.7.0 / 1.3.0, test only | Instrumented tests | Apache-2.0 |
+| Compose UI test and test manifest | BOM-resolved 1.11.3, test/debug only | Instrumented UI tests | Apache-2.0 |
+
+### Necessity, Alternatives, and Scope
+
+- Kotlin and Jetpack Compose implement the already accepted separate-native-app
+  decision in ADR 0015 and avoid a cross-platform framework or shared UI
+  runtime. Android platform APIs remain preferred for lifecycle, Keystore,
+  capture protection, and storage behavior.
+- Gradle 9.4.1, Android Gradle Plugin 9.2.1, SDK Build Tools 36.0.0, and JDK 17
+  are the documented compatible AGP 9.2 baseline. The installed Android Studio
+  JBR may run the build, while application bytecode remains configured for Java
+  17. The Gradle Wrapper distribution checksum must be committed and verified.
+- The stable Compose BOM keeps the narrow UI artifacts on a Google-tested
+  compatible set. Only Activity Compose, UI, Foundation, and Material 3 are
+  direct runtime declarations; navigation, image loading, persistence,
+  dependency injection, analytics, and media libraries are not proposed.
+- OkHttp is elevated because it carries endpoint authority and private
+  projections. Android does not expose a comparable platform WebSocket client;
+  separate HTTP and custom WebSocket implementations would create more protocol
+  and security code. Only the core client is proposed—no logging interceptor,
+  cache, cookie persistence, DNS-over-HTTPS, Brotli, Conscrypt, telemetry, or
+  remote provider is included.
+- JUnit and AndroidX/Compose test artifacts are limited to local and
+  instrumented test configurations. They must not enter the release APK.
+
+### Provenance, Releases, and Resolved Graph
+
+Canonical sources are the Gradle project, Google Android build tools and
+AndroidX repositories, JetBrains Kotlin repository, Square OkHttp/Okio
+repositories, and the JUnit project. Gradle 9.4.1 was released 2026-03-19;
+Activity 1.13.0 was released 2026-03-11; AGP 9.2 is the April 2026 line and
+9.2.1 is its current reviewed patch. The proposed Compose BOM is Google's
+stable 2026.06.00 set. OkHttp's canonical repository publishes 5.3.0 as its
+current reviewed stable coordinate. Exact Maven artifacts and the Gradle
+distribution must resolve from their canonical HTTPS repositories and be
+captured by committed dependency locking and Wrapper integrity metadata.
+
+The disposable release-runtime resolution contained the declared Compose,
+Activity, OkHttp, Okio, Kotlin, and AndroidX support graph plus Kotlin
+coroutines 1.9.0, Kotlin serialization core 1.7.3, JetBrains annotations 23.0.0,
+JSpecify 1.0.0, and Guava `listenablefuture` 1.0. All resolved application
+runtime components are source-available under Apache-2.0 or similarly
+permissive terms in their published metadata; the exact locked graph and
+copyright notices must be reconciled again from the repository build before
+merge and before any external distribution. The JUnit EPL-1.0 and Hamcrest
+BSD-3-Clause graph remains test-only.
+
+### Data, Permissions, and Runtime Behavior
+
+Jetpack libraries declare no backend data transmission. Compose and Activity
+render local state and integrate with Android lifecycle APIs. OkHttp contacts
+only the Guilty Party HTTPS/WSS application endpoints supplied by first-party
+configuration; its disk cache, cookie persistence, event logging, and wire
+logging remain disabled. It performs no analytics, advertising, crash
+reporting, device identification, or remote configuration. Credentials and
+private payloads must never enter logs.
+
+The synthetic debug APK requested only `android.permission.INTERNET` plus the
+signature-level `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` generated by
+AndroidX. It requested no camera, microphone, location, notification, nearby-
+device, storage, advertising, or tracking permission. Its merged manifest also
+contained a non-exported AndroidX Startup provider for Emoji, process lifecycle,
+OkHttp platform initialization, and profile installation, plus the protected
+AndroidX profile installer receiver. The repository artifact must be inspected
+again, and any additional permission, exported component, provider, initializer,
+SDK Index warning, Data Safety effect, or network recipient requires renewed
+review. No Apple privacy-manifest or label impact applies to this Android-only
+set.
+
+### Security, Updates, Tests, and Removal
+
+Use platform TLS without a custom trust manager, hostname verifier, certificate
+pin, or bundled provider. HTTPS/WSS is mandatory for private remote data. The
+transport is kept behind a handwritten interface and tested with synthetic
+fixtures so OkHttp can be upgraded or replaced. Gradle dependency locking,
+Wrapper checksum verification, clean builds, unit/instrumented tests, merged-
+manifest inspection, artifact dependency reconciliation, and advisory review
+are required before merge. Updates never merge automatically and repeat the
+relevant provenance, license, graph, permission, data, and behavior review.
+
+Point-in-time GitHub Advisory Database queries on 2026-08-08 returned no
+advisory affecting the proposed Maven coordinates for OkHttp 5.3.0 or the
+test-only JUnit 4.13.2. This is not a complete or permanent vulnerability
+warranty. The exact locked application, test, plugin, and Wrapper graph must be
+checked again before merge and each external build; any Android Studio SDK
+Index or Play policy warning is a stop-and-review condition.
+
+Removal deletes the Android Gradle project and Wrapper, direct and transitive
+artifacts, locks, imports, initializers, permissions, tests, notices, and SBOM
+entries. Removing OkHttp also removes its transport adapter and Startup
+initializer; a replacement must preserve the contract, TLS, authority,
+idempotency, and resumption tests. No provider account, API key, remotely
+retained vendor data, native binary, dynamic code, or install-time artifact
+download is part of the proposed application runtime.
+
+### Disposable Compatibility Evidence
+
+On 2026-08-08, an isolated project under `/private/tmp` resolved the proposed
+coordinates against the installed Android SDK, compiled an adaptive Compose
+shell with API 36 compile/target and API 33 minimum, and produced a debug APK
+using Gradle 9.4.1, AGP 9.2.1, Build Tools 36.0.0, and the installed Android
+Studio JBR. The downloaded Gradle 9.4.1 binary ZIP matched published SHA-256
+`2ab2958f2a1e51120c326cad6f385153bb11ee93b3c216c5fccebfdfbb7ec6cb`.
+The spike used only synthetic text, contacted no Guilty Party application
+service, and will be deleted after this intake is recorded.
+
+### Owner Decision
+
+Approved by the project owner on 2026-08-08 HST in PR #39. The owner approved
+the proposed Android Companion baseline, including the exact versions, scopes,
+transitive components, data behavior, and controls recorded in this section.
+Any version, artifact, transitive, plugin, repository, initializer, permission,
+endpoint, data behavior, distribution purpose, or feature-scope change requires
+renewed review. This approval does not authorize an Android external test or
+store release.
+
 ## First-Party WebAssembly Adapter
 
 `gp_scenario_wasm` is first-party Guilty Party source, not a third-party

@@ -157,7 +157,8 @@ the accepted permanent-account model.
 - public events, uninvited traffic, App Store, or television-store distribution
 - media-plane audio, video, whispers, captions, recording, or transcription
 - remote AI providers or AI-dependent gameplay
-- Android, tvOS, and other additional native clients
+- Android work beyond the bounded ADR 0017 baseline, tvOS, and other additional
+  native clients
 - multiple downloadable scenarios, creator authoring, R2 catalog delivery, D1
   account data, queues, or containers
 - production analytics, behavioral data, support tooling, or general moderation
@@ -256,10 +257,98 @@ The packaged webOS Stage, physical iPhone Companion, iPadOS simulator
 Companion, and Browser Host have completed the live authorized scenario. The
 physical iPhone also passed same-participant restart recovery, interrupted-vote
 reconciliation without duplication, and post-session credential invalidation.
-MVP completion still requires physical-iPad validation, the tester notice
-decision, and the explicit external-test go/no-go. Android application work
-remains blocked until the owner explicitly accepts the entry checkpoint
-recorded in the Android platform evidence.
+MVP completion still requires the tester-notice decision and the explicit
+external-test go/no-go. The owner accepted the Android entry checkpoint on
+2026-08-08 HST after the full iOS/server resumption exercise and PR #38; the
+bounded Android baseline now proceeds separately under ADR 0017 without making
+Android a requirement for the existing Remote Friends MVP gate.
+
+## Android Companion Baseline
+
+### Status
+
+Approved; the owner explicitly approved the proposed third-party dependency
+intake in PR #39 on 2026-08-08 HST. Implementation begins after that
+documentation-only PR merges.
+
+### Objective
+
+Prove that the accepted control-plane v1 and participant-resumption contracts
+support a native Android player Companion without importing Apple-specific
+assumptions. This is a bounded cross-platform validation slice, not a public or
+store-ready Android release.
+
+### Scope
+
+- attach the existing generated Kotlin DTOs behind handwritten application
+  boundaries
+- provide one adaptive Jetpack Compose shell for Android phone and tablet
+  window sizes, with Android 13/API 33 as the minimum
+- join approved synthetic sessions through the remote HTTPS/WSS service and the
+  bounded development-LAN test path required by ADR 0017, receiving only the
+  caller's authorized private participant projection
+- submit at least one idempotent participant action and reconcile its outcome
+- resume the same participant and endpoint after temporary disconnection or
+  process restart without duplicating the participant or action
+- clear or obscure private content at lifecycle and capture boundaries and
+  retain only the approved encrypted resume credential
+- verify the slice on representative phone and tablet emulators; physical
+  Android checks remain required before any Android external-test approval
+
+Explicitly excluded are production accounts or identity providers, payments,
+media, notifications or Live Updates, analytics, app-store distribution,
+background gameplay, and unrelated iOS parity.
+
+### Architecture Impact
+
+The Android app remains a player-only endpoint. It uses Kotlin and Jetpack
+Compose, generated data-only control-plane DTOs, handwritten transport and
+domain adapters, Android Keystore protection for the resumable credential, and
+server-authorized projections. It does not own scenario truth, authorization,
+or secrecy policy. HTTPS/WSS remains mandatory for private remote data.
+Development-LAN transport is limited to the existing synthetic-data and trust
+boundaries; discovery and local-server behavior remain governed by ADR 0020
+and the existing trust decisions.
+
+### Implementation Steps
+
+1. Complete the ADR 0025 intake and receive explicit owner approval for the
+   exact Android build, UI, transport, and test component set.
+2. Add a reproducible Android Studio/Gradle application under
+   `apps/mobile/android/`, including committed dependency locking and the
+   generated Kotlin DTO attachment.
+3. Implement narrow join, authorized projection, idempotent action, session-end
+   handling, and accepted resumption behavior.
+4. Add adaptive phone/tablet UI plus active-session capture protection and
+   lifecycle privacy behavior.
+5. Add contract, state, transport, idempotency, resumption, privacy, and
+   adaptive-layout tests and run them on phone and tablet emulators.
+6. Reconcile the built APK's dependency graph, licenses, manifest, permissions,
+   endpoints, and data behavior with the approved intake before review.
+
+### Testing Strategy
+
+- deterministic generated-Kotlin drift and compile checks
+- local unit tests for contract decoding, state reduction, terminal failures,
+  idempotency reconciliation, and resume-credential handling boundaries
+- instrumented Compose tests at compact and expanded window sizes
+- synthetic integration tests against the existing remote contract and safe
+  local test doubles
+- clean debug and release builds with dependency verification and locking
+- merged-manifest and APK inspection for permissions, exported components,
+  endpoints, private data, and unexpected bundled code
+
+### Risks
+
+- a broad Compose or test graph can hide transitive behavior unless the resolved
+  release artifact is reconciled rather than reviewing only direct declarations
+- process and network recovery can accidentally duplicate participants or
+  actions if the server-owned resume and idempotency contracts are bypassed
+- Android lifecycle, backup, screenshots, recents, and multi-window behavior
+  can expose stale private content unless tested at the actual application
+  boundary
+- emulator success cannot replace eventual physical phone and tablet checks
+
 
 ---
 
