@@ -66,14 +66,14 @@ those tools into a release still require review.
 
 ## Proposed Android Companion Baseline
 
-### Status and Decision Required
+### Status and Owner Decision
 
-**Proposed; explicit project-owner approval is required before repository
-adoption.** The following set is limited to the first Android vertical slice in
-ADR 0017. The disposable, synthetic-data compatibility build described below
-does not itself approve a component and did not modify the repository. No
-Android build manifest or application source may adopt this set until the owner
-approves it in the pull request containing this evidence.
+**Approved by the project owner on 2026-08-08 HST in PR #39.** The approval is
+limited to the first Android vertical slice in ADR 0017 and the exact versions,
+repositories, features, scopes, data behavior, and controls below. The
+disposable, synthetic-data compatibility build described below did not modify
+the repository. Android build manifests and application source may adopt this
+set after PR #39 merges.
 
 | Component | Exact proposed version | Scope | License |
 | --- | --- | --- | --- |
@@ -195,12 +195,13 @@ service, and will be deleted after this intake is recorded.
 
 ### Owner Decision
 
-Pending. Approval, if granted, is limited to the exact versions, repositories,
-features, scopes, data behavior, and controls above for the ADR 0017 Android
-baseline. Any version, artifact, transitive, plugin, repository, initializer,
-permission, endpoint, data behavior, distribution purpose, or feature-scope
-change requires renewed review. Approval does not authorize an Android external
-test or store release.
+Approved by the project owner on 2026-08-08 HST in PR #39. The owner approved
+the proposed Android Companion baseline, including the exact versions, scopes,
+transitive components, data behavior, and controls recorded in this section.
+Any version, artifact, transitive, plugin, repository, initializer, permission,
+endpoint, data behavior, distribution purpose, or feature-scope change requires
+renewed review. This approval does not authorize an Android external test or
+store release.
 
 ## First-Party WebAssembly Adapter
 

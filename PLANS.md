@@ -267,8 +267,9 @@ Android a requirement for the existing Remote Friends MVP gate.
 
 ### Status
 
-Approved for implementation after explicit approval of the proposed
-third-party dependency intake.
+Approved; the owner explicitly approved the proposed third-party dependency
+intake in PR #39 on 2026-08-08 HST. Implementation begins after that
+documentation-only PR merges.
 
 ### Objective
 
