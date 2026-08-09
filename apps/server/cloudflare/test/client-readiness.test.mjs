@@ -48,3 +48,14 @@ test("client build policy is optional until configured and bounded afterward", (
   assert.equal(evaluateClientBuild({ ...build, build_number: 9 }, policy).status, 409);
   assert.equal(evaluateClientBuild(build, "not-json").status, 503);
 });
+
+test("approved Android Companion build is admitted by the friends policy", () => {
+  const policy = JSON.stringify({
+    companion_android: { minimum_build_number: 1 },
+  });
+  assert.deepEqual(evaluateClientBuild({
+    application_id: "companion_android",
+    application_version: "0.1.0",
+    build_number: 1,
+  }, policy), { ok: true });
+});

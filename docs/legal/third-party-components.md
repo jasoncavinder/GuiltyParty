@@ -64,18 +64,19 @@ development environment prerequisites rather than redistributed components.
 Plugins, extensions, templates, generated artifacts, or runtimes copied from
 those tools into a release still require review.
 
-## Proposed Android Companion Baseline
+## Android Companion Baseline
 
 ### Status and Owner Decision
 
-**Approved by the project owner on 2026-08-08 HST in PR #39.** The approval is
+**Approved by the project owner on 2026-08-08 HST in PR #39 and implemented in
+the bounded Android vertical slice.** The approval is
 limited to the first Android vertical slice in ADR 0017 and the exact versions,
 repositories, features, scopes, data behavior, and controls below. The
-disposable, synthetic-data compatibility build described below did not modify
-the repository. Android build manifests and application source may adopt this
-set after PR #39 merges.
+disposable, synthetic-data compatibility build described below preceded the
+approval; the repository application now adopts the reviewed set with committed
+locking and checksum verification.
 
-| Component | Exact proposed version | Scope | License |
+| Component | Exact approved version | Scope | License |
 | --- | --- | --- | --- |
 | Gradle binary distribution and Wrapper | 9.4.1 | Developer/CI build tool | Apache-2.0 |
 | Android Gradle Plugin | 9.2.1 | Developer/CI build plugin | Apache-2.0 |
@@ -192,6 +193,39 @@ Studio JBR. The downloaded Gradle 9.4.1 binary ZIP matched published SHA-256
 `2ab2958f2a1e51120c326cad6f385153bb11ee93b3c216c5fccebfdfbb7ec6cb`.
 The spike used only synthetic text, contacted no Guilty Party application
 service, and will be deleted after this intake is recorded.
+
+### Repository Artifact Reconciliation
+
+On 2026-08-08 HST, the repository Android application produced clean debug,
+unsigned release, and instrumented-test APKs from the approved versions. The
+committed Gradle lock covers application, test, Kotlin compiler, lint, and
+Unified Test Platform configurations; committed SHA-256 verification metadata
+covers the resolved artifacts. Strict offline debug/release builds, local
+tests, lint, and compact/expanded Android 17-preview emulator tests passed.
+
+The resolved release runtime matches the reviewed Compose, Activity, OkHttp,
+Okio, Kotlin, coroutines, serialization-core, AndroidX support,
+`listenablefuture`, annotations, and JSpecify graph. Compose transitively
+bundles the Apache-2.0 `androidx.graphics:graphics-path:1.0.1` native library
+for arm64-v8a, armeabi-v7a, x86, and x86_64. No first-party native library,
+dynamic code, test framework, JUnit, UTP, lint implementation, or Gradle plugin
+is present in the release APK.
+
+The merged release manifest again requests only `INTERNET` plus AndroidX's
+signature-level `DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION`. It contains the
+previously reviewed non-exported AndroidX Startup provider and protected
+profile-installer receiver, disables cleartext and backup/device transfer, and
+adds no camera, microphone, location, nearby-device, storage, notification,
+advertising, or tracking permission. The debug-only Compose test host is absent
+from release. The only configured application recipient is the first-party
+`api.test.guiltyparty.app` HTTPS/WSS service. Cache, cookies, redirects,
+implicit retries, wire logging, analytics, and other network recipients remain
+disabled.
+
+The detailed synthetic test and artifact record is maintained in
+[Android Companion MVP Test Record](../platforms/android-companion-mvp-test-record.md).
+This reconciliation does not approve an Android external test, Play Console
+registration, production signing, or store distribution.
 
 ### Owner Decision
 

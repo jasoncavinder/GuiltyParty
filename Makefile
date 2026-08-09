@@ -1,4 +1,4 @@
-.PHONY: setup run-server run-host run-play run-stage build-remote-clients build-stage check-contracts generate-mobile-contracts check-mobile-contracts test-remote check-scenario-wasm check-cloudflare rehearse-packaged-stage rehearse-stage-pairing-boundaries rehearse-remote-lifecycle rehearse-remote-game test
+.PHONY: setup run-server run-host run-play run-stage build-remote-clients build-stage build-android test-android test-android-device check-android check-contracts generate-mobile-contracts check-mobile-contracts test-remote check-scenario-wasm check-cloudflare rehearse-packaged-stage rehearse-stage-pairing-boundaries rehearse-remote-lifecycle rehearse-remote-game test
 
 setup:
 	@echo "Checking dependencies..."
@@ -39,6 +39,18 @@ build-stage:
 
 build-remote-clients:
 	@node tooling/build_remote_clients.mjs
+
+build-android:
+	cd apps/mobile/android && ./gradlew --offline --dependency-verification strict assembleDebug
+
+test-android:
+	cd apps/mobile/android && ./gradlew --offline --dependency-verification strict testDebugUnitTest
+
+test-android-device:
+	cd apps/mobile/android && ./gradlew --offline --dependency-verification strict connectedDebugAndroidTest
+
+check-android:
+	cd apps/mobile/android && ./gradlew --offline --dependency-verification strict assembleDebug assembleRelease assembleDebugAndroidTest testDebugUnitTest lintDebug
 
 check-contracts:
 	@python3 tooling/check_contract_artifacts.py

@@ -21,7 +21,7 @@
   "vars": {
     "ENVIRONMENT_PROFILE": "friends-mvp-development",
     "ALLOWED_ORIGINS": "https://host.test.guiltyparty.app,https://play.test.guiltyparty.app",
-    "CLIENT_BUILD_POLICY_JSON": "{\"host_web\":{\"minimum_build_number\":1},\"companion_web\":{\"minimum_build_number\":1},\"companion_ios\":{\"minimum_build_number\":1},\"stage_webos\":{\"minimum_build_number\":1}}"
+    "CLIENT_BUILD_POLICY_JSON": "{\"host_web\":{\"minimum_build_number\":1},\"companion_web\":{\"minimum_build_number\":1},\"companion_ios\":{\"minimum_build_number\":1},\"companion_android\":{\"minimum_build_number\":1},\"stage_webos\":{\"minimum_build_number\":1}}"
   },
   "ratelimits": [
     {

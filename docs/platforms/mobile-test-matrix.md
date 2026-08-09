@@ -11,14 +11,15 @@ coverage role changes.
 
 ## Available Local Environment
 
-Inventory reported on 2026-08-06:
+Physical inventory reported on 2026-08-06; Android emulator execution updated
+on 2026-08-08:
 
 | Surface | Available environment | Current coverage | Important limitation or follow-up |
 | --- | --- | --- | --- |
 | iPhone | iPhone 12 Pro Max, iOS 27 developer beta | Physical iPhone and next-version preview behavior | Does not satisfy the minimum-iOS or latest-stable-iOS release cells; confirm compatible beta Xcode before deploying each preview build |
 | iPad | None reported | Simulator only | A first-class physical iPad remains required |
-| Android phone | None reported | Emulator only | Physical API 33, current Google-reference, and current Samsung coverage remain open |
-| Android tablet | None reported | Emulator only | A representative physical Android tablet remains required |
+| Android phone | No physical device; Medium Phone AVD with Android 17 developer preview/API 37.1, Google APIs Play Store, arm64-v8a | Compact 411dp phone layout and instrumented contract/privacy suite passed | Preview emulation does not satisfy physical API 33, current Google-reference, or current Samsung coverage |
+| Android tablet | No physical device; the same isolated preview image exercised at 2560x1600/240dpi (`sw1067dp`) | Expanded tablet-class layout and instrumented contract/privacy suite passed | A representative physical Android tablet and a distinct tablet hardware profile remain required |
 | Apple Stage | Apple TV 4K | Physical Apple Stage and AirPlay-target testing | Record hardware generation and tvOS version before using it as release evidence |
 | LG webOS Stage | LG `65NANO85UNA`, webOS TV `5.6.2-21` | Physical legacy LG Stage and room integration | Does not replace coverage for newer webOS generations |
 | Development host | 2026 MacBook Pro, M5 Max, 64 GB, macOS 26.6 Tahoe | Local server, browser Host Console, simulator host, and isolated-LAN test control | Machine-specific identifiers and configuration remain outside the repository |
@@ -29,7 +30,8 @@ Inventory reported on 2026-08-06:
 Inventory reported on 2026-08-06:
 
 - Xcode 26.6; locally verified as build `17F113`
-- Android Studio Quail 3 and its available Android emulators
+- Android Studio Quail 3; Medium Phone AVD with Android 17 developer
+  preview/API 37.1, Google APIs Play Store, 16KB page size, arm64-v8a
 - webOS Studio SDK for Visual Studio Code
 - `webOS_TV_6.0_Simulator`
 - `webOS_TV_22_Simulator`
@@ -95,3 +97,6 @@ A qualifying record identifies:
 Do not include production credentials, authentication secrets, raw private
 media, scenario secrets, participant communications, hardware serial numbers,
 Bluetooth addresses, or unrelated machine configuration.
+
+The first Android execution record is
+[Android Companion MVP Test Record](android-companion-mvp-test-record.md).

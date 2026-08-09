@@ -40,3 +40,12 @@ apps/server/data/
 DerivedData/
 xcuserdata/
 *.xcuserstate
+
+# Android and Gradle
+.gradle/
+.kotlin/
+**/build/
+local.properties
+*.apk
+*.aab
+captures/
