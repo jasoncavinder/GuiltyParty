@@ -34,6 +34,7 @@ material, or account information.
 | `lintDebug` | repository source and merged debug manifest | Passed with zero errors; only the accepted API 36-versus-installed-preview notices remain |
 | Instrumented suite, compact | Medium Phone AVD, Android 17 preview, 1080x2400 at 420dpi, approximately 411dp wide | Passed: 10 tests; real Compose session selected compact layout |
 | Instrumented suite, expanded | Same isolated emulator image overridden to 2560x1600 at 240dpi, `sw1067dp`/`w1707dp` | Passed: 10 tests; real Compose session selected expanded layout |
+| Instrumented suite, native tablet | Pixel Tablet AVD, Android 17 preview, 2560x1600 at 320dpi | Passed: 10 tests; zero failures; real Compose session selected expanded layout |
 
 The Android 17 preview changed a hidden input API used by the current Espresso
 bridge. The first semantic-rule attempt therefore failed in Espresso before
@@ -124,13 +125,48 @@ moved from an active private projection to `Session ended` through the bounded
 resume-validation round trip, without restart, stale private content, or an
 uncertain-connection state.
 
+### Pixel Tablet Addendum
+
+On 2026-08-09 HST, exact merged `dev` commit `588bcfe` was installed on a
+distinct Android Studio Pixel Tablet AVD using the installed Android 17
+preview/API 37.1 Google Play 16 KB-page image. This was a genuine 2560x1600 at
+320dpi tablet hardware profile, not the earlier phone-profile display
+override. The production surface rendered and remained interactive in both
+2560x1600 landscape and 1600x2560 portrait.
+
+The native tablet then completed a live synthetic Remote Friends session:
+
+- joined as one Android Companion endpoint and appeared once in the Host
+  roster;
+- received Alice and only Alice's private objective after assignment;
+- advanced to Scene 1, received the public muddy-footprints clue, and omitted
+  the Bob-only security-badge clue entirely;
+- resumed the same participant and endpoint after a force-stop without a
+  duplicate roster entry, restoring a fresh server-authorized projection;
+- moved directly to `Session ended` after confirmed Host termination, without
+  stale private content or an uncertain-reconnection state; and
+- returned to the clean join surface after a post-termination process restart,
+  with the character, objective, clues, and resume authority absent.
+
+The Android 17 preview's synthetic text-input bridge dropped or restored
+characters while automating the GP1 field. Every malformed local attempt was
+blocked by a length preflight and never submitted. The owner completed the
+single live join manually; normal application admission, projection, resume,
+and terminal behavior then passed. Temporary invitations, clipboard values,
+UI dumps, and app credentials were cleared after the run.
+
 ## Remaining Gates
 
-- Test at least one representative physical Android phone and one physical
-  tablet-class Android device before approving Android external distribution.
+- Physical Android phone and tablet evidence remains unavailable. The owner
+  explicitly narrowed the private MVP scope on 2026-08-09 HST: a small,
+  invitation-only friends cohort may gather initial physical Android evidence,
+  but this exception does not establish Android release qualification or
+  authorize an open beta or production release.
 - A stable minimum API 33 image and current stable Google-reference/Samsung
   hardware remain open matrix cells; the preview emulator does not satisfy
   those physical-device requirements.
 
-No Android external test, Play Console registration, production signing, or
-store release is approved by this record.
+No Play Console registration, signing-key creation, store upload, tester
+invitation, open beta, or production release is approved by this record. The
+controlled distribution method and build-specific cohort record remain human
+decisions under ADR 0024.
