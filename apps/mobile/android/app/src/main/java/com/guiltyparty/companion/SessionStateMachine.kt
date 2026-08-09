@@ -122,7 +122,9 @@ enum class ConnectionHealthAction { HEALTHY, SHIELD, DISCONNECT }
 enum class SocketInterruptionAction {
     END_SESSION,
     REFRESH_AUTHORITY,
+    REFRESH_AUTHORITY_WITH_BACKOFF,
     RECONNECT_EXISTING_AUTHORITY,
+    FAIL_PROTOCOL,
 }
 
 object SocketInterruptionPolicy {
@@ -132,7 +134,11 @@ object SocketInterruptionPolicy {
         else -> SocketInterruptionAction.RECONNECT_EXISTING_AUTHORITY
     }
 
-    fun failed(): SocketInterruptionAction = SocketInterruptionAction.REFRESH_AUTHORITY
+    fun failed(failure: SocketFailure): SocketInterruptionAction = when (failure) {
+        SocketFailure.AMBIGUOUS_TRANSPORT ->
+            SocketInterruptionAction.REFRESH_AUTHORITY_WITH_BACKOFF
+        SocketFailure.PROTOCOL_VIOLATION -> SocketInterruptionAction.FAIL_PROTOCOL
+    }
 }
 
 object ConnectionHealthPolicy {

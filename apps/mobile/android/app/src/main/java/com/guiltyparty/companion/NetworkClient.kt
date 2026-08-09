@@ -36,8 +36,10 @@ interface SocketCallback {
     fun onOpen(socketId: String)
     fun onText(socketId: String, text: String)
     fun onClosed(socketId: String, code: Int)
-    fun onFailure(socketId: String)
+    fun onFailure(socketId: String, failure: SocketFailure)
 }
+
+enum class SocketFailure { AMBIGUOUS_TRANSPORT, PROTOCOL_VIOLATION }
 
 class NetworkClient {
     internal val httpClient = baseBuilder()
@@ -249,7 +251,7 @@ class NetworkClient {
             override fun onOpen(webSocket: WebSocket, response: Response) {
                 if (response.header("Sec-WebSocket-Protocol") != CONTROL_SUBPROTOCOL) {
                     webSocket.close(1002, null)
-                    callback.onFailure(socketId)
+                    callback.onFailure(socketId, SocketFailure.PROTOCOL_VIOLATION)
                     return
                 }
                 callback.onOpen(socketId)
@@ -258,7 +260,7 @@ class NetworkClient {
             override fun onMessage(webSocket: WebSocket, text: String) {
                 if (text.toByteArray(Charsets.UTF_8).size > MAXIMUM_RESPONSE_BYTES) {
                     webSocket.close(1009, null)
-                    callback.onFailure(socketId)
+                    callback.onFailure(socketId, SocketFailure.PROTOCOL_VIOLATION)
                 } else {
                     callback.onText(socketId, text)
                 }
@@ -266,7 +268,7 @@ class NetworkClient {
 
             override fun onMessage(webSocket: WebSocket, bytes: ByteString) {
                 webSocket.close(1003, null)
-                callback.onFailure(socketId)
+                callback.onFailure(socketId, SocketFailure.PROTOCOL_VIOLATION)
             }
 
             override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
@@ -274,7 +276,7 @@ class NetworkClient {
             }
 
             override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-                callback.onFailure(socketId)
+                callback.onFailure(socketId, SocketFailure.AMBIGUOUS_TRANSPORT)
             }
         })
     }

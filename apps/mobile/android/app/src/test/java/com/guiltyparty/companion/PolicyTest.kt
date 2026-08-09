@@ -41,8 +41,12 @@ class PolicyTest {
             SocketInterruptionPolicy.closed(1001),
         )
         assertEquals(
-            SocketInterruptionAction.REFRESH_AUTHORITY,
-            SocketInterruptionPolicy.failed(),
+            SocketInterruptionAction.REFRESH_AUTHORITY_WITH_BACKOFF,
+            SocketInterruptionPolicy.failed(SocketFailure.AMBIGUOUS_TRANSPORT),
+        )
+        assertEquals(
+            SocketInterruptionAction.FAIL_PROTOCOL,
+            SocketInterruptionPolicy.failed(SocketFailure.PROTOCOL_VIOLATION),
         )
     }
 
