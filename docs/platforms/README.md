@@ -2,6 +2,7 @@
 
 - [Cloudflare deployment runbook](cloudflare-deployment.md)
 - [Remote Friends MVP test readiness](remote-friends-test-readiness.md)
+- [Proposed Remote Friends Cohort 01](remote-friends-cohort-01.md)
 - [Remote Friends MVP service contract](remote-friends-mvp.md)
 - [Remote MVP client delivery preparation](remote-client-delivery.md)
 - [webOS packaged Stage transport spike](webos-transport-spike.md)

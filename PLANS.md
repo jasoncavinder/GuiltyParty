@@ -35,9 +35,11 @@ until the owner approves the named-friend test gate described below.
 ### Objective
 
 Let one host run one short, original Guilty Party scenario for invited friends
-through the browser Host, LG webOS Stage, iOS Companions, and the Cloudflare
-remote control plane. The purpose is hands-on product learning, not public,
-commercial, production, or market-validation traffic.
+through the browser Host, LG webOS Stage, iOS/iPadOS and bounded Android
+Companions, and the Cloudflare remote control plane. Android participation may
+gather the physical evidence still missing from the development baseline, but
+is not required for a session to succeed. The purpose is hands-on product
+learning, not public, commercial, production, or market-validation traffic.
 
 ### Approved Test Defaults
 
@@ -154,7 +156,9 @@ the accepted permanent-account model.
 
 - permanent accounts, recovery, production identity, or public registration
 - payments, commerce, creator marketplace, or professional hosting workflows
-- public events, uninvited traffic, App Store, or television-store distribution
+- public events, uninvited traffic, public App Store or Google Play production
+  distribution, or television-store distribution; owner-only internal and
+  named external mobile test channels remain governed by ADR 0024
 - media-plane audio, video, whispers, captions, recording, or transcription
 - remote AI providers or AI-dependent gameplay
 - Android work beyond the bounded ADR 0017 baseline, tvOS, and other additional
@@ -236,6 +240,8 @@ The owner must approve:
 - any new third-party dependency or WebAssembly build tool after ADR 0025 intake
 - any change to the approved Host or Stage test hostnames and their DNS changes
 - the named-tester notice and external-test readiness record
+- the proposed first-cohort record, private feedback route, and narrow decision
+  on gathering the second physical Apple result during the cohort
 - the first invitation sent to a friend
 
 The owner approved `api.test.guiltyparty.app` as the API test hostname and
@@ -262,6 +268,12 @@ external-test go/no-go. The owner accepted the Android entry checkpoint on
 2026-08-08 HST after the full iOS/server resumption exercise and PR #38; the
 bounded Android baseline now proceeds separately under ADR 0017 without making
 Android a requirement for the existing Remote Friends MVP gate.
+
+After PR #42, Android phone and distinct Pixel Tablet emulator acceptance are
+recorded. The proposed `remote-friends-01` cohort is intentionally small enough
+for solo support and may gather missing physical Android evidence. Gathering
+the second physical Apple result through the same cohort is proposed but still
+requires explicit owner approval before any friend is invited.
 
 ## Android Companion Baseline
 
