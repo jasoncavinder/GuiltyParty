@@ -18,7 +18,7 @@ on 2026-08-08:
 | --- | --- | --- | --- |
 | iPhone | iPhone 12 Pro Max, iOS 27 developer beta | Physical iPhone and next-version preview behavior | Does not satisfy the minimum-iOS or latest-stable-iOS release cells; confirm compatible beta Xcode before deploying each preview build |
 | iPad | None reported | Simulator only | A first-class physical iPad remains required |
-| Android phone | No physical device; Medium Phone AVD with Android 17 developer preview/API 37.1, Google APIs Play Store, arm64-v8a | Compact 411dp phone layout and instrumented contract/privacy suite passed | Preview emulation does not satisfy physical API 33, current Google-reference, or current Samsung coverage |
+| Android phone | No physical device; Medium Phone AVD with Android 17 developer preview/API 37.1, Google APIs Play Store, arm64-v8a | Compact 411dp layout, instrumented contract/privacy suite, and live remote join/projection/resume/vote/session-end path passed | Preview emulation does not satisfy physical API 33, current Google-reference, or current Samsung coverage |
 | Android tablet | No physical device; the same isolated preview image exercised at 2560x1600/240dpi (`sw1067dp`) | Expanded tablet-class layout and instrumented contract/privacy suite passed | A representative physical Android tablet and a distinct tablet hardware profile remain required |
 | Apple Stage | Apple TV 4K | Physical Apple Stage and AirPlay-target testing | Record hardware generation and tvOS version before using it as release evidence |
 | LG webOS Stage | LG `65NANO85UNA`, webOS TV `5.6.2-21` | Physical legacy LG Stage and room integration | Does not replace coverage for newer webOS generations |

@@ -119,6 +119,28 @@ class SessionStateMachine {
 
 enum class ConnectionHealthAction { HEALTHY, SHIELD, DISCONNECT }
 
+enum class SocketInterruptionAction {
+    END_SESSION,
+    REFRESH_AUTHORITY,
+    REFRESH_AUTHORITY_WITH_BACKOFF,
+    RECONNECT_EXISTING_AUTHORITY,
+    FAIL_PROTOCOL,
+}
+
+object SocketInterruptionPolicy {
+    fun closed(code: Int): SocketInterruptionAction = when (code) {
+        1000 -> SocketInterruptionAction.END_SESSION
+        1008 -> SocketInterruptionAction.REFRESH_AUTHORITY
+        else -> SocketInterruptionAction.RECONNECT_EXISTING_AUTHORITY
+    }
+
+    fun failed(failure: SocketFailure): SocketInterruptionAction = when (failure) {
+        SocketFailure.AMBIGUOUS_TRANSPORT ->
+            SocketInterruptionAction.REFRESH_AUTHORITY_WITH_BACKOFF
+        SocketFailure.PROTOCOL_VIOLATION -> SocketInterruptionAction.FAIL_PROTOCOL
+    }
+}
+
 object ConnectionHealthPolicy {
     const val NEGOTIATION_TIMEOUT_MS = 5_000L
     const val PRIVACY_SHIELD_DELAY_MS = 30_000L

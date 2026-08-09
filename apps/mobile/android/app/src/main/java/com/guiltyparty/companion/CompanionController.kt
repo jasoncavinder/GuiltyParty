@@ -242,11 +242,8 @@ class CompanionController(
         override fun onOpen(socketId: String) = onMain { handleSocketOpen(socketId) }
         override fun onText(socketId: String, text: String) = onMain { handleServerText(socketId, text) }
         override fun onClosed(socketId: String, code: Int) = onMain { handleSocketClosed(socketId, code) }
-        override fun onFailure(socketId: String) = onMain {
-            if (socketId == this@CompanionController.socketId) {
-                protectAndReconnect(PrivacyInterruption.CONNECTION_UNCERTAIN)
-            }
-        }
+        override fun onFailure(socketId: String, failure: SocketFailure) =
+            onMain { handleSocketFailure(socketId, failure) }
     }
 
     private fun handleSocketOpen(eventSocketId: String) {
@@ -421,10 +418,23 @@ class CompanionController(
 
     private fun handleSocketClosed(eventSocketId: String, code: Int) {
         if (eventSocketId != socketId) return
-        when (code) {
-            1000 -> transitionToSessionEnded()
-            1008 -> recoverWithResumeCredentialOrExpire()
-            else -> protectAndReconnect(PrivacyInterruption.CONNECTION_UNCERTAIN)
+        handleSocketInterruption(SocketInterruptionPolicy.closed(code))
+    }
+
+    private fun handleSocketFailure(eventSocketId: String, failure: SocketFailure) {
+        if (eventSocketId != socketId) return
+        handleSocketInterruption(SocketInterruptionPolicy.failed(failure))
+    }
+
+    private fun handleSocketInterruption(action: SocketInterruptionAction) {
+        when (action) {
+            SocketInterruptionAction.END_SESSION -> transitionToSessionEnded()
+            SocketInterruptionAction.REFRESH_AUTHORITY -> recoverWithResumeCredentialOrExpire()
+            SocketInterruptionAction.REFRESH_AUTHORITY_WITH_BACKOFF ->
+                recoverWithResumeCredentialOrExpire(useBackoff = true)
+            SocketInterruptionAction.RECONNECT_EXISTING_AUTHORITY ->
+                protectAndReconnect(PrivacyInterruption.CONNECTION_UNCERTAIN)
+            SocketInterruptionAction.FAIL_PROTOCOL -> failProtocol()
         }
     }
 
@@ -527,7 +537,7 @@ class CompanionController(
         }
     }
 
-    private fun recoverWithResumeCredentialOrExpire() {
+    private fun recoverWithResumeCredentialOrExpire(useBackoff: Boolean = false) {
         if (resumeCredential == null) {
             transitionToExpiredOrRevoked()
             return
@@ -538,7 +548,14 @@ class CompanionController(
         state.interrupt(PrivacyInterruption.CONNECTION_UNCERTAIN)
         statusMessage = "Refreshing this device's private session access…"
         publish()
-        beginCredentialResumeIfNeeded()
+        if (useBackoff) scheduleCredentialResume() else beginCredentialResumeIfNeeded()
+    }
+
+    private fun scheduleCredentialResume() {
+        reconnectFuture?.cancel(false)
+        val maximum = reconnectBackoff.nextMaximumDelayMs()
+        val delay = if (maximum <= 1) 0 else Random.nextLong(maximum + 1)
+        reconnectFuture = schedule(delay) { beginCredentialResumeIfNeeded() }
     }
 
     private fun recordAuthenticatedSequence(sequence: Long) {
