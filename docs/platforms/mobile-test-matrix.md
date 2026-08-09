@@ -12,14 +12,14 @@ coverage role changes.
 ## Available Local Environment
 
 Physical inventory reported on 2026-08-06; Android emulator execution updated
-on 2026-08-08:
+on 2026-08-09:
 
 | Surface | Available environment | Current coverage | Important limitation or follow-up |
 | --- | --- | --- | --- |
 | iPhone | iPhone 12 Pro Max, iOS 27 developer beta | Physical iPhone and next-version preview behavior | Does not satisfy the minimum-iOS or latest-stable-iOS release cells; confirm compatible beta Xcode before deploying each preview build |
 | iPad | None reported | Simulator only | A first-class physical iPad remains required |
 | Android phone | No physical device; Medium Phone AVD with Android 17 developer preview/API 37.1, Google APIs Play Store, arm64-v8a | Compact 411dp layout, instrumented contract/privacy suite, and live remote join/projection/resume/vote/session-end path passed | Preview emulation does not satisfy physical API 33, current Google-reference, or current Samsung coverage |
-| Android tablet | No physical device; the same isolated preview image exercised at 2560x1600/240dpi (`sw1067dp`) | Expanded tablet-class layout and instrumented contract/privacy suite passed | A representative physical Android tablet and a distinct tablet hardware profile remain required |
+| Android tablet | No physical device; Pixel Tablet AVD with Android 17 preview/API 37.1, Google Play, arm64-v8a, 2560x1600 at 320dpi | Distinct native tablet profile passed 10/10 instrumented tests, landscape/portrait layout, and live remote join/projection/filtering/resume/session-end acceptance | Preview emulation is not physical proof; the first invitation-only friends cohort may gather initial hardware evidence, but open-beta and release qualification remain blocked |
 | Apple Stage | Apple TV 4K | Physical Apple Stage and AirPlay-target testing | Record hardware generation and tvOS version before using it as release evidence |
 | LG webOS Stage | LG `65NANO85UNA`, webOS TV `5.6.2-21` | Physical legacy LG Stage and room integration | Does not replace coverage for newer webOS generations |
 | Development host | 2026 MacBook Pro, M5 Max, 64 GB, macOS 26.6 Tahoe | Local server, browser Host Console, simulator host, and isolated-LAN test control | Machine-specific identifiers and configuration remain outside the repository |
@@ -65,6 +65,10 @@ The present local environment does not yet provide:
 These are planned coverage gaps, not an instruction to purchase everything at
 once. A feature remains unclaimed, disabled, externally supplemented, or
 blocked at its release gate until its required physical evidence exists.
+For the bounded private MVP only, the owner accepted initial physical Android
+evidence as a purpose of a future named friends cohort rather than a prerequisite
+for creating that cohort. This does not relabel virtual coverage or waive the
+open-beta and production gates in ADR 0023.
 
 ## Suggested Acquisition or Access Order
 

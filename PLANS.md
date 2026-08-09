@@ -271,9 +271,12 @@ Complete in the bounded development scope. The owner approved the third-party
 dependency intake in PR #39 and merged the native Android implementation in PR
 #40 on 2026-08-08 HST. The locked and checksum-verified build, release
 inspection, compact/expanded emulator suites, reviewed build-policy deployment,
-and live join/projection/resume/vote/session-end path have passed. Physical
-Android phone and tablet checks remain mandatory before Android external
-testing.
+and live join/projection/resume/vote/session-end path have passed. A distinct
+Pixel Tablet AVD also passed 10/10 instrumented tests, both orientations, and
+the live projection-filtering/resume/session-end path on 2026-08-09 HST.
+Physical Android evidence remains open; the owner narrowed the private MVP so
+a small named friends cohort may gather that evidence, without authorizing an
+open beta or production release.
 
 ### Objective
 
@@ -297,7 +300,9 @@ store-ready Android release.
 - clear or obscure private content at lifecycle and capture boundaries and
   retain only the approved encrypted resume credential
 - verify the slice on representative phone and tablet emulators; physical
-  Android checks remain required before any Android external-test approval
+  Android checks remain required for release qualification, while a separately
+  approved invitation-only friends cohort may serve as initial hardware
+  evidence under ADR 0024
 
 Explicitly excluded are production accounts or identity providers, payments,
 media, notifications or Live Updates, analytics, app-store distribution,
