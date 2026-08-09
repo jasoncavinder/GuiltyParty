@@ -19,6 +19,12 @@ Promotion is a human decision. Open beta remains blocked until privacy,
 account-deletion, store, security, support, legal, licensing, and release gates
 are ready for public visibility.
 
+The first external cohort is being prepared in
+[Remote Friends Cohort 01](remote-friends-cohort-01.md). That proposal does not
+authorize a store upload, tester membership, or invitation. Before the external
+group exists, the exact iOS/iPadOS and Android artifacts must first install and
+pass the accepted smoke path through owner-only internal store testing.
+
 ## Build Windows
 
 | Build class | Project support window |

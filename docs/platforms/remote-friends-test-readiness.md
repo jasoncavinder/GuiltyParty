@@ -79,6 +79,9 @@ authority, connect tickets, player names, or private scenario content here.
 - [x] Stage receives no private objective, private clue, individual vote, bearer
       credential belonging to another endpoint, or participant-only state.
 - [ ] Two physical iOS Companions join as distinct participants and reconnect.
+- [x] Android phone and distinct Pixel Tablet emulators complete the native
+      contract, projection-filtering, resumption, and session-end path.
+- [ ] Representative physical Android phone and tablet evidence is recorded.
 - [x] The four active surfaces complete the full original scenario and
       deterministic outcome.
 
@@ -115,6 +118,15 @@ session end cleared both private views, and relaunch could not restore or reuse
 the ended session. This closes the automatic same-installation resumption
 exercise but does not satisfy the separate two-physical-Apple-device checkbox.
 
+The Android baseline subsequently passed the full live path on a phone
+emulator and a distinct Pixel Tablet AVD. Those results are recorded in the
+[Android Companion test record](android-companion-mvp-test-record.md) and do
+not claim physical Android coverage. The owner accepted gathering initial
+physical Android evidence through the named-friends cohort. A similarly narrow
+exception allowing the cohort to gather the second physical Apple result is
+proposed, but remains pending in the cohort go/no-go record. Neither exception
+qualifies a platform for open beta or release.
+
 ## Automated Deployed-Environment Evidence
 
 - [x] A browser Host, two distinct browser fallback participants, and one
@@ -141,20 +153,13 @@ or authorize named-friend traffic.
 
 ## Draft Named-Tester Notice
 
-> You are invited to a private, early development test of Guilty Party. Please
-> use a nickname rather than your real name. The test does not use accounts,
-> advertising, analytics, recording, voice/video capture, private messaging, or
-> remote AI. The service stores the minimum gameplay state needed to run and
-> reconnect the game. Active session storage expires and is scheduled for
-> deletion no later than seven days after the session ends or expires.
-> Cloudflare separately maintains a provider-controlled SQLite recovery history
-> covering up to the preceding 30 days, so seven-day active deletion is not a
-> promise of complete provider erasure at day seven. Please contact the Host if
-> you want to stop participating or report a problem. This test is not a public
-> or commercial release.
-
-The project owner must approve the exact notice delivered to testers, including
-the contact method, before the first invitation.
+The expanded proposed notice is revision `RF-NOTICE-001-DRAFT` in
+[Remote Friends Cohort 01](remote-friends-cohort-01.md). It covers the active
+and provider recovery lifecycles, Apple and Google platform diagnostics,
+attachment minimization, proprietary test status, and the excluded MVP
+features. The project owner must approve the exact notice and working private
+contact method before the first invitation. Binding beta terms remain a
+separate human-review item.
 
 ## Known Limitations
 
@@ -176,5 +181,7 @@ the contact method, before the first invitation.
 - Decision: `PENDING — DO NOT INVITE NAMED TESTERS`
 - Approved source commit and Worker version: `TBD`
 - Approved tester notice revision: `TBD`
+- Approved cohort record and physical-evidence exception: `TBD`
+- Approved private feedback route: `TBD`
 - Approved first-test window and invited cohort: `TBD`
 - Owner name/date: `TBD`
