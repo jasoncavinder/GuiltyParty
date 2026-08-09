@@ -38,6 +38,9 @@ class PolicyTest {
         assertThrows(CompanionFailure::class.java) {
             ServerEndpoint.parse("https://user@example.test/path?token=secret", false)
         }
+        assertThrows(CompanionFailure::class.java) {
+            ServerEndpoint.parse("https://api.test.guiltyparty.app:65536", false)
+        }
     }
 
     @Test
@@ -51,6 +54,12 @@ class PolicyTest {
         )
         assertThrows(CompanionFailure::class.java) {
             ServerEndpoint.parse("http://203.0.113.10:3000", true)
+        }
+        assertThrows(CompanionFailure::class.java) {
+            ServerEndpoint.parse("http://192.168.10.20:0", true)
+        }
+        assertThrows(CompanionFailure::class.java) {
+            ServerEndpoint.parse("http://192.168.10.20:99999", true)
         }
     }
 }

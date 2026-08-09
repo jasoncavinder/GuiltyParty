@@ -26,6 +26,7 @@ class ServerEndpoint private constructor(
             if ((!secure && !permittedDevelopment) ||
                 uri.host.isNullOrBlank() ||
                 uri.userInfo != null ||
+                (uri.port != -1 && uri.port !in 1..65_535) ||
                 uri.query != null ||
                 uri.fragment != null ||
                 (uri.path.isNotEmpty() && uri.path != "/")
