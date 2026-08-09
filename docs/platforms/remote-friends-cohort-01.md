@@ -134,9 +134,13 @@ Feedback should contain only:
 Screenshots, recordings, logs, crash files, and other attachments are never
 automatic. A tester may choose to attach an artifact only after checking that
 it contains no credential, private communication, character secret, objective,
-clue, vote, or unrelated personal information. Raw feedback is restricted to
-the project owner and deleted promptly after triage; durable issues retain only
-the minimized technical summary allowed by project policy.
+clue, vote, or unrelated personal information. Raw feedback and attachments are
+restricted to the project owner, deleted as soon as triage is complete, and
+automatically deleted no later than 30 days after receipt. The approved mailbox
+or equivalent route must enforce and allow verification of that maximum before
+the cohort begins. A durable issue retains only the minimized technical summary
+allowed by project policy and is deleted 180 days after the last occurrence
+unless a shorter governing lifecycle applies.
 
 ## Proposed Named-Tester Notice
 
@@ -201,12 +205,19 @@ requires separate human review and is not supplied by this document.
       identity without exposing account or signing details in the repository.
 - [ ] Exact store artifacts install through owner-only internal testing and
       pass the join, projection, reconnect, vote, and session-end smoke path.
+- [ ] The exact external TestFlight build has completed Beta App Review when
+      required, and the named TestFlight external group and Play closed track
+      are configured to deliver only the approved builds without adding or
+      inviting a friend before the separate first-invitation authorization.
 - [ ] Server compatibility policy admits only the intended external-test build
       and contract range, and the visible update-required and emergency-
       revocation paths are rehearsed.
 - [ ] Exact source commit, store builds, service deployment, test window, and
       rollback target are recorded.
 - [ ] `RF-NOTICE-001` is approved with a working private contact route.
+- [ ] The approved feedback route automatically deletes raw submissions and
+      attachments within the 30-day maximum, permits earlier post-triage
+      deletion, and has a recorded deletion-verification procedure.
 - [ ] Human-reviewed proprietary beta terms are approved separately; this
       operational record and notice do not supply those terms.
 - [ ] The owner explicitly approves using the cohort to gather the missing
@@ -223,6 +234,8 @@ requires separate human review and is not supplied by this document.
 - Approved iOS/iPadOS and Android builds: `TBD`
 - Approved notice and terms revisions: `TBD`
 - Approved feedback route: `TBD`
+- External TestFlight review and named-channel readiness: `TBD`
+- Feedback deletion mechanism and verification: `TBD`
 - Approved start, review, and end dates: `TBD`
 - Approved cohort size and selection criteria: `TBD`
 - Physical-evidence exception decision: `TBD`
