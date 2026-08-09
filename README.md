@@ -80,18 +80,18 @@ prototype is archived as implementation history and deterministic-engine
 evidence.
 
 The dependency-free LG webOS Stage now packages locally for sideload review
-with original project-owned icon artwork. Physical webOS 5.6 transport is
-verified through context-free pending pairing, and the protected
-deployed-service ticket/WebSocket rehearsal passes; physical authorized-
-projection and lifecycle evidence remains incomplete, while newer simulator
-Origin behavior currently fails closed. See the
+with original project-owned icon artwork. Physical webOS 5.6 transport,
+authorized public projection, fresh-ticket reconnect, and session-end clearing
+are verified; narrower forced-network-loss and revocation checks remain open,
+while newer simulator Origin behavior currently fails closed. See the
 [webOS build and test runbook](docs/platforms/webos-stage-build-and-test.md) and
 [transport spike](docs/platforms/webos-transport-spike.md).
 
 The native iOS/iPadOS Companion project is committed under `apps/mobile/iOS`, with
 simulator and physical-iPhone evidence recorded in the
-[iOS setup status](docs/platforms/ios-setup.md). A live authorized multi-client
-rehearsal and physical-iPad validation remain incomplete.
+[iOS Companion MVP test record](docs/platforms/ios-companion-mvp-test-record.md).
+The live authorized multi-client rehearsal passed with a physical iPhone and
+iPad simulator; physical-iPad validation remains incomplete.
 
 ## Documentation
 

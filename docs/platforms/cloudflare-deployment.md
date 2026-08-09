@@ -352,15 +352,17 @@ post-session credential invalidation. Detailed non-secret evidence is recorded
 in `android-entry-checkpoint-evidence.md` and
 `ios-companion-mvp-test-record.md`.
 
-The same reviewed commit was manually promoted to separate Pages projects for
-the Browser Host and Browser Companion fallback. Their production deployment
+The Browser Host and Browser Companion fallback remain the separate Pages
+deployments manually promoted from exact reviewed `dev` commit
+`e85b486b1928704382329bbd73d4fa0a4ae28539`. Their production deployment
 identifiers are `5bde1db6-ee32-4834-bd30-732950f261e5` and
-`eed998d9-d960-4cab-9c9f-537967ab2798`, respectively. No secret or private
-runtime value is configured in either Pages project. Automated gameplay,
-packaged-Stage, pairing-boundary, and lifecycle rehearsals passed against the
-promoted API. The lifecycle rehearsal required a follow-up correction so its
-synthetic Host and fallback-participant requests declare the supported build
-metadata enforced by PR #25; the deployed service itself was unchanged.
+`eed998d9-d960-4cab-9c9f-537967ab2798`, respectively. The 2026-08-08 API
+promotion did not add a Pages deployment. No secret or private runtime value is
+configured in either Pages project. Automated gameplay, packaged-Stage,
+pairing-boundary, and lifecycle rehearsals passed against the promoted API. The
+lifecycle rehearsal required a follow-up correction so its synthetic Host and
+fallback-participant requests declare the supported build metadata enforced by
+PR #25; the deployed service itself was unchanged.
 
 The first-party WebAssembly module and original scenario are bundled with the
 Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
