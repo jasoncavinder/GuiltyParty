@@ -9,9 +9,10 @@ feature, platform claim, beta promotion, or release by itself.
 ## Current Status
 
 The long-term native iOS/iPadOS and Android Companions are not yet generally
-supported products. The local MVP remains iOS-only under ADR 0004, and Android
-begins at the checkpoint and narrow scope defined by ADR 0017. Empty cells are
-not evidence of parity.
+supported products. The Remote Friends MVP remains iOS/iPadOS-only, and Android
+begins at the checkpoint and narrow scope defined by ADR 0017. The live
+[checkpoint evidence](android-entry-checkpoint-evidence.md) remains the
+authoritative readiness record. Empty cells are not evidence of parity.
 
 ## Classification Vocabulary
 

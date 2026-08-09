@@ -1,0 +1,16 @@
+{
+  "protocol_version": "1.0",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-player-001",
+  "participant_id": "participant-synthetic-001",
+  "last_server_sequence": 8,
+  "primary_authority_generation": 3,
+  "pending_idempotency_ids": [
+    "idempotency-synthetic-001"
+  ],
+  "client_build": {
+    "application_id": "companion_ios",
+    "application_version": "0.2.0",
+    "build_number": 3
+  }
+}

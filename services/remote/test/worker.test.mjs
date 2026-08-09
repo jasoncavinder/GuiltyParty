@@ -15,7 +15,11 @@ import {
   SESSION_RETENTION_MS,
   WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
 } from "../src/constants.js";
-import { issueAuthorityToken, sha256Hex } from "../src/friends-auth.js";
+import {
+  issueAuthorityToken,
+  resumeCredentialDigest,
+  sha256Hex,
+} from "../src/friends-auth.js";
 import { decodeInvitationTransfer } from "../src/invitation-transfer.js";
 import schema from "../../../contracts/control-plane/v1/control-plane.schema.json" with { type: "json" };
 import openapi from "../../../contracts/http/v1/openapi.json" with { type: "json" };
@@ -86,6 +90,7 @@ test("compatibility response conforms to the canonical v1 schema", async () => {
 test("OpenAPI declares the session admission failures returned at runtime", () => {
   const createResponses = openapi.paths["/api/v1/sessions"].post.responses;
   const joinResponses = openapi.paths["/api/v1/join"].post.responses;
+  const resumeResponses = openapi.paths["/api/v1/resume"].post.responses;
 
   assert.ok(createResponses["413"]);
   assert.ok(createResponses["409"]);
@@ -101,6 +106,9 @@ test("OpenAPI declares the session admission failures returned at runtime", () =
   assert.ok(openapi.paths["/api/v1/stage-pairings/{pairing_code}/redeem"].post.responses["202"]);
   assert.ok(openapi.paths["/api/v1/session/endpoints"].get.responses["200"]);
   assert.ok(openapi.paths["/api/v1/session/context"].get.responses["200"]);
+  for (const status of ["200", "401", "409", "410", "429", "503"]) {
+    assert.ok(resumeResponses[status], `missing resume response ${status}`);
+  }
 });
 
 test("Host creates a bounded session and receives HttpOnly cookie authority", async () => {
@@ -211,6 +219,7 @@ test("join hashes pairing proof before Durable Object admission and issues nativ
       room_id: "room_0123456789abcdef",
       authority_generation: 1,
       expires_at_unix_ms: expiresAt,
+      server_sequence: 2,
     });
   });
   const pairingProof = "synthetic-pairing-proof";
@@ -238,6 +247,9 @@ test("join hashes pairing proof before Durable Object admission and issues nativ
   assert.equal(body.websocket_transport, "authorization_header");
   assert.equal(body.participant_id, "par_0123456789abcdef");
   assert.ok(body.token.startsWith("gp1."));
+  assert.equal(typeof body.resume_token, "string");
+  assert.equal(body.resume_expires_at_unix_ms, expiresAt);
+  assert.equal(body.server_sequence, 2);
   const ajv = new Ajv2020({ strict: true, strictRequired: false });
   ajv.addSchema(schema);
   const validate = ajv.getSchema(`${schema.$id}#/$defs/RemoteFriendsJoinResponse`);
@@ -245,6 +257,151 @@ test("join hashes pairing proof before Durable Object admission and issues nativ
   assert.equal(captured.name, "ses_0123456789abcdef");
   assert.equal(captured.body.pairing_digest, await sha256Hex(pairingProof));
   assert.equal(JSON.stringify(captured).includes(pairingProof), false);
+  assert.equal(
+    captured.body.resume_credential_digest,
+    await resumeCredentialDigest(body.resume_token, signingKey),
+  );
+  assert.match(captured.body.resume_credential_family_id, /^rsf_/u);
+  assert.equal(JSON.stringify(captured).includes(body.resume_token), false);
+});
+
+test("native participant resume rotates endpoint authority without forwarding raw credentials", async () => {
+  let captured;
+  const expiresAt = Date.now() + 60_000;
+  const env = await friendsEnvironment(async (name, request) => {
+    captured = { name, path: new URL(request.url).pathname, body: await request.json() };
+    return Response.json({
+      endpoint_id: "end_0123456789abcdef",
+      participant_id: "par_0123456789abcdef",
+      room_id: "room_0123456789abcdef",
+      authority_generation: 4,
+      expires_at_unix_ms: expiresAt,
+      resume_expires_at_unix_ms: expiresAt,
+      server_sequence: 9,
+      pending_command_results: [
+        {
+          idempotency_id: "idem_0123456789abcdef",
+          status: "accepted",
+          server_sequence: 9,
+        },
+      ],
+    });
+  });
+  const originalResumeToken = "synthetic-device-only-resume-token-0001";
+  const replacementResumeToken = "synthetic-device-only-resume-token-0002";
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/resume", {
+      method: "POST",
+      headers: {
+        Authorization: `Resume ${originalResumeToken}`,
+        "X-GP-Replacement-Resume": replacementResumeToken,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        session_id: "ses_0123456789abcdef",
+        endpoint_id: "end_0123456789abcdef",
+        participant_id: "par_0123456789abcdef",
+        last_server_sequence: 8,
+        primary_authority_generation: 3,
+        pending_idempotency_ids: ["idem_0123456789abcdef"],
+        client_build: {
+          application_id: "companion_ios",
+          application_version: "0.2.0",
+          build_number: 3,
+        },
+      }),
+    }),
+    env,
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("Cache-Control"), "no-store");
+  const body = await response.json();
+  assert.equal(body.resume_token, replacementResumeToken);
+  assert.ok(body.token.startsWith("gp1."));
+  assert.equal(body.primary_authority_generation, 4);
+  assert.equal(body.server_sequence, 9);
+  assert.deepEqual(body.pending_command_results, [
+    {
+      idempotency_id: "idem_0123456789abcdef",
+      status: "accepted",
+      server_sequence: 9,
+    },
+  ]);
+  const ajv = new Ajv2020({ strict: true, strictRequired: false });
+  ajv.addSchema(schema);
+  const validate = ajv.getSchema(`${schema.$id}#/$defs/RemoteNativeResumeResponse`);
+  assert.equal(validate(body), true, JSON.stringify(validate.errors));
+  assert.equal(captured.name, "ses_0123456789abcdef");
+  assert.equal(captured.path, "/internal/session/resume");
+  assert.equal(
+    captured.body.credential_digest,
+    await resumeCredentialDigest(originalResumeToken, signingKey),
+  );
+  assert.equal(
+    captured.body.replacement_credential_digest,
+    await resumeCredentialDigest(replacementResumeToken, signingKey),
+  );
+  const forwarded = JSON.stringify(captured);
+  assert.equal(forwarded.includes(originalResumeToken), false);
+  assert.equal(forwarded.includes(replacementResumeToken), false);
+});
+
+test("participant resume requires a distinct client-staged replacement credential", async () => {
+  let routed = false;
+  const env = await friendsEnvironment(async () => {
+    routed = true;
+    return Response.json({});
+  });
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/resume", {
+      method: "POST",
+      headers: {
+        Authorization: "Resume synthetic-device-only-resume-token-0001",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        session_id: "ses_0123456789abcdef",
+        endpoint_id: "end_0123456789abcdef",
+        participant_id: "par_0123456789abcdef",
+        last_server_sequence: 8,
+        primary_authority_generation: 3,
+        pending_idempotency_ids: [],
+        client_build: {
+          application_id: "companion_ios",
+          application_version: "0.2.0",
+          build_number: 3,
+        },
+      }),
+    }),
+    env,
+  );
+  assert.equal(response.status, 400);
+  assert.equal(routed, false);
+});
+
+test("participant resume rejects browser contexts before session routing", async () => {
+  let routed = false;
+  const env = await friendsEnvironment(async () => {
+    routed = true;
+    return Response.json({});
+  });
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/resume", {
+      method: "POST",
+      headers: {
+        Authorization: "Resume synthetic-device-only-resume-token-0001",
+        Origin: allowedOrigin,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    }),
+    env,
+  );
+  assert.equal(response.status, 403);
+  assert.equal(routed, false);
 });
 
 test("browser Stage join keeps authority out of the response body", async () => {

@@ -27,6 +27,16 @@
       "expected_valid": true
     },
     {
+      "file": "positive/participant-resume-request.json",
+      "definition": "ParticipantResumeRequest",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/participant-resume-response.json",
+      "definition": "RemoteNativeResumeResponse",
+      "expected_valid": true
+    },
+    {
       "file": "positive/stage-pairing-create-request.json",
       "definition": "StagePairingCreateRequest",
       "expected_valid": true
@@ -119,6 +129,21 @@
     {
       "file": "negative/private-objective-null.json",
       "definition": "ProjectedParticipant",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/participant-resume-missing-endpoint.json",
+      "definition": "ParticipantResumeRequest",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/participant-resume-too-many-pending.json",
+      "definition": "ParticipantResumeRequest",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/participant-resume-inconsistent-result.json",
+      "definition": "RemoteNativeResumeResponse",
       "expected_valid": false
     }
   ],

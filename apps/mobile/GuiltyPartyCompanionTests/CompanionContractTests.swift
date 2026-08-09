@@ -1,4 +1,5 @@
 import Foundation
+import Security
 import XCTest
 @testable import GuiltyPartyCompanion
 
@@ -90,6 +91,29 @@ final class GeneratedContractTests: XCTestCase {
         XCTAssertEqual(envelope.serverSequence, 8)
         XCTAssertEqual(envelope.payload.projection.revealedClues.count, 1)
         XCTAssertNoThrow(try JSONEncoder().encode(decoded))
+    }
+
+    func testGeneratedResumeModelsRoundTripSharedFixtures() throws {
+        let request = try JSONDecoder().decode(
+            GPV1ParticipantResumeRequest.self,
+            from: fixture("participant-resume-request")
+        )
+        XCTAssertEqual(request.lastServerSequence, 8)
+        XCTAssertEqual(request.pendingIdempotencyIds.map(\.value), ["idempotency-synthetic-001"])
+        XCTAssertNoThrow(try JSONEncoder().encode(request))
+
+        let response = try JSONDecoder().decode(
+            GPV1RemoteNativeResumeResponse.self,
+            from: fixture("participant-resume-response")
+        )
+        XCTAssertEqual(response.primaryAuthorityGeneration, 4)
+        guard let first = response.pendingCommandResults.first,
+              case .accepted(let accepted) = first
+        else {
+            return XCTFail("Expected an accepted resumed command result")
+        }
+        XCTAssertEqual(accepted.status, "accepted")
+        XCTAssertNoThrow(try JSONEncoder().encode(response))
     }
 
     func testAdditiveFieldsRemainCompatible() throws {
@@ -276,6 +300,34 @@ final class SessionStateMachineTests: XCTestCase {
         )
     }
 
+    func testRestartedSocketRejectsProjectionBeforeResumedBaseline() throws {
+        let socket = UUID()
+        var machine = SessionStateMachine()
+        machine.beginJoin()
+        machine.beginSocket(
+            id: socket,
+            isRejoin: true,
+            baselineServerSequence: 20
+        )
+
+        XCTAssertThrowsError(
+            try machine.applyProjection(
+                projection(assigned: true),
+                sequence: 19,
+                socketID: socket
+            )
+        ) { error in
+            XCTAssertEqual(error as? SessionModelError, .sequenceRegression)
+        }
+        XCTAssertNoThrow(
+            try machine.applyProjection(
+                projection(assigned: true),
+                sequence: 20,
+                socketID: socket
+            )
+        )
+    }
+
     func testBackgroundAndCaptureClearPrivateProjection() throws {
         for reason in [PrivacyInterruption.backgroundOrLock, .capture] {
             let socket = UUID()
@@ -369,8 +421,134 @@ final class CommandAndRequestTests: XCTestCase {
             ["private_display", "touch_input"]
         )
         XCTAssertEqual(participant.endpoint.clientBuild?.applicationId.value, "companion_ios")
-        XCTAssertEqual(participant.endpoint.clientBuild?.applicationVersion, "0.1.1")
-        XCTAssertEqual(participant.endpoint.clientBuild?.buildNumber, 2)
+        XCTAssertEqual(participant.endpoint.clientBuild?.applicationVersion, "0.2.0")
+        XCTAssertEqual(participant.endpoint.clientBuild?.buildNumber, 3)
+    }
+
+    func testResumeRequestUsesDedicatedHeaderAndContainsOnlyOpaqueMetadata() throws {
+        let credential = resumeCredential()
+        let request = try ResumeClient.request(credential: credential)
+
+        XCTAssertEqual(request.url, CompanionEnvironment.resumeURL)
+        XCTAssertNil(request.url?.query)
+        XCTAssertNil(request.value(forHTTPHeaderField: "Origin"))
+        XCTAssertEqual(
+            request.value(forHTTPHeaderField: "Authorization"),
+            "Resume synthetic-device-only-resume-token"
+        )
+        XCTAssertEqual(
+            request.value(forHTTPHeaderField: "X-GP-Replacement-Resume"),
+            "synthetic-device-only-rotated-resume-token"
+        )
+        let body = try XCTUnwrap(request.httpBody)
+        let text = try XCTUnwrap(String(data: body, encoding: .utf8))
+        XCTAssertFalse(text.contains(credential.token))
+        XCTAssertFalse(text.contains("private_objective"))
+        XCTAssertFalse(text.contains("clue"))
+        XCTAssertFalse(text.contains("target_character"))
+
+        let decoded = try JSONDecoder().decode(GPV1ParticipantResumeRequest.self, from: body)
+        XCTAssertEqual(decoded.endpointId.value, credential.endpointID)
+        XCTAssertEqual(decoded.pendingIdempotencyIds.map(\.value), credential.pendingIdempotencyIDs)
+        XCTAssertEqual(decoded.clientBuild.applicationVersion, "0.2.0")
+        XCTAssertEqual(decoded.clientBuild.buildNumber, 3)
+    }
+
+    func testResumeRequestRequiresDurablyStagedReplacement() throws {
+        let credential = StoredResumeCredential(
+            token: "synthetic-device-only-resume-token",
+            sessionID: "session-synthetic-001",
+            endpointID: "endpoint-synthetic-player-001",
+            participantID: "participant-synthetic-001",
+            expiresAtUnixMilliseconds: 2_000_000_000_000,
+            primaryAuthorityGeneration: 3,
+            lastServerSequence: 8,
+            pendingIdempotencyIDs: [],
+            gameplayLanguage: "en"
+        )
+        XCTAssertThrowsError(try ResumeClient.request(credential: credential))
+    }
+
+    func testResumeResponseRotatesAuthorityWithoutChangingIdentity() throws {
+        let admission = try ResumeClient.decodeResponse(
+            fixture("participant-resume-response"),
+            previous: resumeCredential(),
+            cacheControl: "private, no-store",
+            nowUnixMilliseconds: 1_000
+        )
+
+        XCTAssertEqual(admission.authority.sessionID, "session-synthetic-001")
+        XCTAssertEqual(admission.authority.endpointID, "endpoint-synthetic-player-001")
+        XCTAssertEqual(admission.authority.participantID, "participant-synthetic-001")
+        XCTAssertEqual(admission.authority.primaryAuthorityGeneration, 4)
+        XCTAssertEqual(admission.resumeCredential.lastServerSequence, 9)
+        XCTAssertEqual(admission.resumeCredential.pendingIdempotencyIDs, [])
+        XCTAssertEqual(
+            admission.resumeCredential.token,
+            "synthetic-device-only-rotated-resume-token"
+        )
+    }
+
+    func testResumeResponseRejectsIdentitySubstitutionAndMissingPendingResult() throws {
+        var object = try XCTUnwrap(
+            try JSONSerialization.jsonObject(with: fixture("participant-resume-response"))
+                as? [String: Any]
+        )
+        object["endpoint_id"] = "endpoint-attacker"
+        let substituted = try JSONSerialization.data(withJSONObject: object)
+        XCTAssertThrowsError(
+            try ResumeClient.decodeResponse(
+                substituted,
+                previous: resumeCredential(),
+                cacheControl: "no-store",
+                nowUnixMilliseconds: 1_000
+            )
+        )
+
+        object["endpoint_id"] = "endpoint-synthetic-player-001"
+        object["pending_command_results"] = []
+        let incomplete = try JSONSerialization.data(withJSONObject: object)
+        XCTAssertThrowsError(
+            try ResumeClient.decodeResponse(
+                incomplete,
+                previous: resumeCredential(),
+                cacheControl: "no-store",
+                nowUnixMilliseconds: 1_000
+            )
+        )
+    }
+
+    func testResumeCredentialSerializationHasOnlyApprovedOpaqueFields() throws {
+        let data = try JSONEncoder().encode(resumeCredential())
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        XCTAssertEqual(
+            Set(object.keys),
+            Set([
+                "token", "sessionID", "endpointID", "participantID",
+                "expiresAtUnixMilliseconds", "primaryAuthorityGeneration",
+                "lastServerSequence", "pendingIdempotencyIDs", "gameplayLanguage",
+                "pendingReplacementToken",
+            ])
+        )
+        let text = try XCTUnwrap(String(data: data, encoding: .utf8))
+        XCTAssertFalse(text.contains("privateObjective"))
+        XCTAssertFalse(text.contains("revealedClues"))
+        XCTAssertFalse(text.contains("targetCharacterID"))
+    }
+
+    func testKeychainPolicyIsDeviceOnlyNonSynchronizingAndUnlockedOnly() {
+        let query = KeychainResumeCredentialStore.baseQuery()
+        XCTAssertEqual(
+            query[kSecAttrSynchronizable as String] as? Bool,
+            false
+        )
+        let attributes = KeychainResumeCredentialStore.saveAttributes(data: Data("synthetic".utf8))
+        XCTAssertEqual(
+            attributes[kSecAttrAccessible as String] as? String,
+            kSecAttrAccessibleWhenUnlockedThisDeviceOnly as String
+        )
     }
 
     func testWebSocketRequestKeepsBearerOutOfURLAndOffersProtocol() {
@@ -523,6 +701,46 @@ final class ReconnectBackoffTests: XCTestCase {
     }
 }
 
+final class ResumeCredentialLifecycleTests: XCTestCase {
+    @MainActor
+    func testManualRejoinDeletesSavedResumeAuthority() {
+        let store = MemoryResumeCredentialStore(value: resumeCredential())
+        let session = CompanionSession(
+            credentialStore: store,
+            automaticallyResume: false
+        )
+
+        XCTAssertEqual(session.phase, .joining)
+        session.manualRejoin()
+
+        XCTAssertEqual(session.phase, .manualRejoin)
+        XCTAssertNil(store.value)
+    }
+
+    @MainActor
+    func testExpiredSavedResumeAuthorityIsDeletedAtLaunch() {
+        let expired = StoredResumeCredential(
+            token: "synthetic-expired-device-only-resume-token",
+            sessionID: "session-synthetic-001",
+            endpointID: "endpoint-synthetic-player-001",
+            participantID: "participant-synthetic-001",
+            expiresAtUnixMilliseconds: 1,
+            primaryAuthorityGeneration: 3,
+            lastServerSequence: 8,
+            pendingIdempotencyIDs: [],
+            gameplayLanguage: "en"
+        )
+        let store = MemoryResumeCredentialStore(value: expired)
+        let session = CompanionSession(
+            credentialStore: store,
+            automaticallyResume: false
+        )
+
+        XCTAssertEqual(session.phase, .manualRejoin)
+        XCTAssertNil(store.value)
+    }
+}
+
 final class ConnectionHealthPolicyTests: XCTestCase {
     func testNegotiationAndStabilityDurationsMatchAcceptedPolicy() {
         XCTAssertEqual(ConnectionHealthPolicy.negotiationTimeout, .seconds(5))
@@ -554,6 +772,21 @@ private func authority() -> SessionAuthority {
         expiresAtUnixMilliseconds: 2_000_000_000_000,
         primaryAuthorityGeneration: 3,
         gameplayLanguage: "en"
+    )
+}
+
+private func resumeCredential() -> StoredResumeCredential {
+    StoredResumeCredential(
+        token: "synthetic-device-only-resume-token",
+        sessionID: "session-synthetic-001",
+        endpointID: "endpoint-synthetic-player-001",
+        participantID: "participant-synthetic-001",
+        expiresAtUnixMilliseconds: 2_000_000_000_000,
+        primaryAuthorityGeneration: 3,
+        lastServerSequence: 8,
+        pendingIdempotencyIDs: ["idempotency-synthetic-001"],
+        gameplayLanguage: "en",
+        pendingReplacementToken: "synthetic-device-only-rotated-resume-token"
     )
 }
 
@@ -620,5 +853,36 @@ private final class RedirectDecisionRecorder: @unchecked Sendable {
         lock.lock()
         defer { lock.unlock() }
         rejected.append(request == nil)
+    }
+}
+
+private final class MemoryResumeCredentialStore: ResumeCredentialStoring, @unchecked Sendable {
+    private let lock = NSLock()
+    private var storedValue: StoredResumeCredential?
+
+    init(value: StoredResumeCredential?) {
+        storedValue = value
+    }
+
+    var value: StoredResumeCredential? {
+        lock.lock()
+        defer { lock.unlock() }
+        return storedValue
+    }
+
+    func load() throws -> StoredResumeCredential? {
+        value
+    }
+
+    func save(_ credential: StoredResumeCredential) throws {
+        lock.lock()
+        storedValue = credential
+        lock.unlock()
+    }
+
+    func delete() throws {
+        lock.lock()
+        storedValue = nil
+        lock.unlock()
     }
 }

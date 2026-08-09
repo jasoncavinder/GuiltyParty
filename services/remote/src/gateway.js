@@ -23,6 +23,7 @@ import {
   issueWebSocketTicket,
   offeredSubprotocols,
   requestOriginAllowed,
+  resumeCredentialDigest,
   resolveFriendsAuthority,
   resolvePackagedStageAuthority,
   sha256Hex,
@@ -92,6 +93,13 @@ export default {
         return withCors(methodNotAllowed("POST"), request, env);
       }
       return withCors(await joinSession(request, env), request, env);
+    }
+
+    if (url.pathname === "/api/v1/resume") {
+      if (request.method !== "POST") {
+        return methodNotAllowed("POST");
+      }
+      return resumeParticipant(request, env);
     }
 
     if (url.pathname === "/api/v1/stage-pairings") {
@@ -376,6 +384,9 @@ async function joinSession(request, env) {
   }
 
   const authorityOrigin = browser ? requestOrigin : null;
+  const nativeParticipant = !browser && parsed.value.kind === "participant";
+  const resumeToken = nativeParticipant ? randomSecret(32) : null;
+  const resumeCredentialFamilyId = nativeParticipant ? randomIdentifier("rsf") : null;
   const stub = sessionStub(env, sessionId);
   const internalResponse = await stub.fetch("https://session.internal/internal/session/join", {
     method: "POST",
@@ -385,6 +396,15 @@ async function joinSession(request, env) {
       origin: authorityOrigin,
       join: parsed.value,
       now_unix_ms: Date.now(),
+      ...(nativeParticipant
+        ? {
+            resume_credential_digest: await resumeCredentialDigest(
+              resumeToken,
+              env.AUTHORITY_SIGNING_KEY,
+            ),
+            resume_credential_family_id: resumeCredentialFamilyId,
+          }
+        : {}),
     }),
   });
   if (!internalResponse.ok) {
@@ -423,6 +443,13 @@ async function joinSession(request, env) {
         : {}),
       authority_expires_at_unix_ms: admission.expires_at_unix_ms,
       primary_authority_generation: admission.authority_generation,
+      ...(nativeParticipant
+        ? {
+            resume_token: resumeToken,
+            resume_expires_at_unix_ms: admission.expires_at_unix_ms,
+            server_sequence: admission.server_sequence,
+          }
+        : {}),
     },
     {
       status: 200,
@@ -431,6 +458,113 @@ async function joinSession(request, env) {
         : undefined,
     },
   );
+}
+
+async function resumeParticipant(request, env) {
+  const unavailable = friendsServiceUnavailable(env);
+  if (unavailable) {
+    return unavailable;
+  }
+  if (request.headers.get("Origin") !== null || request.headers.has("Cookie")) {
+    return problemResponse(403, "native_resume_required", "Native resume required", {
+      retryable: false,
+    });
+  }
+  const authorization = request.headers.get("Authorization") ?? "";
+  if (!authorization.startsWith("Resume ")) {
+    return problemResponse(401, "invalid_resume_credential", "Invalid resume credential", {
+      retryable: false,
+    });
+  }
+  const resumeToken = authorization.slice("Resume ".length);
+  if (resumeToken.length < 32 || resumeToken.length > 128) {
+    return problemResponse(401, "invalid_resume_credential", "Invalid resume credential", {
+      retryable: false,
+    });
+  }
+
+  const parsed = await readJsonObject(request);
+  if (!parsed.ok) {
+    return parsed.response;
+  }
+  if (!validParticipantResumeRequest(parsed.value)) {
+    return problemResponse(400, "invalid_resume_request", "Invalid resume request", {
+      retryable: false,
+    });
+  }
+  const buildAdmission = clientBuildAdmission(parsed.value.client_build, env);
+  if (buildAdmission) {
+    return buildAdmission;
+  }
+  const edgeLimit = await consumeEdgeLimit(
+    env.SESSION_JOIN_RATE_LIMITER,
+    `resume:${await sha256Hex(parsed.value.session_id)}`,
+  );
+  if (!edgeLimit.ok) {
+    return edgeLimit.response;
+  }
+
+  const replacementResumeToken = request.headers.get("X-GP-Replacement-Resume") ?? "";
+  if (
+    replacementResumeToken.length < 32 ||
+    replacementResumeToken.length > 128 ||
+    replacementResumeToken === resumeToken
+  ) {
+    return problemResponse(400, "invalid_replacement_resume_credential", "Invalid replacement resume credential", {
+      retryable: false,
+    });
+  }
+  const response = await sessionStub(env, parsed.value.session_id).fetch(
+    "https://session.internal/internal/session/resume",
+    {
+      method: "POST",
+      headers: internalHeaders(),
+      body: JSON.stringify({
+        credential_digest: await resumeCredentialDigest(
+          resumeToken,
+          env.AUTHORITY_SIGNING_KEY,
+        ),
+        replacement_credential_digest: await resumeCredentialDigest(
+          replacementResumeToken,
+          env.AUTHORITY_SIGNING_KEY,
+        ),
+        resume: parsed.value,
+        now_unix_ms: Date.now(),
+      }),
+    },
+  );
+  if (!response.ok) {
+    return safeInternalFailure(response, "resume_failed", "Unable to resume session");
+  }
+  const resumed = await response.json();
+  const token = await issueAuthorityToken(
+    {
+      sessionId: parsed.value.session_id,
+      endpointId: resumed.endpoint_id,
+      audience: "participant",
+      participantId: resumed.participant_id,
+      authorityGeneration: resumed.authority_generation,
+      expiresAtUnixMs: resumed.expires_at_unix_ms,
+      origin: null,
+    },
+    env.AUTHORITY_SIGNING_KEY,
+  );
+  return jsonResponse({
+    protocol_version: PROTOCOL_VERSION,
+    token,
+    resume_token: replacementResumeToken,
+    session_id: parsed.value.session_id,
+    endpoint_id: resumed.endpoint_id,
+    room_id: resumed.room_id,
+    participant_id: resumed.participant_id,
+    authority_transport: "bearer",
+    websocket_transport: "authorization_header",
+    authority_expires_at_unix_ms: resumed.expires_at_unix_ms,
+    resume_expires_at_unix_ms: resumed.resume_expires_at_unix_ms,
+    primary_authority_generation: resumed.authority_generation,
+    server_sequence: resumed.server_sequence,
+    pending_command_results: resumed.pending_command_results,
+  });
 }
 
 async function createStagePairing(request, env) {
@@ -1190,6 +1324,25 @@ function validJoinRequest(value) {
     return value.display_name === undefined || value.display_name === null;
   }
   return value.kind === "participant" && validDisplayName(value.display_name);
+}
+
+function validParticipantResumeRequest(value) {
+  return (
+    value &&
+    value.protocol_version === PROTOCOL_VERSION &&
+    SESSION_IDENTIFIER_PATTERN.test(value.session_id) &&
+    SESSION_IDENTIFIER_PATTERN.test(value.endpoint_id) &&
+    SESSION_IDENTIFIER_PATTERN.test(value.participant_id) &&
+    Number.isSafeInteger(value.last_server_sequence) &&
+    value.last_server_sequence >= 0 &&
+    Number.isSafeInteger(value.primary_authority_generation) &&
+    value.primary_authority_generation >= 1 &&
+    Array.isArray(value.pending_idempotency_ids) &&
+    value.pending_idempotency_ids.length <= 32 &&
+    new Set(value.pending_idempotency_ids).size === value.pending_idempotency_ids.length &&
+    value.pending_idempotency_ids.every((identifier) => SESSION_IDENTIFIER_PATTERN.test(identifier)) &&
+    validClientBuild(value.client_build)
+  );
 }
 
 function isPackagedStageJoin(value, origin) {

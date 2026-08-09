@@ -567,6 +567,13 @@ fn render_array_validation(
         )
         .unwrap();
     }
+    if let Some(maximum) = rules.maximum_items {
+        writeln!(
+            output,
+            "{indent}gpRequire({expression}.size <= {maximum}, \"array is longer than maxItems\")"
+        )
+        .unwrap();
+    }
     if rules.unique_items {
         writeln!(output, "{indent}gpRequire({expression}.toSet().size == {expression}.size, \"array items are not unique\")").unwrap();
     }
@@ -595,6 +602,7 @@ fn needs_inline_validation(schema: &Schema) -> bool {
         Schema::Integer(rules) => rules.minimum.is_some() || rules.maximum.is_some(),
         Schema::Array(rules) => {
             rules.minimum_items.is_some()
+                || rules.maximum_items.is_some()
                 || rules.unique_items
                 || needs_inline_validation(&rules.items)
         }
@@ -677,5 +685,16 @@ mod tests {
     fn kotlin_literals_escape_interpolation_markers() {
         assert_eq!(quoted_kotlin("${42}"), "\"\\${42}\"");
         assert_eq!(quoted_kotlin("$value"), "\"\\$value\"");
+    }
+
+    #[test]
+    fn max_items_alone_requires_inline_validation() {
+        let schema = Schema::Nullable(Box::new(Schema::Array(ArrayRules {
+            items: Box::new(Schema::String(StringRules::default())),
+            minimum_items: None,
+            maximum_items: Some(3),
+            unique_items: false,
+        })));
+        assert!(needs_inline_validation(&schema));
     }
 }

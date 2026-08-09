@@ -61,6 +61,11 @@ struct SessionAuthority: Sendable {
     let gameplayLanguage: String
 }
 
+struct ParticipantSessionAdmission: Sendable {
+    let authority: SessionAuthority
+    let resumeCredential: StoredResumeCredential
+}
+
 struct ProjectedScene: Equatable, Sendable {
     let name: String
     let publicNarrative: String

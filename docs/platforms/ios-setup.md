@@ -2,8 +2,9 @@
 
 This document describes the committed native SwiftUI Companion for the
 account-free Remote Friends private test. It replaces the earlier local-LAN
-scaffold. The longer-term account, recovery, media, notification, and LAN
-features remain outside this MVP.
+scaffold. Endpoint-bound gameplay-session recovery is included; longer-term
+account recovery, media, notification, and LAN features remain outside this
+MVP.
 
 The implementation follows the separate-native-client decision in
 [ADR 0015](../adr/0015-native-mobile-client-strategy.md). It is one universal
@@ -18,8 +19,8 @@ factor.
 - Product name: `GuiltyPartyCompanion`
 - Development bundle identifier: `com.guiltyparty.companion`
 - Minimum deployment target: iOS/iPadOS 18.0
-- Marketing version: `0.1.1`
-- Build number: `2`
+- Marketing version: `0.2.0`
+- Build number: `3`
 - Swift language mode: Swift 6
 - Supported device families: iPhone and iPad
 
@@ -68,14 +69,41 @@ browser `Origin`, a participant endpoint with `private_display` and
 ```json
 {
   "application_id": "companion_ios",
-  "application_version": "0.1.1",
-  "build_number": 2
+  "application_version": "0.2.0",
+  "build_number": 3
 }
 ```
 
-The returned bearer is retained only by the in-process session object. It is
-not stored in UserDefaults, Keychain, files, pasteboards, logs, envelopes, or
-URLs. The long-lived first-party `URLSessionWebSocketTask` connects to:
+The returned access bearer is retained only by the in-process session object.
+It is not stored in UserDefaults, Keychain, files, pasteboards, logs,
+envelopes, or URLs. Native admission separately returns an opaque
+endpoint-bound resume credential. The app stores that value and only the
+minimum opaque resumption metadata in a non-synchronizing
+`kSecAttrAccessibleWhenUnlockedThisDeviceOnly` Keychain item. No projection,
+clue, objective, vote, action payload, or display name is stored there.
+
+After an app restart or expired in-memory access bearer, the Companion sends:
+
+```text
+POST https://api.test.guiltyparty.app/api/v1/resume
+Authorization: Resume <device-only credential>
+X-GP-Replacement-Resume: <staged device-only replacement>
+```
+
+Both resume credentials are absent from the URL and JSON body. Before sending,
+the app generates and durably stages the replacement in the same device-only
+Keychain record. An exact retry reuses that staged value, allowing a lost
+response or interrupted Keychain update to complete without revoking the
+endpoint; a different replacement for a consumed credential still fails
+closed. The request includes the same participant and endpoint identifiers,
+authority generation, last accepted server sequence, and unresolved
+idempotency identifiers. A successful response confirms the staged credential
+and rotates the access generation. All private content remains covered until a
+full, fresh recipient-specific projection passes validation. Expiry,
+revocation, session end, protocol failure, or an explicit manual rejoin clears
+the local resume record.
+
+The long-lived first-party `URLSessionWebSocketTask` connects to:
 
 ```text
 wss://api.test.guiltyparty.app/ws/v1

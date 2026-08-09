@@ -18,6 +18,7 @@ export const MESSAGE_RATE_WINDOW_MS = 10 * 1000;
 export const MAX_MESSAGES_PER_WINDOW = 100;
 export const WEBSOCKET_TICKET_DURATION_MS = 30 * 1000;
 export const MAX_WEBSOCKET_TICKETS_PER_ENDPOINT = 16;
+export const MAX_RESUME_ROTATIONS_PER_ENDPOINT = 64;
 export const STAGE_PAIRING_DURATION_MS = 120 * 1000;
 export const STAGE_PAIRING_POLL_AFTER_MS = 1500;
 
@@ -35,6 +36,7 @@ export const COMPATIBILITY_RESPONSE = Object.freeze({
     "gameplay_language_metadata",
     "gp1_invitation_transfer",
     "host_approved_stage_pairing",
+    "native_participant_resume",
   ],
 });
 

@@ -6,11 +6,13 @@ import {
   MAX_PARTICIPANTS,
   MAX_JOIN_ATTEMPTS_PER_WINDOW,
   MAX_MESSAGES_PER_WINDOW,
+  MAX_RESUME_ROTATIONS_PER_ENDPOINT,
   MAX_WEBSOCKET_TICKETS_PER_ENDPOINT,
   MAX_WEBSOCKET_MESSAGE_BYTES,
   MESSAGE_RATE_WINDOW_MS,
   PROTOCOL_VERSION,
 } from "./constants.js";
+import { validClientBuild } from "./client-build.js";
 import { offeredSubprotocols } from "./friends-auth.js";
 import { scenarioEngine } from "./scenario-engine.js";
 import { SessionCore, SessionFault } from "./session-core.js";
@@ -42,6 +44,9 @@ export class GameSession extends DurableObject {
     }
     if (url.pathname === `${INTERNAL_PREFIX}join`) {
       return this.joinSession(request);
+    }
+    if (url.pathname === `${INTERNAL_PREFIX}resume`) {
+      return this.resumeParticipant(request);
     }
     if (url.pathname === `${INTERNAL_PREFIX}stage-pair`) {
       return this.pairApprovedStage(request);
@@ -148,6 +153,8 @@ export class GameSession extends DurableObject {
         canonicalEntries,
         rateWindowMs: JOIN_RATE_WINDOW_MS,
         maximumAttemptsPerWindow: MAX_JOIN_ATTEMPTS_PER_WINDOW,
+        resumeCredentialDigest: value.resume_credential_digest ?? null,
+        resumeCredentialFamilyId: value.resume_credential_family_id ?? null,
       });
     });
     if (!result.ok) {
@@ -165,6 +172,48 @@ export class GameSession extends DurableObject {
       authority_generation: result.authorityGeneration,
       expires_at_unix_ms: result.expiresAtUnixMs,
       server_sequence: result.serverSequence,
+    });
+  }
+
+  async resumeParticipant(request) {
+    if (request.method !== "POST") {
+      return internalProblem(405, "method_not_allowed", "Method not allowed");
+    }
+    const value = await safeJson(request);
+    if (!validParticipantResume(value)) {
+      return internalProblem(400, "invalid_resume_request", "Invalid resume request");
+    }
+    const result = await this.serializeOperation(async () =>
+      this.store.resumeParticipant({
+        credentialDigest: value.credential_digest,
+        replacementCredentialDigest: value.replacement_credential_digest,
+        sessionId: value.resume.session_id,
+        endpointId: value.resume.endpoint_id,
+        participantId: value.resume.participant_id,
+        authorityGeneration: value.resume.primary_authority_generation,
+        lastServerSequence: value.resume.last_server_sequence,
+        pendingIdempotencyIds: value.resume.pending_idempotency_ids,
+        nowUnixMs: value.now_unix_ms,
+        maximumRotationsPerEndpoint: MAX_RESUME_ROTATIONS_PER_ENDPOINT,
+      }),
+    );
+    if (result.closeEndpoint && result.endpointId) {
+      for (const socket of this.ctx.getWebSockets(`endpoint:${result.endpointId}`)) {
+        socket.close(1008, result.ok ? "Endpoint authority rotated" : "Resume authority revoked");
+      }
+    }
+    if (!result.ok) {
+      return internalProblem(result.status, result.code, result.title);
+    }
+    return internalJson({
+      endpoint_id: result.endpointId,
+      participant_id: result.participantId,
+      room_id: result.roomId,
+      authority_generation: result.authorityGeneration,
+      expires_at_unix_ms: result.expiresAtUnixMs,
+      resume_expires_at_unix_ms: result.resumeExpiresAtUnixMs,
+      server_sequence: result.serverSequence,
+      pending_command_results: result.pendingCommandResults,
     });
   }
 
@@ -795,6 +844,9 @@ function validSessionConfiguration(value) {
 }
 
 function validAdmissionRequest(value) {
+  const hasResumeCredential =
+    /^[a-f0-9]{64}$/u.test(value?.resume_credential_digest ?? "") &&
+    validIdentifier(value?.resume_credential_family_id);
   return (
     value &&
     /^[a-f0-9]{64}$/u.test(value.pairing_digest) &&
@@ -804,7 +856,39 @@ function validAdmissionRequest(value) {
     value.join &&
     ["stage", "participant"].includes(value.join.kind) &&
     validEndpoint(value.join.endpoint) &&
-    (value.join.kind === "stage" || validDisplayName(value.join.display_name))
+    (value.join.kind === "stage" || validDisplayName(value.join.display_name)) &&
+    (
+      hasResumeCredential
+        ? value.join.kind === "participant" && value.origin === null
+        : value.resume_credential_digest === undefined &&
+          value.resume_credential_family_id === undefined
+    )
+  );
+}
+
+function validParticipantResume(value) {
+  const resume = value?.resume;
+  return (
+    value &&
+    /^[a-f0-9]{64}$/u.test(value.credential_digest) &&
+    /^[a-f0-9]{64}$/u.test(value.replacement_credential_digest) &&
+    value.credential_digest !== value.replacement_credential_digest &&
+    Number.isSafeInteger(value.now_unix_ms) &&
+    value.now_unix_ms > 0 &&
+    resume &&
+    resume.protocol_version === PROTOCOL_VERSION &&
+    validIdentifier(resume.session_id) &&
+    validIdentifier(resume.endpoint_id) &&
+    validIdentifier(resume.participant_id) &&
+    Number.isSafeInteger(resume.last_server_sequence) &&
+    resume.last_server_sequence >= 0 &&
+    Number.isSafeInteger(resume.primary_authority_generation) &&
+    resume.primary_authority_generation >= 1 &&
+    Array.isArray(resume.pending_idempotency_ids) &&
+    resume.pending_idempotency_ids.length <= 32 &&
+    new Set(resume.pending_idempotency_ids).size === resume.pending_idempotency_ids.length &&
+    resume.pending_idempotency_ids.every(validIdentifier) &&
+    validClientBuild(resume.client_build)
   );
 }
 

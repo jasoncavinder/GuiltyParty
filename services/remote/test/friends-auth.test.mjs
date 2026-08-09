@@ -9,6 +9,7 @@ import {
   issueWebSocketTicket,
   resolveFriendsAuthority,
   resolvePackagedStageAuthority,
+  resumeCredentialDigest,
   sha256Hex,
   verifyAuthorityToken,
   verifyBootstrapProof,
@@ -41,6 +42,21 @@ test("signed authority round-trips without exposing signing material", async () 
     ok: true,
     authority: claims({ expiresAtUnixMs: (await verifyAuthorityToken(token, signingKey)).authority.expiresAtUnixMs }),
   });
+});
+
+test("resume credentials use a keyed domain-separated digest", async () => {
+  const credential = "synthetic-resume-credential-at-least-32-characters";
+  const digest = await resumeCredentialDigest(credential, signingKey);
+  const otherKeyDigest = await resumeCredentialDigest(
+    credential,
+    "other-synthetic-signing-key-at-least-32-characters",
+  );
+  const unrelatedSha256 = await sha256Hex(credential);
+
+  assert.match(digest, /^[a-f0-9]{64}$/);
+  assert.notEqual(digest, otherKeyDigest);
+  assert.notEqual(digest, unrelatedSha256);
+  assert.equal(digest.includes(credential), false);
 });
 
 test("tampered and expired authorities fail closed", async () => {

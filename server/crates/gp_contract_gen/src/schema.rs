@@ -41,6 +41,7 @@ pub(crate) struct IntegerRules {
 pub(crate) struct ArrayRules {
     pub(crate) items: Box<Schema>,
     pub(crate) minimum_items: Option<u64>,
+    pub(crate) maximum_items: Option<u64>,
     pub(crate) unique_items: bool,
 }
 
@@ -481,6 +482,7 @@ fn parse_schema(value: &Value, path: &str) -> Result<Schema, String> {
             "minimum",
             "maximum",
             "minItems",
+            "maxItems",
             "uniqueItems",
             "items",
             "required",
@@ -631,6 +633,7 @@ fn parse_typed_schema(
                     "title",
                     "items",
                     "minItems",
+                    "maxItems",
                     "uniqueItems",
                 ],
                 path,
@@ -638,9 +641,16 @@ fn parse_typed_schema(
             let items = object
                 .get("items")
                 .ok_or_else(|| format!("{path}: arrays must declare items"))?;
+            let minimum_items = optional_u64(object, "minItems", path)?;
+            let maximum_items = optional_u64(object, "maxItems", path)?;
+            if matches!((minimum_items, maximum_items), (Some(minimum), Some(maximum)) if minimum > maximum)
+            {
+                return Err(format!("{path}: array minItems exceeds maxItems"));
+            }
             Ok(Schema::Array(ArrayRules {
                 items: Box::new(parse_schema(items, &format!("{path}/items"))?),
-                minimum_items: optional_u64(object, "minItems", path)?,
+                minimum_items,
+                maximum_items,
                 unique_items: optional_bool(object, "uniqueItems", path)?.unwrap_or(false),
             }))
         }
@@ -950,6 +960,35 @@ mod tests {
             );
             assert!(Contract::parse(&source).is_err());
         }
+    }
+
+    #[test]
+    fn preserves_bounded_array_domains_and_rejects_reversed_bounds() {
+        let source = r#"{
+          "$schema":"https://json-schema.org/draft/2020-12/schema",
+          "$defs":{
+            "Thing":{
+              "type":"array",
+              "minItems":1,
+              "maxItems":3,
+              "items":{"type":"string"}
+            }
+          }
+        }"#;
+        let contract = Contract::parse(source).unwrap();
+        assert!(matches!(
+            contract.definition("Thing"),
+            Ok(Schema::Array(ArrayRules {
+                minimum_items: Some(1),
+                maximum_items: Some(3),
+                ..
+            }))
+        ));
+
+        let reversed = source.replace("\"minItems\":1", "\"minItems\":4");
+        assert!(Contract::parse(&reversed)
+            .unwrap_err()
+            .contains("array minItems exceeds maxItems"));
     }
 
     #[test]

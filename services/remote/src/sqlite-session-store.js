@@ -60,6 +60,21 @@ export class SqliteSessionStore {
       );
       CREATE INDEX IF NOT EXISTS endpoint_authorities_audience
         ON endpoint_authorities (audience, revoked_at_unix_ms);
+      CREATE TABLE IF NOT EXISTS participant_resume_credentials (
+        credential_digest TEXT PRIMARY KEY,
+        family_id TEXT NOT NULL,
+        endpoint_id TEXT NOT NULL,
+        participant_id TEXT NOT NULL,
+        authority_generation INTEGER NOT NULL,
+        expires_at_unix_ms INTEGER NOT NULL,
+        issued_at_unix_ms INTEGER NOT NULL,
+        consumed_at_unix_ms INTEGER,
+        revoked_at_unix_ms INTEGER
+      );
+      CREATE INDEX IF NOT EXISTS participant_resume_family
+        ON participant_resume_credentials (family_id, issued_at_unix_ms);
+      CREATE INDEX IF NOT EXISTS participant_resume_endpoint
+        ON participant_resume_credentials (endpoint_id, issued_at_unix_ms);
       CREATE TABLE IF NOT EXISTS admission_rate_limit (
         singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
         window_started_at_unix_ms INTEGER NOT NULL,
@@ -137,6 +152,8 @@ export class SqliteSessionStore {
     canonicalEntries = [],
     rateWindowMs,
     maximumAttemptsPerWindow,
+    resumeCredentialDigest = null,
+    resumeCredentialFamilyId = null,
   }) {
     return this.storage.transactionSync(() => {
       const metadata = this.sessionMetadata();
@@ -198,6 +215,20 @@ export class SqliteSessionStore {
         JSON.stringify(endpoint.capabilities),
         metadata.session_expires_at_unix_ms,
       );
+      if (resumeCredentialDigest !== null) {
+        this.sql.exec(
+          `INSERT INTO participant_resume_credentials (
+             credential_digest, family_id, endpoint_id, participant_id,
+             authority_generation, expires_at_unix_ms, issued_at_unix_ms
+           ) VALUES (?, ?, ?, ?, 1, ?, ?)`,
+          resumeCredentialDigest,
+          resumeCredentialFamilyId,
+          endpointId,
+          participantId,
+          metadata.session_expires_at_unix_ms,
+          nowUnixMs,
+        );
+      }
       const currentSequence = this.currentSequence();
       for (const [index, entry] of canonicalEntries.entries()) {
         if (entry.sequence_number !== currentSequence + index + 1) {
@@ -216,6 +247,227 @@ export class SqliteSessionStore {
         serverSequence: currentSequence + canonicalEntries.length,
       };
     });
+  }
+
+  resumeParticipant({
+    credentialDigest,
+    replacementCredentialDigest,
+    sessionId,
+    endpointId,
+    participantId,
+    authorityGeneration,
+    lastServerSequence,
+    pendingIdempotencyIds,
+    nowUnixMs,
+    maximumRotationsPerEndpoint,
+  }) {
+    return this.storage.transactionSync(() => {
+      const metadata = this.sessionMetadata();
+      if (!metadata || metadata.session_id !== sessionId) {
+        return { ok: false, status: 404, code: "session_not_found", title: "Session not found" };
+      }
+      if (metadata.ended_at_unix_ms !== null) {
+        return { ok: false, status: 410, code: "session_ended", title: "Session ended" };
+      }
+      if (nowUnixMs >= metadata.session_expires_at_unix_ms) {
+        return { ok: false, status: 410, code: "session_expired", title: "Session expired" };
+      }
+
+      const credential = Array.from(
+        this.sql.exec(
+          `SELECT credential_digest, family_id, endpoint_id, participant_id,
+                  authority_generation, expires_at_unix_ms,
+                  consumed_at_unix_ms, revoked_at_unix_ms
+           FROM participant_resume_credentials
+           WHERE credential_digest = ?`,
+          credentialDigest,
+        ),
+      )[0];
+      if (!credential) {
+        return { ok: false, status: 401, code: "invalid_resume_credential", title: "Invalid resume credential" };
+      }
+      if (credential.revoked_at_unix_ms !== null) {
+        return { ok: false, status: 401, code: "resume_credential_revoked", title: "Resume credential revoked" };
+      }
+      if (nowUnixMs >= Number(credential.expires_at_unix_ms)) {
+        this.sql.exec(
+          "UPDATE participant_resume_credentials SET revoked_at_unix_ms = ? WHERE family_id = ?",
+          nowUnixMs,
+          credential.family_id,
+        );
+        return { ok: false, status: 401, code: "resume_credential_expired", title: "Resume credential expired" };
+      }
+
+      const endpoint = Array.from(
+        this.sql.exec(
+          `SELECT endpoint_id, audience, participant_id, room_id,
+                  authority_generation, expires_at_unix_ms, revoked_at_unix_ms
+           FROM endpoint_authorities WHERE endpoint_id = ?`,
+          endpointId,
+        ),
+      )[0];
+      if (credential.consumed_at_unix_ms !== null) {
+        const exactReplacement = Array.from(
+          this.sql.exec(
+            `SELECT credential_digest, authority_generation, consumed_at_unix_ms, revoked_at_unix_ms
+             FROM participant_resume_credentials
+             WHERE credential_digest = ? AND family_id = ? AND endpoint_id = ?
+               AND participant_id = ?`,
+            replacementCredentialDigest,
+            credential.family_id,
+            credential.endpoint_id,
+            credential.participant_id,
+          ),
+        )[0];
+        const retryGeneration = authorityGeneration + 1;
+        if (
+          endpoint &&
+          endpoint.audience === "participant" &&
+          endpoint.participant_id === participantId &&
+          endpoint.endpoint_id === credential.endpoint_id &&
+          participantId === credential.participant_id &&
+          Number(credential.authority_generation) === authorityGeneration &&
+          Number(endpoint.authority_generation) === retryGeneration &&
+          endpoint.revoked_at_unix_ms === null &&
+          exactReplacement &&
+          Number(exactReplacement.authority_generation) === retryGeneration &&
+          exactReplacement.consumed_at_unix_ms === null &&
+          exactReplacement.revoked_at_unix_ms === null
+        ) {
+          const currentSequence = this.currentSequence();
+          if (lastServerSequence > currentSequence) {
+            return { ok: false, status: 409, code: "resume_sequence_ahead", title: "Invalid resume sequence" };
+          }
+          return {
+            ok: true,
+            endpointId,
+            participantId,
+            roomId: endpoint.room_id,
+            authorityGeneration: retryGeneration,
+            expiresAtUnixMs: Number(endpoint.expires_at_unix_ms),
+            resumeExpiresAtUnixMs: Number(credential.expires_at_unix_ms),
+            serverSequence: currentSequence,
+            pendingCommandResults: this.pendingCommandResults(endpointId, pendingIdempotencyIds),
+            closeEndpoint: false,
+          };
+        }
+        this.revokeResumeFamily(credential.family_id, credential.endpoint_id, nowUnixMs);
+        return {
+          ok: false,
+          status: 401,
+          code: "resume_credential_reused",
+          title: "Resume credential reuse detected",
+          endpointId: credential.endpoint_id,
+          closeEndpoint: true,
+        };
+      }
+      if (
+        !endpoint ||
+        endpoint.audience !== "participant" ||
+        endpoint.participant_id !== participantId ||
+        endpoint.endpoint_id !== credential.endpoint_id ||
+        participantId !== credential.participant_id ||
+        Number(endpoint.authority_generation) !== authorityGeneration ||
+        Number(credential.authority_generation) !== authorityGeneration ||
+        endpoint.revoked_at_unix_ms !== null
+      ) {
+        return { ok: false, status: 401, code: "invalid_resume_context", title: "Invalid resume context" };
+      }
+      const currentSequence = this.currentSequence();
+      if (lastServerSequence > currentSequence) {
+        return { ok: false, status: 409, code: "resume_sequence_ahead", title: "Invalid resume sequence" };
+      }
+      const rotations = Array.from(
+        this.sql.exec(
+          "SELECT COUNT(*) AS count FROM participant_resume_credentials WHERE endpoint_id = ?",
+          endpointId,
+        ),
+      )[0];
+      if (Number(rotations.count) >= maximumRotationsPerEndpoint) {
+        return { ok: false, status: 429, code: "resume_rotation_limit", title: "Resume limit reached" };
+      }
+
+      const nextGeneration = authorityGeneration + 1;
+      if (!Number.isSafeInteger(nextGeneration)) {
+        return { ok: false, status: 409, code: "authority_generation_exhausted", title: "Authority unavailable" };
+      }
+      this.sql.exec(
+        "UPDATE participant_resume_credentials SET consumed_at_unix_ms = ? WHERE credential_digest = ?",
+        nowUnixMs,
+        credentialDigest,
+      );
+      this.sql.exec(
+        `UPDATE endpoint_authorities SET authority_generation = ?
+         WHERE endpoint_id = ? AND authority_generation = ? AND revoked_at_unix_ms IS NULL`,
+        nextGeneration,
+        endpointId,
+        authorityGeneration,
+      );
+      this.sql.exec(
+        `INSERT INTO participant_resume_credentials (
+           credential_digest, family_id, endpoint_id, participant_id,
+           authority_generation, expires_at_unix_ms, issued_at_unix_ms
+         ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        replacementCredentialDigest,
+        credential.family_id,
+        endpointId,
+        participantId,
+        nextGeneration,
+        credential.expires_at_unix_ms,
+        nowUnixMs,
+      );
+
+      return {
+        ok: true,
+        endpointId,
+        participantId,
+        roomId: endpoint.room_id,
+        authorityGeneration: nextGeneration,
+        expiresAtUnixMs: Number(endpoint.expires_at_unix_ms),
+        resumeExpiresAtUnixMs: Number(credential.expires_at_unix_ms),
+        serverSequence: currentSequence,
+        pendingCommandResults: this.pendingCommandResults(endpointId, pendingIdempotencyIds),
+        closeEndpoint: true,
+      };
+    });
+  }
+
+  pendingCommandResults(endpointId, idempotencyIds) {
+    return idempotencyIds.map((idempotencyId) => {
+      const row = Array.from(
+        this.sql.exec(
+          `SELECT result_json, sequence_number FROM command_idempotency
+           WHERE endpoint_id = ? AND idempotency_id = ?`,
+          endpointId,
+          idempotencyId,
+        ),
+      )[0];
+      if (!row) {
+        return { idempotency_id: idempotencyId, status: "unknown", server_sequence: null };
+      }
+      const result = JSON.parse(row.result_json);
+      return {
+        idempotency_id: idempotencyId,
+        status: result.status === "accepted" ? "accepted" : "rejected",
+        server_sequence: Number(row.sequence_number),
+      };
+    });
+  }
+
+  revokeResumeFamily(familyId, endpointId, nowUnixMs) {
+    this.sql.exec(
+      `UPDATE participant_resume_credentials SET revoked_at_unix_ms = ?
+       WHERE family_id = ? AND revoked_at_unix_ms IS NULL`,
+      nowUnixMs,
+      familyId,
+    );
+    this.sql.exec(
+      `UPDATE endpoint_authorities
+       SET revoked_at_unix_ms = ?, authority_generation = authority_generation + 1
+       WHERE endpoint_id = ? AND revoked_at_unix_ms IS NULL`,
+      nowUnixMs,
+      endpointId,
+    );
   }
 
   admitApprovedStage({ transactionId, endpoint, endpointId, roomId, nowUnixMs }) {
@@ -503,6 +755,12 @@ export class SqliteSessionStore {
         nowUnixMs,
         endpointId,
       );
+      this.sql.exec(
+        `UPDATE participant_resume_credentials SET revoked_at_unix_ms = ?
+         WHERE endpoint_id = ? AND revoked_at_unix_ms IS NULL`,
+        nowUnixMs,
+        endpointId,
+      );
       return { ok: true, duplicate: false };
     });
   }
@@ -530,6 +788,10 @@ export class SqliteSessionStore {
         "UPDATE endpoint_authorities SET revoked_at_unix_ms = ? WHERE revoked_at_unix_ms IS NULL",
         nowUnixMs,
       );
+      this.sql.exec(
+        "UPDATE participant_resume_credentials SET revoked_at_unix_ms = ? WHERE revoked_at_unix_ms IS NULL",
+        nowUnixMs,
+      );
       return { ok: true, deleteAtUnixMs };
     });
   }
@@ -550,6 +812,10 @@ export class SqliteSessionStore {
         );
         this.sql.exec(
           "UPDATE endpoint_authorities SET revoked_at_unix_ms = ? WHERE revoked_at_unix_ms IS NULL",
+          nowUnixMs,
+        );
+        this.sql.exec(
+          "UPDATE participant_resume_credentials SET revoked_at_unix_ms = ? WHERE revoked_at_unix_ms IS NULL",
           nowUnixMs,
         );
       }

@@ -14,9 +14,22 @@ defined by [ADR 0005](../docs/adr/0005-versioned-control-plane-contract.md).
   transport models derived from the canonical schema.
 - `../tests/contracts/v1/` contains synthetic conformance and privacy fixtures.
 
-Protocol `1.0` is implemented by the Rust prototype server and the browser Host
-and Stage surfaces. Native clients must still prove conformance against the
-fixture manifest before claiming v1 compatibility.
+Protocol `1.0` is implemented by the Rust prototype server, the remote Worker,
+the browser Host and fallback Companion, the packaged Stage, and the native
+iOS/iPadOS Companion. Committed native-client generation and fixture checks
+prove the transport-model boundary; live release claims still require the
+applicable simulator and physical-device evidence.
+
+Native participant admission returns a device-bound rotating resume credential
+in addition to the memory-only access bearer. `POST /api/v1/resume` binds that
+credential to the existing session, participant, endpoint, authority
+generation, last accepted sequence, and unresolved idempotency identifiers.
+Before each request, the native client durably stages a distinct replacement
+credential and carries it only in `X-GP-Replacement-Resume`. An exact retry of
+the same old-to-replacement transition is idempotent; changing the replacement
+after the old credential was consumed triggers family revocation. Resume never
+accepts client state as canonical and never substitutes raw journal events for
+a fresh authorized projection.
 
 Unknown optional object members are intentionally permitted within protocol
 major 1. A receiver must still reject unknown message discriminators and

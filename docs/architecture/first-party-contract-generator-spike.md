@@ -45,7 +45,7 @@ Supported validation vocabulary:
 
 - string `const`, `minLength`, `maxLength`, and `pattern`
 - mandatory signed 64-bit integer `minimum` and `maximum` bounds
-- array `minItems` and `uniqueItems`
+- array `minItems`, `maxItems`, and `uniqueItems`
 
 `description`, `title`, `format`, and `writeOnly` remain annotations. The tool
 does not silently approximate unsupported keywords, external or nested
