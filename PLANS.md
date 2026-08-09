@@ -246,19 +246,20 @@ corresponding authentication-transport redesign recorded in ADR 0035.
 
 ### Completion Notes
 
-The reviewed remote backend through PR #25 is deployed at
-`api.test.guiltyparty.app`; automated full-game, Stage-boundary, hibernation,
-reconnect, expiry, and active-storage-deletion rehearsals pass with synthetic
-actors. The Browser Host and Companion fallback are manually deployed as
-separate Cloudflare Pages projects from the same exact reviewed `dev` commit.
+The reviewed remote backend through the participant-resumption slice is
+deployed at `api.test.guiltyparty.app`; automated full-game, Stage-boundary,
+hibernation, reconnect, expiry, active-storage-deletion, and native-resumption
+rehearsals pass with synthetic actors. The Browser Host and Companion fallback
+remain deployed as separate Cloudflare Pages projects.
 
-MVP completion still requires physical packaged-webOS validation, a live
-authorized multi-client rehearsal with the native iOS/iPadOS Companion,
-physical-iPad validation, the tester notice decision, and the explicit
-external-test go/no-go. The universal native Companion implementation,
-simulator conformance suite, and physical preview-iPhone build/test evidence are
-recorded in the iOS platform documentation; they do not satisfy the remaining
-live-room or physical-iPad gates.
+The packaged webOS Stage, physical iPhone Companion, iPadOS simulator
+Companion, and Browser Host have completed the live authorized scenario. The
+physical iPhone also passed same-participant restart recovery, interrupted-vote
+reconciliation without duplication, and post-session credential invalidation.
+MVP completion still requires physical-iPad validation, the tester notice
+decision, and the explicit external-test go/no-go. Android application work
+remains blocked until the owner explicitly accepts the entry checkpoint
+recorded in the Android platform evidence.
 
 ---
 

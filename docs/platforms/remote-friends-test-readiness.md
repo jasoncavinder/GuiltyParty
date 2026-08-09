@@ -7,14 +7,15 @@ invitation until the project owner records the final decision below.
 
 ## Candidate Deployment
 
-- Reviewed source commit: `e85b486b1928704382329bbd73d4fa0a4ae28539`
-- Worker version: `603165d6-001a-4de4-98e6-faad5e78c426`
+- Reviewed API source commit:
+  `af43fa47ac956e967d361698d41b4144ae01eae4`
+- Worker version: `1aecea5a-e07b-4f61-97ad-b9da1da6ece1`
 - Provider script ETag:
-  `fb72c47a3ee2bf94bbac88d4925919aac14a1719641fb49a935588c615a2b52c`
+  `1b3ce9ee062303213f091b2e5f1e0d28badbff10d81b8a5291b70d9dd433d26d`
 - Wrangler 4.119.0 dry-run runtime artifact manifest:
 
   - `worker.js` SHA-256:
-    `814a516a80430c27f22bec38f447af8042f76f58c1f4e1ee15a9063527b9c0a5`
+    `eb5ceecb327b3c56b66c2a49de5b2df4508cd473aed0e8aa854a4402920adb6b`
   - `85b31fdbd5ef4c5f690c397f89cbbb70b9af79d5-gp_scenario_wasm.wasm`
     SHA-256:
     `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`
@@ -28,7 +29,7 @@ invitation until the project owner records the final decision below.
   `eed998d9-d960-4cab-9c9f-537967ab2798`
 - Packaged Stage transport: opaque `null` Origin plus realtime connect ticket
 - Deployment operator and date: project owner through authenticated Wrangler,
-  2026-08-07 HST
+  2026-08-08 HST
 - Proven rollback version: `dddc679c-3ea9-424a-a432-b7c2fea832d7`
 
 Do not record account identifiers, raw secrets, pairing proofs, bearer
@@ -104,6 +105,16 @@ froze the iPad simulator Companion under Xcode. After PR #33 merged, Companion
 and all four active surfaces reported explicit session end. Both Companions
 cleared private content; the iPad result remains simulator evidence.
 
+The 2026-08-08 resumption checkpoint used reviewed source
+`af43fa47ac956e967d361698d41b4144ae01eae4`, Worker version
+`1aecea5a-e07b-4f61-97ad-b9da1da6ece1`, Companion 0.2.0 (3), the physical
+iPhone, and an iPad (A16) simulator. Application termination restored the same
+iPhone participant and endpoint without an invitation or duplicate roster
+entry. A vote interrupted by termination reconciled exactly once. Explicit
+session end cleared both private views, and relaunch could not restore or reuse
+the ended session. This closes the automatic same-installation resumption
+exercise but does not satisfy the separate two-physical-Apple-device checkbox.
+
 ## Automated Deployed-Environment Evidence
 
 - [x] A browser Host, two distinct browser fallback participants, and one
@@ -148,8 +159,10 @@ the contact method, before the first invitation.
 ## Known Limitations
 
 - Guest authority is temporary and does not provide account recovery.
-- Companion authority is memory-only. When automatic recovery is unavailable,
-  a manual rejoin currently creates a new participant and leaves the prior
+- Short-lived Companion authority is memory-only. The device-only resume
+  credential now restores the same participant and endpoint for the tested
+  same-installation restart path. When automatic recovery is unavailable, a
+  manual rejoin can still create a new participant and leave the prior
   participant in the session roster until session end.
 - Restarting the packaged Stage requires pairing again.
 - Reconnect restores a full authorized projection; delta replay is not yet

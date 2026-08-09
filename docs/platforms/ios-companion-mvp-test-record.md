@@ -7,6 +7,7 @@
 - Target branch: `dev`
 - Initial product: `GuiltyPartyCompanion` 0.1.0 (1)
 - Post-remediation product: `GuiltyPartyCompanion` 0.1.1 (2)
+- Resumption-checkpoint product: `GuiltyPartyCompanion` 0.2.0 (3)
 - Minimum OS: iOS/iPadOS 18.0
 - Host: macOS 26.6 Tahoe
 - IDE: Xcode 26.6 (17F113)
@@ -115,6 +116,23 @@ the iPad remained responsive. This closes the observed duplicate-completion
 freeze and live session-end privacy check. It does not establish persistent
 participant identity or automatic recovery after application termination.
 
+After participant-resumption support and the repository relocations merged,
+exact reviewed `dev` source at
+`af43fa47ac956e967d361698d41b4144ae01eae4` was deployed as Cloudflare Worker
+version `1aecea5a-e07b-4f61-97ad-b9da1da6ece1`. Companion 0.2.0 (3) was built
+from that source for the physical iPhone and iPad (A16), iOS 26.5 simulator.
+Both joined a fresh session as distinct participants and received separate
+assignments and authorized private projections.
+
+Terminating and relaunching the physical iPhone without its invitation restored
+the same participant and endpoint with a fresh private projection and no
+duplicate roster entry. Repeating termination immediately after one vote kept
+the Host total at exactly one and reconciled the pending action without a
+second submission. The iPad cast the other vote; the resulting one-to-one tie
+deterministically produced no public outcome. After explicit session end, both
+applications cleared private content, and neither could restore that content
+or reuse the ended session after relaunch.
+
 The XCTest suite covers GP1 acceptance/rejection, generated-model JSON
 round trips, shared positive and negative fixtures, additive fields, unknown
 critical variants, portable numeric limits, privacy fixtures, participant
@@ -145,8 +163,8 @@ clearing, and the fresh-projection reconnect gate.
 | Screen recording or mirroring | Capture trait shields content and disables actions until capture ends and a fresh projection arrives | Unit covered; source inspected; live private projection unavailable |
 | Screenshot | Honest post-capture warning; no prevention/deletion claim | Source inspected; live private projection unavailable |
 | Revocation or session end | Authority and projection discarded; no private actions | Unit covered; live synthetic session-end check passed on physical iPhone and iPad simulator |
-| Persistence review | No private gameplay cache, UserDefaults authority, logs, analytics, or diagnostics upload; only a device-only Keychain resume credential and minimum opaque metadata persist | Source inspection and unit coverage passed; backup/transfer and physical restart checks pending |
-| Application restart | Rotate endpoint-bound resume authority, preserve participant and endpoint, resolve pending idempotency IDs, and require a fresh projection | Contract, Worker, Durable Object, and native unit coverage passed; deployed physical exercise pending |
+| Persistence review | No private gameplay cache, UserDefaults authority, logs, analytics, or diagnostics upload; only a device-only Keychain resume credential and minimum opaque metadata persist | Source inspection and unit coverage passed; physical restart and post-end invalidation passed; backup/transfer behavior not physically exercised |
+| Application restart | Rotate endpoint-bound resume authority, preserve participant and endpoint, resolve pending idempotency IDs, and require a fresh projection | Contract, Worker, Durable Object, and native unit coverage passed; deployed physical-iPhone exercise passed with iPad-simulator peer |
 
 ## Generated Contract and Dependency Evidence
 
@@ -175,7 +193,9 @@ clearing, and the fresh-projection reconnect gate.
 - Short-lived participant access authority remains memory-only. Companion
   `0.2.0 (3)` adds an endpoint-bound rotating resume credential and minimum
   opaque resumption metadata in device-only, non-synchronizing Keychain
-  storage. Automated contract, server, and native tests cover the candidate;
-  the deployed physical restart exercise in
-  `android-entry-checkpoint-evidence.md` remains required before claiming the
-  duplicate-participant defect is closed or starting Android application work.
+  storage. Automated contract, server, and native tests and the deployed
+  physical-iPhone restart exercise cover the candidate. The duplicate-
+  participant defect is closed for automatic same-installation resumption in
+  this tested configuration. Android application work remains blocked until
+  the owner explicitly accepts the checkpoint in
+  `android-entry-checkpoint-evidence.md`.
