@@ -3,9 +3,10 @@
 ## Status
 
 The Remote Friends MVP development service was most recently promoted on
-2026-08-07 HST from reviewed `dev` commit
-`e85b486b1928704382329bbd73d4fa0a4ae28539` after PR #25 merged. The deployment
-remains limited to the synthetic
+2026-08-08 HST from reviewed `dev` commit
+`af43fa47ac956e967d361698d41b4144ae01eae4` after the participant-resumption
+slice and repository relocations merged. The deployment remains limited to the
+synthetic
 `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
 `workers.dev` endpoint, the owner-approved `api.test.guiltyparty.app` Custom
 Domain, exact browser origins, and the minimum test authority secrets described
@@ -161,7 +162,7 @@ DNS route, production resource, or CI credential was created. No production
 identity, private participant information, or licensed scenario content was
 sent to Cloudflare.
 
-## Remote Friends MVP Development Promotion (Completed 2026-08-07 HST)
+## Remote Friends MVP Development Promotions
 
 The reviewed runtime passes Host creation, browser cookie pairing, native
 bearer pairing, two-participant deterministic gameplay, private clue filtering,
@@ -325,6 +326,32 @@ A fresh Wrangler 4.119.0 dry run produced `worker.js` SHA-256
 the WebAssembly SHA-256 remained
 `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`.
 
+The 2026-08-08 participant-resumption promotion advanced the API to Worker
+version `1aecea5a-e07b-4f61-97ad-b9da1da6ece1` from exact reviewed `dev` commit
+`af43fa47ac956e967d361698d41b4144ae01eae4`. A pinned Wrangler 4.119.0 dry run
+from the relocated `apps/server/cloudflare/` workspace produced `worker.js`
+SHA-256
+`eb5ceecb327b3c56b66c2a49de5b2df4508cd473aed0e8aa854a4402920adb6b`;
+the WebAssembly SHA-256 remained
+`3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`.
+The provider script ETag for this Worker version is
+`1b3ce9ee062303213f091b2e5f1e0d28badbff10d81b8a5291b70d9dd433d26d`.
+
+Both `workers.dev` and `api.test.guiltyparty.app` advertised the
+`native_participant_resume` protocol feature after route convergence. The
+Custom Domain briefly served the prior version after deployment and converged
+on the new version after 20 seconds; both hostnames were verified separately.
+An unauthenticated `POST /api/v1/resume` returned `401`, and the Browser Host
+and Companion fallback remained available. No secret, binding, Durable Object
+migration, Pages deployment, or new Cloudflare resource was added.
+
+The physical-iPhone and iPad-simulator exercise passed same-participant and
+same-endpoint restart recovery, no duplicate roster entry, interrupted-vote
+reconciliation without duplicate action, deterministic tie handling, and
+post-session credential invalidation. Detailed non-secret evidence is recorded
+in `android-entry-checkpoint-evidence.md` and
+`ios-companion-mvp-test-record.md`.
+
 The same reviewed commit was manually promoted to separate Pages projects for
 the Browser Host and Browser Companion fallback. Their production deployment
 identifiers are `5bde1db6-ee32-4834-bd30-732950f261e5` and
@@ -339,13 +366,14 @@ The first-party WebAssembly module and original scenario are bundled with the
 Worker. Wrangler and its development dependency graph are not bundled. D1, R2,
 Queues, Realtime, Containers, analytics, and remote AI remain absent.
 
-Before named friends join, the readiness gate still requires app conformance,
-the approved tester notice, and the final owner go/no-go record. Hibernation,
-active-storage deletion, API and Pages Custom Domain DNS/certificate checks,
-packaged Stage transport, emergency disable, invitation rotation and closure,
-endpoint revocation, explicit session end, per-session join limiting, and
-per-endpoint message limiting have deployed evidence. The client-specific
-behaviors still require physical app-level rehearsal.
+Before named friends join, the readiness gate still requires the remaining app
+conformance, the approved tester notice, and the final owner go/no-go record.
+Hibernation, active-storage deletion, API and Pages Custom Domain
+DNS/certificate checks, packaged Stage transport, emergency disable,
+invitation rotation and closure, endpoint revocation, explicit session end,
+per-session join limiting, per-endpoint message limiting, and native participant
+resumption have deployed evidence. The second-physical-Apple-device claim
+remains unverified.
 
 ## Staging Gate
 

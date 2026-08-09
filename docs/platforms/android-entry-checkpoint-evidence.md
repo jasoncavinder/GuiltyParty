@@ -9,7 +9,7 @@ conversation or task is interrupted.
 
 ## Current Status
 
-**Implementation candidate; owner exercise and acceptance pending.**
+**Hands-on exercise passed; explicit owner acceptance pending.**
 
 This status does not authorize Android application scaffolding, dependencies,
 UI, transport adapters, or source code. Committed generated Kotlin DTOs are
@@ -22,8 +22,8 @@ language-neutral contract output, not an Android application.
 | Stable control-plane v1 schemas and representative fixtures | Canonical schema, OpenAPI, manifest, and positive, negative, compatibility, and privacy fixtures under `contracts/` and `tests/contracts/v1/` | Met for first baseline |
 | Reproducible Swift and Kotlin generation | `make check-mobile-contracts` verifies deterministic first-party output, compilation, fixtures, and worktree drift | Met |
 | Deterministic iOS/iPadOS session loop and journal replay | Remote-service, scenario-engine, contract, and native Companion evidence plus the completed physical MVP rehearsal | Met for the current synthetic scenario |
-| Temporary disconnect and same-endpoint resumption without duplicate participant or action | Endpoint-bound rotating resume contract, Worker/Durable Object tests, native Keychain boundary, and iOS/iPadOS automated tests | Implementation complete; physical restart exercise pending |
-| Owner hands-on acceptance of the full iOS/server baseline | The owner accepted the full gameplay rehearsal; the new restart-resumption slice still requires hands-on acceptance | Pending |
+| Temporary disconnect and same-endpoint resumption without duplicate participant or action | Endpoint-bound rotating resume contract, Worker/Durable Object tests, native Keychain boundary, automated tests, and the deployed physical-iPhone restart exercise recorded below | Met |
+| Owner hands-on acceptance of the full iOS/server baseline | The owner completed and reported every required resumption exercise condition as passing; explicit acceptance of this Android entry checkpoint is still required | Pending explicit decision |
 | Accepted Android minimum and capability baseline | Android 13/API 33 minimum and the capability policy are recorded in MC-DEL-001 and ADR 0019 | Met |
 
 ## Required Hands-On Exercise
@@ -47,6 +47,40 @@ After the resumption change is reviewed, merged, and deployed:
    private content or reuse the ended session.
 8. Record only pass/fail outcomes and non-secret build identifiers in the
    existing MVP test record.
+
+## 2026-08-08 HST Exercise Evidence
+
+- Reviewed and deployed source:
+  `af43fa47ac956e967d361698d41b4144ae01eae4`.
+- Cloudflare Worker version:
+  `1aecea5a-e07b-4f61-97ad-b9da1da6ece1`.
+- Native product: `GuiltyPartyCompanion` 0.2.0 (3).
+- Destinations: physical iPhone 12 Pro Max on iOS 27 developer beta and iPad
+  (A16), iOS 26.5 simulator.
+
+The two Companions joined a fresh synthetic session as distinct participants,
+received separate character assignments and current private projections, and
+remained exactly two entries in the Host roster. The physical iPhone was then
+terminated and relaunched without rescanning or pasting the invitation. It
+recovered the same participant, endpoint, assignment, and fresh authorized
+private projection without creating a duplicate roster entry.
+
+During an open vote, the physical iPhone submitted one vote and was immediately
+terminated. After automatic recovery, the Host still reported exactly one vote
+and the Companion reconciled the pending action without resubmission. The iPad
+then submitted the second vote. The two opposing votes produced the scenario's
+deterministic tie behavior—no public outcome—and no duplicate action.
+
+After explicit session end, both Companions reported the ended state and
+cleared private content. Terminating and relaunching both applications did not
+restore private content or reuse the ended session; each required a fresh
+invitation and join. The owner reported every exercise condition as passing.
+This operational evidence contains no invitation, authority, participant or
+endpoint identifier, private scenario text, or signing identifier.
+
+The exercise satisfies the technical and hands-on evidence requirements. It
+does not itself record the separate explicit owner decision required by ADR
+0017 to authorize Android application work.
 
 ## Stop Boundary
 
