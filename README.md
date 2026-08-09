@@ -88,7 +88,7 @@ Origin behavior currently fails closed. See the
 [webOS build and test runbook](docs/platforms/webos-stage-build-and-test.md) and
 [transport spike](docs/platforms/webos-transport-spike.md).
 
-The native iOS/iPadOS Companion project is committed under `apps/mobile`, with
+The native iOS/iPadOS Companion project is committed under `apps/mobile/iOS`, with
 simulator and physical-iPhone evidence recorded in the
 [iOS setup status](docs/platforms/ios-setup.md). A live authorized multi-client
 rehearsal and physical-iPad validation remain incomplete.
