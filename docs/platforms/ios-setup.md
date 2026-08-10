@@ -16,7 +16,8 @@ factor.
 - Project: `apps/mobile/iOS/GuiltyPartyCompanion.xcodeproj`
 - Shared scheme and application target: `GuiltyPartyCompanion`
 - Unit-test target: `GuiltyPartyCompanionTests`
-- Product name: `GuiltyPartyCompanion`
+- Internal Xcode product name: `GuiltyPartyCompanion`
+- Public display and future store-listing name: `Guilty Party`
 - Durable application identifier: `app.guiltyparty.companion`
 - Minimum deployment target: iOS/iPadOS 18.0
 - Marketing version: `0.2.0`

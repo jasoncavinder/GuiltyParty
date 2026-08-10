@@ -13,6 +13,14 @@ history and any future queued questions are tracked in the
 
 ## Role and Surfaces
 
+### MC-PROD-017: Public Mobile App Name
+
+The public-facing mobile app and store-listing name is **Guilty Party**.
+**Companion** remains an internal architectural term for the private player
+surface and may remain in source targets, modules, contracts, and technical
+documentation, but it is not part of the name shown to players. Internal
+bundle and application identifiers remain independent of the public name.
+
 ### MC-PROD-001: Player-Only Mobile App
 
 The installed mobile Companion is a player surface. Host tools belong in the
