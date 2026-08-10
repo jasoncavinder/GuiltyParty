@@ -8,7 +8,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.guiltyparty.companion"
+        applicationId = "app.guiltyparty.companion"
         minSdk = 33
         targetSdk = 36
         versionCode = 1

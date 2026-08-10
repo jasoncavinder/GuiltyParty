@@ -17,17 +17,23 @@ factor.
 - Shared scheme and application target: `GuiltyPartyCompanion`
 - Unit-test target: `GuiltyPartyCompanionTests`
 - Product name: `GuiltyPartyCompanion`
-- Development bundle identifier: `com.guiltyparty.companion`
+- Durable application identifier: `app.guiltyparty.companion`
 - Minimum deployment target: iOS/iPadOS 18.0
 - Marketing version: `0.2.0`
 - Build number: `3`
 - Swift language mode: Swift 6
 - Supported device families: iPhone and iPad
 
-The bundle identifier is a development identifier only. This project does not
-create or imply an App Store Connect record or final store identity. The project
-contains no development-team, provisioning-profile, device, or other
-machine-specific signing selection.
+The project owner approved this durable store identity on 2026-08-09. This
+repository decision does not create an App Store Connect record, register the
+identifier with Apple, or select a signing team. The project contains no
+development-team, provisioning-profile, device, or other machine-specific
+signing selection.
+
+An installed build using the former development bundle identifier remains a
+separate application and Keychain access group. Remove it explicitly when no
+longer needed. The project does not migrate a resume credential or private
+state from the pre-store identity.
 
 ## Contract Integration
 
