@@ -20,6 +20,105 @@ Product direction belongs in:
 
 # Active Plans
 
+## Local Product Refinement Before External Beta
+
+### Status
+
+Approved direction; interface inventory and implementation sequencing in
+progress. The owner selected **Guilty Party** as the sole public mobile app
+name and directed the project on 2026-08-09 to improve the owner-tested product
+experience before TestFlight or Google Play testing.
+
+This plan does not authorize external testers, store records, uploads, new
+third-party dependencies, or a live-media provider. The existing Remote
+Friends MVP privacy and external-test gates remain closed.
+
+### Objective
+
+Turn the technically complete multi-surface prototype into a coherent,
+accessible Guilty Party experience that the owner can evaluate on physical
+devices and simulators before distribution expands.
+
+The detailed current-state inventory, sequence, and decision gates are recorded
+in the [Local Product Refinement Roadmap](docs/roadmap/local-product-refinement.md).
+
+### Included Scope
+
+- one public Guilty Party name and consistent player-facing terminology
+- a shared semantic visual foundation mapped to native platform conventions
+- deliberate Host, Stage, phone, and tablet information hierarchy
+- polished join, assignment, scene, clue, voting, reconnect, privacy, and
+  session-end experiences
+- accessibility, adaptable layout, localization readiness, and reduced-motion
+  behavior appropriate to each surface
+- a bounded proposal and proof for original presentation media
+- local full-session acceptance on available physical devices and simulators
+
+### Explicit Exclusions
+
+- TestFlight, Google Play, television-store, or public distribution work
+- permanent accounts, passkeys, provider sign-in, payments, or commerce
+- production scenario media or unverified third-party assets
+- recording, transcription, analytics, advertising, or retained private
+  communications
+- live voice/video communications until a separately reviewed implementation
+  slice identifies the exact provider, dependencies, control-plane grants,
+  media-plane behavior, and physical-device evidence
+- changing canonical scenario truth, secrecy enforcement, or deterministic
+  replay to simplify presentation
+
+### Implementation Sequence
+
+1. Record the cross-surface interface inventory, design principles, media
+   boundary, acceptance gates, and unresolved owner decisions.
+2. Propose a shared visual foundation using original project-owned work and
+   semantic tokens; review representative Host, Stage, phone, and tablet states
+   before broad implementation.
+3. Apply the accepted foundation surface by surface without introducing a
+   shared UI runtime or weakening native accessibility and platform behavior.
+4. Replace development-only player interactions with the intended joining,
+   character, clue, voting, recovery, privacy, and terminal-session experience.
+5. Verify accessibility and localization behavior across phone, tablet, web,
+   and television layouts with synthetic content.
+6. Implement an approved, bounded presentation-media vertical slice using only
+   original placeholder assets and explicit scenario-owned references.
+7. Decide separately whether live communications media is required before the
+   first named-friend test; if so, approve its dependency and implementation
+   plan before coding.
+8. Run a complete owner-only physical-and-virtual rehearsal and update the
+   readiness record before resuming beta-distribution preparation.
+
+### Acceptance Criteria
+
+- all public surfaces identify the product as **Guilty Party**, while internal
+  architectural terms remain internal
+- the Host, Stage, iOS/iPadOS, Android, and browser player fallback use one
+  documented semantic visual language with appropriate native adaptations
+- players choose valid vote targets directly; raw scenario identifiers and
+  development transport controls are absent from ordinary release UX
+- joining, reconnecting, privacy shielding, assignment, scenes, clues, voting,
+  outcomes, and session end have intentional empty, loading, success, failure,
+  and interrupted states
+- phone and tablet layouts remain first-class and complete at supported text
+  sizes, orientations, appearance settings, and reduced-motion settings
+- presentation media cannot expose a private audience, become canonical truth,
+  or enter retained journals, diagnostics, or browser storage
+- no dependency, font, image, audio, video, or other asset lacks recorded
+  project ownership or approved compatible rights
+- the full deterministic session still passes on the available Host, packaged
+  LG Stage, physical iPhone, iOS/iPadOS simulators, and Android phone/tablet
+  emulators before store work resumes
+
+### Human Gates
+
+The owner must approve:
+
+- the representative visual direction before it becomes the shared foundation
+- any new font, asset source, library, SDK, media provider, or hosted service
+- the exact first presentation-media slice
+- whether live voice communications are required before named-friend testing
+- resumption of TestFlight or Google Play preparation
+
 ## Remote Friends MVP
 
 ### Status
