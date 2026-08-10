@@ -109,7 +109,7 @@ private fun JoinScreen(snapshot: UiSnapshot, controller: CompanionController) {
             Spacer(Modifier.height(8.dp))
             Text("Guilty Party", style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold)
             Text(
-                "Private Android Companion development build",
+                "Private Android player development build",
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -259,7 +259,7 @@ private fun PrivatePane(
         modifier.verticalScroll(rememberScrollState()).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
-        Text("Private Companion", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
+        Text("Private player view", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.Bold)
         PrivateContent(snapshot, controller)
     }
 }

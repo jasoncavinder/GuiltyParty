@@ -41,10 +41,27 @@ IDs are never renumbered or silently removed.
 ## Current Discussion
 
 No item is active. All 53 questions in the initial Mobile Companion decision
-queue are accepted, with no open or deliberately deferred items. New questions
+queue and the subsequently added public-name decision are accepted, with no
+open or deliberately deferred items. New questions
 receive stable IDs and enter the ordered queue under the resume protocol above.
 
 ## Accepted Decision History
+
+### MC-NAME-001: Public Mobile App Name
+
+**Status:** Accepted
+
+**Decision date:** 2026-08-09
+
+**Decision:** The public-facing installed app and store-listing name is
+**Guilty Party**. **Companion** remains an internal term for the private player
+surface rather than part of the player-visible product name. Internal source,
+target, module, contract, bundle, and application identifiers do not need to
+match the public name.
+
+**Rationale:** One Guilty Party brand should face players across surfaces.
+The word Companion describes the mobile surface's role for the project team,
+but should not make the installed product appear to be a separate brand.
 
 ### MC-DEL-004: Mobile Store Privacy and Review Preparation
 

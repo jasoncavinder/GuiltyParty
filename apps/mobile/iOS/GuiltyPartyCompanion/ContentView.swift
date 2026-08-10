@@ -82,7 +82,7 @@ private struct JoinView: View {
                             .accessibilityHidden(true)
                         Text("Guilty Party")
                             .font(.largeTitle.bold())
-                        Text("Private Companion development build")
+                        Text("Private player development build")
                             .font(.headline)
                             .foregroundStyle(.secondary)
                     }
@@ -146,7 +146,7 @@ private struct JoinView: View {
                 .padding(24)
                 .frame(maxWidth: .infinity)
             }
-            .navigationTitle("Companion")
+            .navigationTitle("Guilty Party")
         }
     }
 
@@ -183,7 +183,7 @@ private struct SessionView: View {
                         .navigationTitle("Guilty Party")
                 } detail: {
                     PrivateSessionDetail(session: session)
-                        .navigationTitle("Private Companion")
+                        .navigationTitle("Private player view")
                 }
             } else {
                 NavigationStack {
