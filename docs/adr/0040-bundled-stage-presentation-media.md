@@ -374,22 +374,29 @@ Rejected because ADR 0002 makes published scenario versions immutable.
 Rejected because local bundling is sufficient for this proof and avoids remote
 delivery, caching, integrity, availability, privacy, and cost decisions.
 
-## Replace the WAV with Native AAC/M4A or MP3 Playback
+## Replace Web Audio with Native AAC/M4A or MP3 Playback
 
-Rejected for the bounded MVP proof after a disposable physical-device spike on
-2026-08-11. AAC-LC/M4A and MP3 candidates derived from the approved owned WAV
-were approximately 90 percent smaller, but neither produced a supported native
-playback path on the physical LG webOS 5.6 television. Embedded `data:` native
-playback failed; relative packaged-file playback was correctly blocked by the
-opaque-origin sandbox; and `blob:` playback reached the media engine but
-returned media error code 4, `Format error`, for both formats despite
-`canPlayType()` reporting probable support. The candidates and local encoding
-tools were disposable and were not added to the repository or product.
+Rejected after a disposable physical-device spike on 2026-08-11. Native
+embedded AAC-LC/M4A and MPEG-1 Layer III MP3 playback failed. Relative packaged
+files were correctly blocked by the opaque-origin sandbox, and the
+unsandboxed outer application shell still rejected a packaged MP3 through the
+webOS URL-safety layer before codec decoding. Sandbox-compatible `blob:`
+playback reached the physical LG webOS 5.6 media engine but returned media
+error code 4, `Format error`, for both formats despite `canPlayType()` reporting
+probable support. These results do not show that the listed standalone codecs
+are absent; they show that the native HTML media source paths conflict with the
+accepted application security and packaging boundaries.
 
-The verified PCM WAV/Web Audio implementation remains authoritative. Its
-larger package size and one-time decode/start latency are accepted for this
-proof rather than weakening the sandbox or relying on optimistic capability
-claims that contradict target-device behavior.
+The same 128-kbps, 44.1-kHz stereo MP3 was then embedded, decoded through the
+existing Web Audio architecture, and exercised directly on the physical TV.
+It started almost immediately, looped seamlessly for repeated cycles, and
+stopped/reset reliably while reducing encoded audio size by approximately 90
+percent. This establishes a viable follow-up optimization without weakening
+the sandbox or adding a runtime dependency. The verified PCM WAV remains
+authoritative until a separate reviewed adoption change updates asset
+validation, MIME handling, provenance, package bounds, automated tests, and
+physical regression evidence. The candidate and local encoding tools remain
+disposable and are not part of the repository or product.
 
 ## Start with Private Audio or Live Communications
 

@@ -210,19 +210,24 @@ time without losing later questions:
    before named-friend testing.
 5. **LPR-DIST-001:** decide when local evidence is sufficient to resume mobile
    beta-distribution preparation.
-6. **LPR-MEDIA-004 — accepted and resolved 2026-08-11:** preserve the
-   physically verified PCM WAV and Web Audio path for the bounded MVP proof.
-   A disposable optimization spike derived AAC-LC/M4A and MP3 candidates from
-   the owned WAV master and reduced the encoded candidate sizes by roughly 90
-   percent. Neither compressed candidate was adopted: native embedded playback
-   failed; the opaque-origin sandbox correctly blocked relative packaged-file
-   playback; and sandbox-compatible `blob:` playback reached the physical LG
-   webOS 5.6 media engine but returned media error code 4, `Format error`, for
-   both candidates despite optimistic `canPlayType()` results. The spike used
+6. **LPR-MEDIA-004 — accepted; evaluation completed 2026-08-11:** a
+   disposable optimization spike derived AAC-LC/M4A and MPEG-1 Layer III MP3
+   candidates from the owned WAV master. Native embedded playback failed; the
+   opaque-origin sandbox correctly blocked relative packaged-file playback;
+   and sandbox-compatible `blob:` playback reached the physical LG webOS 5.6
+   media engine but returned media error code 4, `Format error`, despite
+   optimistic `canPlayType()` results. A separate standalone-shell test
+   confirmed that packaged-file MP3 was rejected by the webOS URL-safety layer
+   before decoding. Finally, the 128-kbps, 44.1-kHz stereo MP3 was embedded and
+   decoded through the existing Web Audio architecture. On the physical TV it
+   started almost immediately, looped seamlessly, and stopped/reset reliably
+   while reducing encoded audio size by roughly 90 percent. The spike used
    FFmpeg 8.1.2 and LAME 4.0 only as disposable local tooling; no candidate,
-   runtime dependency, or third-party encoder was added to the repository or
-   product. Do not relax the sandbox or replace the verified WAV path without
-   new target-device evidence and a separately reviewed decision.
+   runtime dependency, or third-party encoder has yet been added to the
+   repository or product. Preserve the verified WAV implementation until a
+   separate reviewed adoption change updates validation, MIME handling,
+   provenance, package bounds, and physical regression evidence. Do not relax
+   the sandbox or use relative, network, or `blob:` media sources.
 
 New questions receive stable IDs and are appended rather than replacing or
 silently reordering this queue.
