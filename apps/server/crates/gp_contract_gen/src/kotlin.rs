@@ -529,6 +529,19 @@ fn render_string_validation(
     if let Some(pattern) = &rules.pattern {
         writeln!(output, "{indent}gpRequire(Regex({}).containsMatchIn({expression}), \"string does not match pattern\")", quoted_kotlin(pattern)).unwrap();
     }
+    if !rules.allowed_values.is_empty() {
+        let values = rules
+            .allowed_values
+            .iter()
+            .map(|value| quoted_kotlin(value))
+            .collect::<Vec<_>>()
+            .join(", ");
+        writeln!(
+            output,
+            "{indent}gpRequire(setOf({values}).contains({expression}), \"string is not an allowed enum value\")"
+        )
+        .unwrap();
+    }
 }
 
 fn render_integer_validation(
@@ -597,6 +610,7 @@ fn needs_inline_validation(schema: &Schema) -> bool {
             rules.minimum_length.is_some()
                 || rules.maximum_length.is_some()
                 || rules.pattern.is_some()
+                || !rules.allowed_values.is_empty()
         }
         Schema::StringConstant(_) => true,
         Schema::Integer(rules) => rules.minimum.is_some() || rules.maximum.is_some(),

@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://guiltyparty.example/contracts/control-plane/v1/control-plane.schema.json",
-  "title": "Guilty Party control plane protocol 1.0",
+  "title": "Guilty Party control plane protocol 1.1",
   "description": "Canonical payload and WebSocket envelope schemas. Unknown optional object members are allowed for additive compatibility within major version 1.",
   "$defs": {
     "ProtocolVersion": {
       "type": "string",
-      "const": "1.0"
+      "enum": ["1.0", "1.1"]
     },
     "Identifier": {
       "type": "string",
@@ -1495,6 +1495,26 @@
         }
       }
     },
+    "VotingPhase": {
+      "type": "string",
+      "enum": ["not_open", "open", "closed", "resolved"],
+      "description": "Server-derived voting lifecycle state. Present only for a participant endpoint that negotiated participant_vote_targets_v1."
+    },
+    "ProjectedVoteTarget": {
+      "type": "object",
+      "required": ["character_id", "character_name"],
+      "properties": {
+        "character_id": {
+          "$ref": "#/$defs/Identifier",
+          "description": "Opaque existing command value. A client displays character_name instead."
+        },
+        "character_name": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "description": "One server-authorized voting choice without private character information."
+    },
     "AuthorizedProjection": {
       "type": "object",
       "required": [
@@ -1548,6 +1568,18 @@
         },
         "voting_open": {
           "type": "boolean"
+        },
+        "voting_phase": {
+          "$ref": "#/$defs/VotingPhase"
+        },
+        "vote_targets": {
+          "type": "array",
+          "maxItems": 128,
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/ProjectedVoteTarget"
+          },
+          "description": "Present only while voting is open and this negotiated participant endpoint remains eligible to vote."
         },
         "votes_cast": {
           "type": "integer",

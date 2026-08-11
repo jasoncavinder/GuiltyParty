@@ -43,7 +43,8 @@ use crate::{
         decode_client_request, validate_join_request, AiSuggestionPayload, ClientCommand,
         ClientRequest, CommandResultBody, CompatibilityResponse, ErrorBody, JoinKind, JoinRequest,
         JoinResponse, ProblemDetails, ProjectionPayload, ProtocolError, ServerEnvelope,
-        CONTROL_SUBPROTOCOL, PROTOCOL_VERSION,
+        CONTROL_SUBPROTOCOL, PARTICIPANT_VOTING_FEATURE, PREFERRED_PROTOCOL_VERSION,
+        PROTOCOL_VERSION,
     },
 };
 
@@ -254,13 +255,14 @@ async fn handle_join(
     let endpoint_id = new_identifier("endpoint");
     match request.kind {
         JoinKind::Stage => {
-            let token = state
-                .authorities
-                .write()
-                .await
-                .issue_stage(state.session_id.clone(), endpoint_id.clone());
+            let token = state.authorities.write().await.issue_stage(
+                request.protocol_version.clone(),
+                request.endpoint.features.clone(),
+                state.session_id.clone(),
+                endpoint_id.clone(),
+            );
             Ok(join_response(JoinResponse {
-                protocol_version: PROTOCOL_VERSION,
+                protocol_version: request.protocol_version,
                 token,
                 session_id: state.session_id.clone(),
                 endpoint_id,
@@ -294,11 +296,13 @@ async fn handle_join(
             notify_update(&state.update_tx);
             let token = state.authorities.write().await.issue_participant(
                 participant_id.clone(),
+                request.protocol_version.clone(),
+                request.endpoint.features.clone(),
                 state.session_id.clone(),
                 endpoint_id.clone(),
             );
             Ok(join_response(JoinResponse {
-                protocol_version: PROTOCOL_VERSION,
+                protocol_version: request.protocol_version,
                 token,
                 session_id: state.session_id.clone(),
                 endpoint_id,
@@ -369,6 +373,7 @@ async fn handle_socket(mut socket: WebSocket, state: Arc<AppState>, authority: A
                     Message::Text(text) => {
                         let request = match decode_client_request(
                             &text,
+                            &authority.protocol_version,
                             &authority.session_id,
                             &authority.endpoint_id,
                         ) {
@@ -615,17 +620,25 @@ async fn send_projection(
     authority: &AuthorityContext,
     correlation_id: Option<String>,
 ) -> Result<(), ()> {
-    let (projection, server_sequence) = {
+    let (mut projection, server_sequence) = {
         let session = state.session.lock().await;
         (
             build_projection(&session.game_state, &authority.audience),
             session.server_sequence(),
         )
     };
+    if authority.protocol_version != PREFERRED_PROTOCOL_VERSION
+        || !authority
+            .features
+            .iter()
+            .any(|feature| feature == PARTICIPANT_VOTING_FEATURE)
+    {
+        projection.remove_participant_voting_feature();
+    }
     send_json(
         socket,
         &ServerEnvelope {
-            protocol_version: PROTOCOL_VERSION,
+            protocol_version: authority.protocol_version.clone(),
             message_type: "projection",
             message_id: new_identifier("message"),
             correlation_id,
@@ -649,7 +662,7 @@ async fn send_error(
     send_json(
         socket,
         &ServerEnvelope {
-            protocol_version: PROTOCOL_VERSION,
+            protocol_version: authority.protocol_version.clone(),
             message_type: "error",
             message_id: new_identifier("message"),
             correlation_id,
@@ -691,7 +704,7 @@ async fn send_ai_suggestion(
     send_json(
         socket,
         &ServerEnvelope {
-            protocol_version: PROTOCOL_VERSION,
+            protocol_version: authority.protocol_version.clone(),
             message_type: "ai_suggestion",
             message_id: new_identifier("message"),
             correlation_id: Some(correlation_id),
@@ -714,7 +727,7 @@ async fn send_command_result(
     send_json(
         socket,
         &ServerEnvelope {
-            protocol_version: PROTOCOL_VERSION,
+            protocol_version: authority.protocol_version.clone(),
             message_type: "command_result",
             message_id: new_identifier("message"),
             correlation_id: Some(correlation_id),
@@ -1004,6 +1017,8 @@ mod tests {
         let mut session = SessionState::load(scenario, path.clone()).unwrap();
         let authority = AuthorityContext {
             audience: ProjectionAudience::Host,
+            protocol_version: PROTOCOL_VERSION.into(),
+            features: Vec::new(),
             session_id: "session-1".into(),
             endpoint_id: "host-endpoint".into(),
             primary_authority_generation: 0,
@@ -1065,6 +1080,8 @@ mod tests {
         let mut session = SessionState::load(scenario, path).unwrap();
         let host = AuthorityContext {
             audience: ProjectionAudience::Host,
+            protocol_version: PROTOCOL_VERSION.into(),
+            features: Vec::new(),
             session_id: "session-1".into(),
             endpoint_id: "host-endpoint".into(),
             primary_authority_generation: 0,

@@ -29,6 +29,7 @@ pub(crate) struct StringRules {
     pub(crate) minimum_length: Option<u64>,
     pub(crate) maximum_length: Option<u64>,
     pub(crate) pattern: Option<String>,
+    pub(crate) allowed_values: Vec<String>,
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
@@ -297,7 +298,8 @@ impl Contract {
                 }
                 let length = value.chars().count() as u64;
                 Ok(rules.minimum_length.is_none_or(|minimum| length >= minimum)
-                    && rules.maximum_length.is_none_or(|maximum| length <= maximum))
+                    && rules.maximum_length.is_none_or(|maximum| length <= maximum)
+                    && (rules.allowed_values.is_empty() || rules.allowed_values.contains(value)))
             }
             (Schema::Object(object), _)
                 if object.required.is_empty() && object.properties.is_empty() =>
@@ -479,6 +481,7 @@ fn parse_schema(value: &Value, path: &str) -> Result<Schema, String> {
             "minLength",
             "maxLength",
             "pattern",
+            "enum",
             "minimum",
             "maximum",
             "minItems",
@@ -585,6 +588,7 @@ fn parse_typed_schema(
                     "minLength",
                     "maxLength",
                     "pattern",
+                    "enum",
                 ],
                 path,
             )?;
@@ -592,6 +596,7 @@ fn parse_typed_schema(
                 minimum_length: optional_u64(object, "minLength", path)?,
                 maximum_length: optional_u64(object, "maxLength", path)?,
                 pattern: optional_string(object, "pattern", path)?,
+                allowed_values: string_enum(object, path)?,
             }))
         }
         "integer" => {
@@ -767,6 +772,30 @@ fn optional_bool(
     }
 }
 
+fn string_enum(object: &Map<String, Value>, path: &str) -> Result<Vec<String>, String> {
+    let Some(values) = object.get("enum") else {
+        return Ok(Vec::new());
+    };
+    let values = values
+        .as_array()
+        .ok_or_else(|| format!("{path}: enum must be an array"))?;
+    if values.is_empty() {
+        return Err(format!("{path}: enum must not be empty"));
+    }
+    let mut unique = BTreeSet::new();
+    let mut result = Vec::with_capacity(values.len());
+    for value in values {
+        let value = value
+            .as_str()
+            .ok_or_else(|| format!("{path}: string enum values must be strings"))?;
+        if !unique.insert(value.to_string()) {
+            return Err(format!("{path}: string enum values must be unique"));
+        }
+        result.push(value.to_string());
+    }
+    Ok(result)
+}
+
 fn insert_consistent(
     values: &mut BTreeMap<String, Schema>,
     name: String,
@@ -872,6 +901,26 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec!["participant", "stage"]
         );
+    }
+
+    #[test]
+    fn preserves_bounded_string_enums_and_rejects_ambiguous_values() {
+        let contract = production_schema();
+        assert!(matches!(
+            contract.definition("ProtocolVersion").unwrap(),
+            Schema::String(StringRules { allowed_values, .. })
+                if allowed_values == &["1.0", "1.1"]
+        ));
+
+        for enum_values in [r#"[]"#, r#"[\"one\",\"one\"]"#, r#"[\"one\",2]"#] {
+            let source = format!(
+                r#"{{
+                  "$schema":"https://json-schema.org/draft/2020-12/schema",
+                  "$defs":{{"Thing":{{"type":"string","enum":{enum_values}}}}}
+                }}"#
+            );
+            assert!(Contract::parse(&source).is_err());
+        }
     }
 
     #[test]

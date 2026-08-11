@@ -1,6 +1,7 @@
 import { DurableObject } from "cloudflare:workers";
 
 import { validClientBuild } from "./client-build.js";
+import { supportedProtocolVersion } from "./constants.js";
 import { StagePairingStore } from "./stage-pairing-store.js";
 
 const INTERNAL_PREFIX = "/internal/stage-pairing/";
@@ -48,9 +49,10 @@ export class StagePairing extends DurableObject {
       this.ctx.storage.sql.exec("DELETE FROM stage_pairing");
       this.ctx.storage.sql.exec(
         `INSERT INTO stage_pairing (
-           singleton, transaction_id, polling_digest, endpoint_json,
+           singleton, protocol_version, transaction_id, polling_digest, endpoint_json,
            created_at_unix_ms, expires_at_unix_ms
-         ) VALUES (1, ?, ?, ?, ?, ?)`,
+         ) VALUES (1, ?, ?, ?, ?, ?, ?)`,
+        value.protocol_version,
         value.transaction_id,
         value.polling_digest,
         JSON.stringify(value.endpoint),
@@ -142,12 +144,14 @@ export class StagePairing extends DurableObject {
         return {
           ok: true,
           pending: true,
+          protocolVersion: current.protocol_version,
           expiresAtUnixMs: Number(current.expires_at_unix_ms),
         };
       }
       return {
         ok: true,
         pending: false,
+        protocolVersion: current.protocol_version,
         transactionId: current.transaction_id,
         sessionId: current.approved_session_id,
         endpoint: JSON.parse(current.endpoint_json),
@@ -158,10 +162,15 @@ export class StagePairing extends DurableObject {
       return internalProblem(result.status, result.code, result.title);
     }
     if (result.pending) {
-      return internalJson({ pending: true, expires_at_unix_ms: result.expiresAtUnixMs }, 202);
+      return internalJson({
+        pending: true,
+        protocol_version: result.protocolVersion,
+        expires_at_unix_ms: result.expiresAtUnixMs,
+      }, 202);
     }
     return internalJson({
       pending: false,
+      protocol_version: result.protocolVersion,
       transaction_id: result.transactionId,
       session_id: result.sessionId,
       endpoint: result.endpoint,
@@ -177,6 +186,7 @@ export class StagePairing extends DurableObject {
 function validCreate(value) {
   return (
     value &&
+    supportedProtocolVersion(value.protocol_version) &&
     IDENTIFIER_PATTERN.test(value.transaction_id) &&
     /^[a-f0-9]{64}$/u.test(value.polling_digest) &&
     value.endpoint &&

@@ -8,6 +8,7 @@ export class StagePairingStore {
     this.sql.exec(`
       CREATE TABLE IF NOT EXISTS stage_pairing (
         singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+        protocol_version TEXT NOT NULL DEFAULT '1.0',
         transaction_id TEXT NOT NULL UNIQUE,
         polling_digest TEXT NOT NULL,
         endpoint_json TEXT NOT NULL,
@@ -19,6 +20,12 @@ export class StagePairingStore {
         approved_at_unix_ms INTEGER
       )
     `);
+    const columns = new Set(
+      Array.from(this.sql.exec("PRAGMA table_info(stage_pairing)"), (row) => row.name),
+    );
+    if (!columns.has("protocol_version")) {
+      this.sql.exec("ALTER TABLE stage_pairing ADD COLUMN protocol_version TEXT NOT NULL DEFAULT '1.0'");
+    }
   }
 
   current() {

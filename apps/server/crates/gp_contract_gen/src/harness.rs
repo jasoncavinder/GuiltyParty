@@ -202,7 +202,7 @@ private func verifyConstruction() throws {
     let response = try GPV1JoinResponse(
         endpointId: try GPV1Identifier("synthetic-endpoint"),
         participantId: nil,
-        protocolVersion: GPV1ProtocolVersion(),
+        protocolVersion: try GPV1ProtocolVersion("1.0"),
         roomId: try GPV1Identifier("synthetic-room"),
         sessionId: try GPV1Identifier("synthetic-session"),
         token: try GPV1Token("synthetic-token")

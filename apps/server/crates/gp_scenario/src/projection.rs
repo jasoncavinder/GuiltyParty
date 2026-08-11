@@ -18,6 +18,10 @@ pub struct AuthorizedProjection {
     pub revealed_clues: Vec<ProjectedClue>,
     pub participants: Vec<ProjectedParticipant>,
     pub voting_open: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub voting_phase: Option<VotingPhase>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub vote_targets: Option<Vec<ProjectedVoteTarget>>,
     pub votes_cast: usize,
     pub outcome: Option<ProjectedOutcome>,
 }
@@ -51,6 +55,21 @@ pub struct ProjectedParticipant {
 pub struct ProjectedOutcome {
     pub id: String,
     pub public_resolution: String,
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum VotingPhase {
+    NotOpen,
+    Open,
+    Closed,
+    Resolved,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+pub struct ProjectedVoteTarget {
+    pub character_id: String,
+    pub character_name: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
@@ -125,6 +144,40 @@ pub fn build_projection(state: &GameState, audience: &ProjectionAudience) -> Aut
         public_resolution: outcome.public_resolution.clone(),
     });
 
+    let (voting_phase, vote_targets) = match audience {
+        ProjectionAudience::Participant(participant_id) => state
+            .participants
+            .get(participant_id)
+            .map(|participant| {
+                let phase = if outcome.is_some() {
+                    VotingPhase::Resolved
+                } else if state.voting_closed {
+                    VotingPhase::Closed
+                } else if state.voting_open {
+                    VotingPhase::Open
+                } else {
+                    VotingPhase::NotOpen
+                };
+                let targets = (phase == VotingPhase::Open
+                    && participant.character_id.is_some()
+                    && !state.votes.contains_key(participant_id))
+                .then(|| {
+                    state
+                        .scenario
+                        .characters
+                        .iter()
+                        .map(|character| ProjectedVoteTarget {
+                            character_id: character.id.clone(),
+                            character_name: character.name.clone(),
+                        })
+                        .collect()
+                });
+                (Some(phase), targets)
+            })
+            .unwrap_or((None, None)),
+        ProjectionAudience::Stage | ProjectionAudience::Host => (None, None),
+    };
+
     let active_scene = state.active_scene_id.as_ref().and_then(|scene_id| {
         state
             .scenario
@@ -146,8 +199,17 @@ pub fn build_projection(state: &GameState, audience: &ProjectionAudience) -> Aut
         revealed_clues,
         participants,
         voting_open: state.voting_open,
+        voting_phase,
+        vote_targets,
         votes_cast: state.votes.len(),
         outcome,
+    }
+}
+
+impl AuthorizedProjection {
+    pub fn remove_participant_voting_feature(&mut self) {
+        self.voting_phase = None;
+        self.vote_targets = None;
     }
 }
 

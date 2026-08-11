@@ -4,11 +4,14 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
 pub const PROTOCOL_VERSION: &str = "1.0";
+pub const PREFERRED_PROTOCOL_VERSION: &str = "1.1";
 pub const CONTROL_SUBPROTOCOL: &str = "guiltyparty.control.v1";
-pub const PROTOCOL_FEATURES: [&str; 3] = [
+pub const PARTICIPANT_VOTING_FEATURE: &str = "participant_vote_targets_v1";
+pub const PROTOCOL_FEATURES: [&str; 4] = [
     "authorized_projections",
     "command_idempotency",
     "host_ai_suggestions",
+    PARTICIPANT_VOTING_FEATURE,
 ];
 
 #[derive(Debug, Serialize)]
@@ -16,14 +19,14 @@ pub struct CompatibilityResponse {
     pub supported_protocol_majors: [u8; 1],
     pub preferred_protocol_version: &'static str,
     pub required_upgrade: bool,
-    pub features: [&'static str; 3],
+    pub features: [&'static str; 4],
 }
 
 impl Default for CompatibilityResponse {
     fn default() -> Self {
         Self {
             supported_protocol_majors: [1],
-            preferred_protocol_version: PROTOCOL_VERSION,
+            preferred_protocol_version: PREFERRED_PROTOCOL_VERSION,
             required_upgrade: false,
             features: PROTOCOL_FEATURES,
         }
@@ -41,6 +44,8 @@ pub enum JoinKind {
 pub struct EndpointRegistration {
     pub platform: String,
     pub capabilities: Vec<String>,
+    #[serde(default)]
+    pub features: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -53,7 +58,7 @@ pub struct JoinRequest {
 
 #[derive(Debug, Serialize)]
 pub struct JoinResponse {
-    pub protocol_version: &'static str,
+    pub protocol_version: String,
     pub token: String,
     pub session_id: String,
     pub endpoint_id: String,
@@ -136,7 +141,7 @@ impl ProtocolError {
 
 #[derive(Debug, Serialize)]
 pub struct ServerEnvelope<T: Serialize> {
-    pub protocol_version: &'static str,
+    pub protocol_version: String,
     #[serde(rename = "type")]
     pub message_type: &'static str,
     pub message_id: String,
@@ -197,7 +202,7 @@ pub struct ProblemDetails {
 }
 
 pub fn validate_join_request(request: &JoinRequest) -> Result<(), ProtocolError> {
-    if request.protocol_version != PROTOCOL_VERSION {
+    if !supported_protocol_version(&request.protocol_version) {
         return Err(ProtocolError::new(
             "unsupported_protocol",
             "The requested control-plane protocol is not supported",
@@ -212,12 +217,31 @@ pub fn validate_join_request(request: &JoinRequest) -> Result<(), ProtocolError>
     }
     let mut capabilities = BTreeSet::new();
     for capability in &request.endpoint.capabilities {
-        if !valid_feature_identifier(capability) || !capabilities.insert(capability) {
+        if !valid_feature_identifier(capability) || !capabilities.insert(capability.clone()) {
             return Err(ProtocolError::new(
                 "invalid_endpoint",
                 "Endpoint capabilities must be valid and unique",
             ));
         }
+    }
+    let mut features = BTreeSet::new();
+    for feature in &request.endpoint.features {
+        if !valid_feature_identifier(feature) || !features.insert(feature.clone()) {
+            return Err(ProtocolError::new(
+                "invalid_endpoint",
+                "Endpoint features must be valid and unique",
+            ));
+        }
+    }
+    if features.contains(PARTICIPANT_VOTING_FEATURE)
+        && (request.protocol_version != PREFERRED_PROTOCOL_VERSION
+            || !matches!(request.kind, JoinKind::Participant)
+            || !capabilities.contains("private_display"))
+    {
+        return Err(ProtocolError::new(
+            "invalid_endpoint",
+            "The participant voting feature is not valid for this endpoint",
+        ));
     }
 
     match request.kind {
@@ -250,6 +274,7 @@ pub fn validate_join_request(request: &JoinRequest) -> Result<(), ProtocolError>
 
 pub fn decode_client_request(
     text: &str,
+    expected_protocol_version: &str,
     expected_session_id: &str,
     expected_endpoint_id: &str,
 ) -> Result<ClientRequest, ProtocolError> {
@@ -272,7 +297,7 @@ pub fn decode_client_request(
             "The control-plane message identifier is invalid",
         ));
     }
-    if envelope.protocol_version != PROTOCOL_VERSION {
+    if envelope.protocol_version != expected_protocol_version {
         return Err(ProtocolError::new(
             "unsupported_protocol",
             "The control-plane protocol version is not supported",
@@ -349,6 +374,10 @@ pub fn decode_client_request(
     }
 }
 
+pub fn supported_protocol_version(value: &str) -> bool {
+    matches!(value, PROTOCOL_VERSION | PREFERRED_PROTOCOL_VERSION)
+}
+
 pub fn valid_display_name(name: &str) -> bool {
     let length = name.chars().count();
     (1..=80).contains(&length) && !name.chars().any(char::is_control)
@@ -411,10 +440,59 @@ mod tests {
     }
 
     #[test]
+    fn participant_voting_requires_minor_1_1_and_a_private_participant_endpoint() {
+        let negotiated: JoinRequest = serde_json::from_value(serde_json::json!({
+            "protocol_version": "1.1",
+            "kind": "participant",
+            "display_name": "Synthetic Player",
+            "endpoint": {
+                "platform": "ios_companion",
+                "capabilities": ["private_display"],
+                "features": [PARTICIPANT_VOTING_FEATURE]
+            }
+        }))
+        .unwrap();
+        assert!(validate_join_request(&negotiated).is_ok());
+
+        for invalid in [
+            serde_json::json!({
+                "protocol_version": "1.0",
+                "kind": "participant",
+                "display_name": "Synthetic Player",
+                "endpoint": {
+                    "platform": "ios_companion",
+                    "capabilities": ["private_display"],
+                    "features": [PARTICIPANT_VOTING_FEATURE]
+                }
+            }),
+            serde_json::json!({
+                "protocol_version": "1.1",
+                "kind": "stage",
+                "endpoint": {
+                    "platform": "webos",
+                    "capabilities": ["public_display"],
+                    "features": [PARTICIPANT_VOTING_FEATURE]
+                }
+            }),
+        ] {
+            let request: JoinRequest = serde_json::from_value(invalid).unwrap();
+            assert_eq!(
+                validate_join_request(&request).unwrap_err().code,
+                "invalid_endpoint"
+            );
+        }
+    }
+
+    #[test]
     fn client_envelopes_require_matching_connection_context() {
         let envelope = context_envelope("get_projection", serde_json::json!({}));
-        let error = decode_client_request(&envelope.to_string(), "other-session", "endpoint-1")
-            .unwrap_err();
+        let error = decode_client_request(
+            &envelope.to_string(),
+            PROTOCOL_VERSION,
+            "other-session",
+            "endpoint-1",
+        )
+        .unwrap_err();
         assert_eq!(error.code, "invalid_context");
         assert_eq!(error.correlation_id.as_deref(), Some("message-1"));
     }
@@ -426,9 +504,14 @@ mod tests {
             serde_json::json!({"command": {"type": "open_voting"}}),
         );
         assert_eq!(
-            decode_client_request(&envelope.to_string(), "session-1", "endpoint-1")
-                .unwrap_err()
-                .code,
+            decode_client_request(
+                &envelope.to_string(),
+                PROTOCOL_VERSION,
+                "session-1",
+                "endpoint-1",
+            )
+            .unwrap_err()
+            .code,
             "invalid_message"
         );
     }
@@ -448,7 +531,12 @@ mod tests {
         object.insert("future_envelope".into(), Value::Bool(true));
 
         assert!(matches!(
-            decode_client_request(&envelope.to_string(), "session-1", "endpoint-1"),
+            decode_client_request(
+                &envelope.to_string(),
+                PROTOCOL_VERSION,
+                "session-1",
+                "endpoint-1",
+            ),
             Ok(ClientRequest::SubmitCommand { .. })
         ));
     }
@@ -457,9 +545,14 @@ mod tests {
     fn unknown_critical_variants_fail_safely() {
         let envelope = context_envelope("future_message", serde_json::json!({}));
         assert_eq!(
-            decode_client_request(&envelope.to_string(), "session-1", "endpoint-1")
-                .unwrap_err()
-                .code,
+            decode_client_request(
+                &envelope.to_string(),
+                PROTOCOL_VERSION,
+                "session-1",
+                "endpoint-1",
+            )
+            .unwrap_err()
+            .code,
             "unknown_message_type"
         );
     }
@@ -476,8 +569,13 @@ mod tests {
             .unwrap()
             .insert("protocol_version".into(), Value::String("99.0".into()));
 
-        let error =
-            decode_client_request(&envelope.to_string(), "session-1", "endpoint-1").unwrap_err();
+        let error = decode_client_request(
+            &envelope.to_string(),
+            PROTOCOL_VERSION,
+            "session-1",
+            "endpoint-1",
+        )
+        .unwrap_err();
         assert_eq!(error.code, "invalid_message");
         assert_eq!(error.correlation_id, None);
     }

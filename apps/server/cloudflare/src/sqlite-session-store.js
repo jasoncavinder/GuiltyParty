@@ -50,6 +50,7 @@ export class SqliteSessionStore {
       );
       CREATE TABLE IF NOT EXISTS endpoint_authorities (
         endpoint_id TEXT PRIMARY KEY,
+        protocol_version TEXT NOT NULL DEFAULT '1.0',
         audience TEXT NOT NULL CHECK (audience IN ('host', 'stage', 'participant')),
         participant_id TEXT,
         room_id TEXT NOT NULL,
@@ -123,6 +124,9 @@ export class SqliteSessionStore {
     if (!columns.has("features_json")) {
       this.sql.exec("ALTER TABLE endpoint_authorities ADD COLUMN features_json TEXT NOT NULL DEFAULT '[]'");
     }
+    if (!columns.has("protocol_version")) {
+      this.sql.exec("ALTER TABLE endpoint_authorities ADD COLUMN protocol_version TEXT NOT NULL DEFAULT '1.0'");
+    }
     if (!columns.has("client_build_json")) {
       this.sql.exec("ALTER TABLE endpoint_authorities ADD COLUMN client_build_json TEXT");
     }
@@ -151,11 +155,12 @@ export class SqliteSessionStore {
       );
       this.sql.exec(
         `INSERT INTO endpoint_authorities (
-           endpoint_id, audience, participant_id, room_id, authority_generation,
+           endpoint_id, protocol_version, audience, participant_id, room_id, authority_generation,
            origin, platform, capabilities_json, features_json, client_build_json,
            expires_at_unix_ms
-         ) VALUES (?, 'host', NULL, ?, 1, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, 'host', NULL, ?, 1, ?, ?, ?, ?, ?, ?)`,
         configuration.hostEndpointId,
+        configuration.protocolVersion ?? "1.0",
         configuration.hostRoomId,
         configuration.hostOrigin,
         configuration.endpoint.platform,
@@ -176,6 +181,7 @@ export class SqliteSessionStore {
 
   admitGuest({
     sessionId,
+    protocolVersion = "1.0",
     pairingDigest,
     kind,
     displayName,
@@ -240,11 +246,12 @@ export class SqliteSessionStore {
       const audience = kind === "stage" ? "stage" : "participant";
       this.sql.exec(
         `INSERT INTO endpoint_authorities (
-           endpoint_id, audience, participant_id, room_id, authority_generation,
+           endpoint_id, protocol_version, audience, participant_id, room_id, authority_generation,
            origin, platform, capabilities_json, features_json, client_build_json,
            expires_at_unix_ms
-         ) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
         endpointId,
+        protocolVersion,
         audience,
         participantId,
         roomId,
@@ -283,6 +290,7 @@ export class SqliteSessionStore {
         participantId,
         roomId,
         authorityGeneration: 1,
+        protocolVersion,
         expiresAtUnixMs: metadata.session_expires_at_unix_ms,
         serverSequence: currentSequence + canonicalEntries.length,
       };
@@ -296,6 +304,7 @@ export class SqliteSessionStore {
     endpointId,
     participantId,
     authorityGeneration,
+    protocolVersion = "1.0",
     lastServerSequence,
     pendingIdempotencyIds,
     nowUnixMs,
@@ -341,7 +350,7 @@ export class SqliteSessionStore {
       const endpoint = Array.from(
         this.sql.exec(
           `SELECT endpoint_id, audience, participant_id, room_id,
-                  authority_generation, expires_at_unix_ms, revoked_at_unix_ms
+                  protocol_version, authority_generation, expires_at_unix_ms, revoked_at_unix_ms
            FROM endpoint_authorities WHERE endpoint_id = ?`,
           endpointId,
         ),
@@ -365,6 +374,7 @@ export class SqliteSessionStore {
           endpoint.audience === "participant" &&
           endpoint.participant_id === participantId &&
           endpoint.endpoint_id === credential.endpoint_id &&
+          endpoint.protocol_version === protocolVersion &&
           participantId === credential.participant_id &&
           Number(credential.authority_generation) === authorityGeneration &&
           Number(endpoint.authority_generation) === retryGeneration &&
@@ -384,6 +394,7 @@ export class SqliteSessionStore {
             participantId,
             roomId: endpoint.room_id,
             authorityGeneration: retryGeneration,
+            protocolVersion: endpoint.protocol_version,
             expiresAtUnixMs: Number(endpoint.expires_at_unix_ms),
             resumeExpiresAtUnixMs: Number(credential.expires_at_unix_ms),
             serverSequence: currentSequence,
@@ -406,6 +417,7 @@ export class SqliteSessionStore {
         endpoint.audience !== "participant" ||
         endpoint.participant_id !== participantId ||
         endpoint.endpoint_id !== credential.endpoint_id ||
+        endpoint.protocol_version !== protocolVersion ||
         participantId !== credential.participant_id ||
         Number(endpoint.authority_generation) !== authorityGeneration ||
         Number(credential.authority_generation) !== authorityGeneration ||
@@ -463,6 +475,7 @@ export class SqliteSessionStore {
         participantId,
         roomId: endpoint.room_id,
         authorityGeneration: nextGeneration,
+        protocolVersion: endpoint.protocol_version,
         expiresAtUnixMs: Number(endpoint.expires_at_unix_ms),
         resumeExpiresAtUnixMs: Number(credential.expires_at_unix_ms),
         serverSequence: currentSequence,
@@ -510,7 +523,7 @@ export class SqliteSessionStore {
     );
   }
 
-  admitApprovedStage({ transactionId, endpoint, endpointId, roomId, nowUnixMs }) {
+  admitApprovedStage({ protocolVersion = "1.0", transactionId, endpoint, endpointId, roomId, nowUnixMs }) {
     return this.storage.transactionSync(() => {
       const metadata = this.sessionMetadata();
       if (!metadata) {
@@ -521,7 +534,7 @@ export class SqliteSessionStore {
       }
       const prior = Array.from(
         this.sql.exec(
-          `SELECT a.endpoint_id, a.room_id, e.authority_generation,
+          `SELECT a.endpoint_id, a.room_id, e.protocol_version, e.authority_generation,
                   e.expires_at_unix_ms, e.revoked_at_unix_ms
            FROM stage_pairing_admissions a
            JOIN endpoint_authorities e ON e.endpoint_id = a.endpoint_id
@@ -537,6 +550,7 @@ export class SqliteSessionStore {
           ok: true,
           duplicate: true,
           endpointId: prior.endpoint_id,
+          protocolVersion: prior.protocol_version,
           roomId: prior.room_id,
           authorityGeneration: Number(prior.authority_generation),
           expiresAtUnixMs: Number(prior.expires_at_unix_ms),
@@ -553,11 +567,12 @@ export class SqliteSessionStore {
       }
       this.sql.exec(
         `INSERT INTO endpoint_authorities (
-           endpoint_id, audience, participant_id, room_id, authority_generation,
+           endpoint_id, protocol_version, audience, participant_id, room_id, authority_generation,
            origin, platform, capabilities_json, features_json, client_build_json,
            expires_at_unix_ms
-         ) VALUES (?, 'stage', NULL, ?, 1, NULL, ?, ?, ?, ?, ?)`,
+         ) VALUES (?, ?, 'stage', NULL, ?, 1, NULL, ?, ?, ?, ?, ?)`,
         endpointId,
+        protocolVersion,
         roomId,
         endpoint.platform,
         JSON.stringify(endpoint.capabilities),
@@ -578,6 +593,7 @@ export class SqliteSessionStore {
         ok: true,
         duplicate: false,
         endpointId,
+        protocolVersion,
         roomId,
         authorityGeneration: 1,
         expiresAtUnixMs: Number(metadata.session_expires_at_unix_ms),
@@ -620,7 +636,7 @@ export class SqliteSessionStore {
   endpointRegistration(endpointId) {
     const row = Array.from(
       this.sql.exec(
-        `SELECT audience, platform, capabilities_json, features_json,
+        `SELECT audience, protocol_version, platform, capabilities_json, features_json,
                 client_build_json, revoked_at_unix_ms
          FROM endpoint_authorities WHERE endpoint_id = ?`,
         endpointId,
@@ -629,6 +645,7 @@ export class SqliteSessionStore {
     if (!row) return null;
     return {
       audience: row.audience,
+      protocolVersion: row.protocol_version,
       platform: row.platform,
       capabilities: JSON.parse(row.capabilities_json),
       features: JSON.parse(row.features_json ?? "[]"),

@@ -10,7 +10,10 @@ import {
   MAX_WEBSOCKET_TICKETS_PER_ENDPOINT,
   MAX_WEBSOCKET_MESSAGE_BYTES,
   MESSAGE_RATE_WINDOW_MS,
+  PARTICIPANT_VOTING_FEATURE,
+  PREFERRED_PROTOCOL_VERSION,
   PROTOCOL_VERSION,
+  supportedProtocolVersion,
 } from "./constants.js";
 import { validClientBuild } from "./client-build.js";
 import { offeredSubprotocols } from "./friends-auth.js";
@@ -25,6 +28,7 @@ import { scenarioEngine } from "./scenario-engine.js";
 import { SessionCore, SessionFault } from "./session-core.js";
 import { SqliteSessionStore } from "./sqlite-session-store.js";
 import { fanOutWebSockets } from "./websocket-fanout.js";
+import { applyParticipantVotingNegotiation } from "./participant-voting.js";
 
 const INTERNAL_PREFIX = "/internal/session/";
 const FEATURE_IDENTIFIER_PATTERN = /^[a-z][a-z0-9_.-]{0,127}$/u;
@@ -91,6 +95,7 @@ export class GameSession extends DurableObject {
       return internalProblem(400, "invalid_session_configuration", "Invalid session configuration");
     }
     const result = this.store.createFriendsSession({
+      protocolVersion: value.protocol_version,
       sessionId: value.session_id,
       hostEndpointId: value.host_endpoint_id,
       hostRoomId: value.host_room_id,
@@ -155,6 +160,7 @@ export class GameSession extends DurableObject {
       }
       return this.store.admitGuest({
         sessionId: this.store.sessionMetadata()?.session_id ?? "",
+        protocolVersion: value.join.protocol_version,
         pairingDigest: value.pairing_digest,
         kind: value.join.kind,
         displayName: participant ? value.join.display_name : null,
@@ -180,6 +186,7 @@ export class GameSession extends DurableObject {
     // response depend on any one existing socket remaining writable.
     this.ctx.waitUntil(this.broadcastProjections());
     return internalJson({
+      protocol_version: result.protocolVersion,
       audience: result.audience,
       endpoint_id: result.endpointId,
       participant_id: result.participantId,
@@ -206,6 +213,7 @@ export class GameSession extends DurableObject {
         endpointId: value.resume.endpoint_id,
         participantId: value.resume.participant_id,
         authorityGeneration: value.resume.primary_authority_generation,
+        protocolVersion: value.resume.protocol_version,
         lastServerSequence: value.resume.last_server_sequence,
         pendingIdempotencyIds: value.resume.pending_idempotency_ids,
         nowUnixMs: value.now_unix_ms,
@@ -221,6 +229,7 @@ export class GameSession extends DurableObject {
       return internalProblem(result.status, result.code, result.title);
     }
     return internalJson({
+      protocol_version: result.protocolVersion,
       endpoint_id: result.endpointId,
       participant_id: result.participantId,
       room_id: result.roomId,
@@ -242,6 +251,7 @@ export class GameSession extends DurableObject {
     }
     const result = await this.serializeOperation(async () =>
       this.store.admitApprovedStage({
+        protocolVersion: value.protocol_version,
         transactionId: value.transaction_id,
         endpoint: value.endpoint,
         endpointId: randomIdentifier("end"),
@@ -257,6 +267,7 @@ export class GameSession extends DurableObject {
     // so already-connected Host clients refresh that roster automatically.
     this.ctx.waitUntil(this.broadcastProjections());
     return internalJson({
+      protocol_version: result.protocolVersion,
       audience: "stage",
       endpoint_id: result.endpointId,
       participant_id: null,
@@ -338,12 +349,17 @@ export class GameSession extends DurableObject {
     if (!valid.ok) {
       return internalProblem(401, valid.code, "Invalid authority");
     }
+    const registration = this.store.endpointRegistration(authority.endpointId);
+    if (!registration || registration.revoked || registration.audience !== authority.audience) {
+      return internalProblem(401, "invalid_authority", "Invalid authority");
+    }
 
     const pair = new WebSocketPair();
     const [client, server] = Object.values(pair);
     this.ctx.acceptWebSocket(server, [CONTROL_SUBPROTOCOL, `endpoint:${authority.endpointId}`]);
     server.serializeAttachment({
       protocolMajor: 1,
+      protocolVersion: registration.protocolVersion ?? PROTOCOL_VERSION,
       endpointId: authority.endpointId,
       audience: authority.audience,
       participantId: authority.participantId,
@@ -520,7 +536,7 @@ export class GameSession extends DurableObject {
     }
     const projection = this.projectionForAttachment(result.projection, attachment);
     socket.send(JSON.stringify({
-      protocol_version: PROTOCOL_VERSION,
+      protocol_version: attachmentProtocolVersion(attachment),
       type: "projection",
       message_id: crypto.randomUUID(),
       correlation_id: correlationId,
@@ -632,7 +648,7 @@ export class GameSession extends DurableObject {
       }
       const projection = this.projectionForAttachment(result.projection, attachment);
       socket.send(JSON.stringify({
-        protocol_version: PROTOCOL_VERSION,
+        protocol_version: attachmentProtocolVersion(attachment),
         type: "projection",
         message_id: crypto.randomUUID(),
         session_id: attachment.sessionId,
@@ -645,9 +661,14 @@ export class GameSession extends DurableObject {
 
   projectionForAttachment(projection, attachment) {
     const withLanguage = projectionWithLanguage(projection, this.store.gameplayLanguage());
-    if (attachment.audience !== "stage") return withLanguage;
     const registration = this.store.endpointRegistration(attachment.endpointId);
-    return decorateStageProjection(withLanguage, registration, this.clientBuildPolicy);
+    const negotiated = applyParticipantVotingNegotiation(
+      withLanguage,
+      { ...attachment, protocolVersion: attachmentProtocolVersion(attachment) },
+      registration,
+    );
+    if (attachment.audience !== "stage") return negotiated;
+    return decorateStageProjection(negotiated, registration, this.clientBuildPolicy);
   }
 
   sendCurrentPresentationStatus(socket, attachment) {
@@ -675,7 +696,7 @@ export class GameSession extends DurableObject {
 
   sendPresentationStatus(socket, attachment, status) {
     socket.send(JSON.stringify({
-      protocol_version: PROTOCOL_VERSION,
+      protocol_version: attachmentProtocolVersion(attachment),
       type: "presentation_status",
       message_id: crypto.randomUUID(),
       session_id: attachment.sessionId,
@@ -771,10 +792,15 @@ function validAuthority(value) {
   );
 }
 
+function attachmentProtocolVersion(value) {
+  return value?.protocolVersion ?? PROTOCOL_VERSION;
+}
+
 function validAttachment(value) {
   return (
     value &&
     value.protocolMajor === 1 &&
+    supportedProtocolVersion(attachmentProtocolVersion(value)) &&
     validAuthority({
       sessionId: value.sessionId,
       endpointId: value.endpointId,
@@ -793,7 +819,7 @@ function validEnvelopeContext(envelope, attachment) {
     envelope &&
     typeof envelope === "object" &&
     !Array.isArray(envelope) &&
-    envelope.protocol_version === PROTOCOL_VERSION &&
+    envelope.protocol_version === attachmentProtocolVersion(attachment) &&
     validIdentifier(envelope.message_id) &&
     envelope.session_id === attachment.sessionId &&
     envelope.endpoint_id === attachment.endpointId &&
@@ -905,7 +931,7 @@ function authorityFromAttachment(attachment) {
 function sendCommandResult(socket, attachment, envelope, result) {
   const accepted = result.status === "accepted";
   socket.send(JSON.stringify({
-    protocol_version: PROTOCOL_VERSION,
+    protocol_version: attachmentProtocolVersion(attachment),
     type: "command_result",
     message_id: crypto.randomUUID(),
     correlation_id: envelope.message_id,
@@ -923,7 +949,7 @@ function sendCommandResult(socket, attachment, envelope, result) {
 
 function sendError(socket, attachment, correlationId, code, title, detail) {
   socket.send(JSON.stringify({
-    protocol_version: PROTOCOL_VERSION,
+    protocol_version: attachmentProtocolVersion(attachment),
     type: "error",
     message_id: crypto.randomUUID(),
     ...(validIdentifier(correlationId) ? { correlation_id: correlationId } : {}),
@@ -945,6 +971,7 @@ async function safeJson(request) {
 function validSessionConfiguration(value) {
   return (
     value &&
+    supportedProtocolVersion(value.protocol_version) &&
     validIdentifier(value.session_id) &&
     validIdentifier(value.host_endpoint_id) &&
     validIdentifier(value.host_room_id) &&
@@ -952,6 +979,7 @@ function validSessionConfiguration(value) {
     validGameplayLanguage(value.gameplay_language) &&
     scenarioEngine.supports({ scenarioId: value.scenario_id, scenarioVersion: value.scenario_version }) &&
     validEndpoint(value.endpoint) &&
+    !value.endpoint.features?.includes(PARTICIPANT_VOTING_FEATURE) &&
     /^[a-f0-9]{64}$/u.test(value.invitation_digest) &&
     validTimeline(value.created_at_unix_ms, value.invitation_expires_at_unix_ms) &&
     validTimeline(value.created_at_unix_ms, value.session_expires_at_unix_ms) &&
@@ -965,6 +993,7 @@ function validAdmissionRequest(value) {
     validIdentifier(value?.resume_credential_family_id);
   return (
     value &&
+    supportedProtocolVersion(value.join?.protocol_version) &&
     /^[a-f0-9]{64}$/u.test(value.pairing_digest) &&
     (value.origin === null || validHttpsOrigin(value.origin)) &&
     Number.isSafeInteger(value.now_unix_ms) &&
@@ -972,6 +1001,11 @@ function validAdmissionRequest(value) {
     value.join &&
     ["stage", "participant"].includes(value.join.kind) &&
     validEndpoint(value.join.endpoint) &&
+    validParticipantVotingClaim(
+      value.join.protocol_version,
+      value.join.kind,
+      value.join.endpoint,
+    ) &&
     (value.join.kind === "stage" || validDisplayName(value.join.display_name)) &&
     (
       hasResumeCredential
@@ -992,7 +1026,7 @@ function validParticipantResume(value) {
     Number.isSafeInteger(value.now_unix_ms) &&
     value.now_unix_ms > 0 &&
     resume &&
-    resume.protocol_version === PROTOCOL_VERSION &&
+    supportedProtocolVersion(resume.protocol_version) &&
     validIdentifier(resume.session_id) &&
     validIdentifier(resume.endpoint_id) &&
     validIdentifier(resume.participant_id) &&
@@ -1022,12 +1056,14 @@ function validWebSocketTicketRegistration(value) {
 function validApprovedStagePairing(value) {
   return (
     value &&
+    supportedProtocolVersion(value.protocol_version) &&
     validIdentifier(value.transaction_id) &&
     Number.isSafeInteger(value.now_unix_ms) &&
     value.now_unix_ms > 0 &&
     validEndpoint(value.endpoint) &&
     value.endpoint.platform === "webos" &&
-    value.endpoint.capabilities.includes("public_display")
+    value.endpoint.capabilities.includes("public_display") &&
+    !value.endpoint.features?.includes(PARTICIPANT_VOTING_FEATURE)
   );
 }
 
@@ -1046,6 +1082,15 @@ function validEndpoint(value) {
         new Set(value.features).size === value.features.length &&
         value.features.every((item) => FEATURE_IDENTIFIER_PATTERN.test(item)))) &&
     (value.client_build === undefined || validClientBuild(value.client_build))
+  );
+}
+
+function validParticipantVotingClaim(protocolVersion, kind, endpoint) {
+  if (!endpoint.features?.includes(PARTICIPANT_VOTING_FEATURE)) return true;
+  return (
+    protocolVersion === PREFERRED_PROTOCOL_VERSION &&
+    kind === "participant" &&
+    endpoint.capabilities.includes("private_display")
   );
 }
 

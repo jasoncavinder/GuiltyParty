@@ -1,4 +1,10 @@
 export const PROTOCOL_VERSION = "1.0";
+export const PREFERRED_PROTOCOL_VERSION = "1.1";
+export const SUPPORTED_PROTOCOL_VERSIONS = Object.freeze([
+  PROTOCOL_VERSION,
+  PREFERRED_PROTOCOL_VERSION,
+]);
+export const PARTICIPANT_VOTING_FEATURE = "participant_vote_targets_v1";
 export const CONTROL_SUBPROTOCOL = "guiltyparty.control.v1";
 export const WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX = "guiltyparty.ticket.";
 export const FRIENDS_MVP_PROFILE = "friends-mvp-development";
@@ -24,7 +30,7 @@ export const STAGE_PAIRING_POLL_AFTER_MS = 1500;
 
 export const COMPATIBILITY_RESPONSE = Object.freeze({
   supported_protocol_majors: [1],
-  preferred_protocol_version: PROTOCOL_VERSION,
+  preferred_protocol_version: PREFERRED_PROTOCOL_VERSION,
   required_upgrade: false,
   features: [
     "remote_friends_mvp",
@@ -39,8 +45,13 @@ export const COMPATIBILITY_RESPONSE = Object.freeze({
     "native_participant_resume",
     "stage_presentation_media_v1",
     "host_presentation_status_v1",
+    PARTICIPANT_VOTING_FEATURE,
   ],
 });
+
+export function supportedProtocolVersion(value) {
+  return SUPPORTED_PROTOCOL_VERSIONS.includes(value);
+}
 
 export const SECURITY_HEADERS = Object.freeze({
   "Cache-Control": "no-store",
