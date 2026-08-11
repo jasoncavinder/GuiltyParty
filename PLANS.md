@@ -24,12 +24,14 @@ Product direction belongs in:
 
 ### Status
 
-Approved direction; the interface inventory is complete and the Refined Case
-File visual language was accepted under LPR-DESIGN-001 on 2026-08-10. The owner
-selected **Guilty Party** as the sole public mobile app name and directed the
-project on 2026-08-09 to improve the owner-tested product experience before
-TestFlight or Google Play testing. Layout, navigation, and multimedia UX remain
-open for representative studies and platform-specific refinement.
+Approved direction; the interface inventory is complete, the Refined Case File
+visual language was accepted under LPR-DESIGN-001, and the bounded Stage-only
+public presentation-media slice was accepted under LPR-MEDIA-001 on 2026-08-10.
+The owner selected **Guilty Party** as the sole public mobile app name and
+directed the project on 2026-08-09 to improve the owner-tested product
+experience before TestFlight or Google Play testing. Layout, navigation, and
+multimedia UX remain open for representative studies and platform-specific
+refinement.
 
 This plan does not authorize external testers, store records, uploads, new
 third-party dependencies, or a live-media provider. The existing Remote
@@ -118,7 +120,8 @@ The owner must approve:
 - any material departure from the Refined Case File visual direction accepted
   under LPR-DESIGN-001 on 2026-08-10
 - any new font, asset source, library, SDK, media provider, or hosted service
-- the exact first presentation-media slice
+- the proposed technical boundary and original asset provenance for the first
+  presentation-media implementation
 - whether live voice communications are required before named-friend testing
 - resumption of TestFlight or Google Play preparation
 

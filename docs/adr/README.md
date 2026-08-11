@@ -47,6 +47,7 @@ captured in a new ADR that supersedes the earlier decision.
 | [0037](0037-remote-mvp-client-readiness.md) | Accepted | Separate remote client delivery surfaces and standardize session language, coarse build admission, non-URL invitations, and bounded beta preparation. |
 | [0038](0038-development-lifecycle-rehearsal.md) | Accepted | Add a fixed, operator-authenticated development route for deployed hibernation, expiry, and deletion rehearsals without changing ordinary session lifetimes. |
 | [0039](0039-server-application-directory.md) | Accepted | Place the native server workspace and Cloudflare adapter under the canonical `apps/server/` application boundary. |
+| [0040](0040-bundled-stage-presentation-media.md) | Proposed | Bind one original image and atmosphere loop to a new immutable scenario version through a public presentation manifest and closed packaged-Stage asset registry. |
 
 ## Adding an ADR
 
