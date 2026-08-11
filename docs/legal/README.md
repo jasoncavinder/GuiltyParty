@@ -15,6 +15,9 @@ permission beyond the terms expressly stated in those files.
   project reference and does not replace the root license files.
 - [Third-party components](third-party-components.md) records dependency intake,
   review status, notices, and release-inventory obligations under ADR 0025.
+- [Bundled Stage media provenance](bundled-stage-media-provenance.md) records the
+  exact owner-approved image and audio bytes used by the first public Stage
+  presentation proof; it is not a license grant.
 - [Brand guidelines](brand.md) describe naming, voice, and identity direction.
 - [Trademark planning notes](trademark.md) identify future clearance work and do
   not claim registration.

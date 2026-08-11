@@ -79,11 +79,15 @@ the review and manual deployment procedure. The earlier local browser
 prototype is archived as implementation history and deterministic-engine
 evidence.
 
-The dependency-free LG webOS Stage now packages locally for sideload review
-with original project-owned icon artwork. Physical webOS 5.6 transport,
-authorized public projection, fresh-ticket reconnect, and session-end clearing
-are verified; narrower forced-network-loss and revocation checks remain open,
-while newer simulator Origin behavior currently fails closed. See the
+The dependency-free LG webOS Stage packages locally with original,
+digest-verified public presentation artwork and atmosphere audio in addition to
+the project-owned icon. Media starts muted, remains nonessential to canonical
+story state, and is selected only through an authorized logical descriptor; it
+is never fetched from a runtime URL. Physical webOS 5.6 transport, authorized
+public projection, fresh-ticket reconnect, and session-end clearing are
+verified for the prior text presentation. The new build still requires
+simulator and physical-TV image/audio, focus, interruption, and clearing
+evidence; newer simulator Origin behavior currently fails closed. See the
 [webOS build and test runbook](docs/platforms/webos-stage-build-and-test.md) and
 [transport spike](docs/platforms/webos-transport-spike.md).
 

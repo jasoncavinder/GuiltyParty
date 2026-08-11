@@ -1,6 +1,7 @@
 import {
-  ApiProblem, ControlConnection, HOST_BUILD, PROTOCOL_VERSION,
-  apiRequest, configuredApiOrigin, recoverContext,
+  ApiProblem, ControlConnection, HOST_BUILD, HOST_PRESENTATION_STATUS_FEATURE,
+  PROTOCOL_VERSION, apiRequest, compatibilityFeatures, configuredApiOrigin,
+  recoverContext,
 } from "./control-client.js";
 
 const apiOrigin = configuredApiOrigin();
@@ -13,6 +14,7 @@ let connection = null;
 let projection = null;
 let invitationPayload = "";
 let endingSession = false;
+let serverFeatures = new Set();
 
 $("#create-form").addEventListener("submit", createSession);
 $("#copy-invitation").addEventListener("click", copyInvitation);
@@ -29,7 +31,16 @@ document.querySelectorAll("[data-command]").forEach((button) => button.addEventL
 window.addEventListener("pagehide", () => connection?.stop());
 window.addEventListener("pageshow", (event) => { if (event.persisted && context) restorePersistedSession(); });
 
+await discoverServerFeatures();
 await resume();
+
+async function discoverServerFeatures() {
+  try {
+    serverFeatures = await compatibilityFeatures(apiOrigin);
+  } catch {
+    serverFeatures = new Set();
+  }
+}
 
 async function resume() {
   try {
@@ -64,7 +75,14 @@ async function createSession(event) {
       body: JSON.stringify({
         protocol_version: PROTOCOL_VERSION,
         gameplay_language: $("#gameplay-language").value.trim(),
-        endpoint: { platform: "browser", capabilities: ["host_control", "private_display"], client_build: HOST_BUILD },
+        endpoint: {
+          platform: "browser",
+          capabilities: ["host_control", "private_display"],
+          ...(serverFeatures.has(HOST_PRESENTATION_STATUS_FEATURE)
+            ? { features: [HOST_PRESENTATION_STATUS_FEATURE] }
+            : {}),
+          client_build: HOST_BUILD,
+        },
       }),
     });
     invitationPayload = created.invitation_payload;
@@ -90,7 +108,15 @@ function activate(nextContext) {
   consolePanel.classList.remove("hidden");
   $("#session-meta").textContent = `Language announced by session · ${context.session_id}`;
   connection?.stop();
-  connection = new ControlConnection({ apiOrigin, context, onProjection: renderProjection, onStatus: renderConnection, onProblem: (error) => setStatus("action", present(error), true), onTerminal: leaveEndedHost });
+  connection = new ControlConnection({
+    apiOrigin,
+    context,
+    onProjection: renderProjection,
+    onStatus: renderConnection,
+    onPresentationStatus: renderPresentationStatus,
+    onProblem: (error) => setStatus("action", present(error), true),
+    onTerminal: leaveEndedHost,
+  });
   connection.start();
   loadRoster();
 }
@@ -99,6 +125,20 @@ function renderConnection(state) {
   const badge = $("#connection-badge");
   badge.textContent = state === "connected" ? "Live" : state === "connecting" ? "Connecting" : state === "ended" ? "Ended" : "Reconnecting";
   badge.classList.toggle("live", state === "connected");
+}
+
+function renderPresentationStatus(value) {
+  const status = $("#presentation-status");
+  if (!value || value.atmosphere_state === "unknown") {
+    status.textContent = "Presentation status unavailable until the Stage reports fresh state.";
+    status.className = "status";
+    return;
+  }
+  const asset = value.asset_available ? "artwork ready" : "artwork unavailable";
+  const sound = value.sound_enabled ? "sound enabled" : "sound muted";
+  const motion = value.reduced_motion ? "reduced motion" : "standard motion";
+  status.textContent = `Stage presentation · ${asset} · ${sound} · atmosphere ${value.atmosphere_state} · ${motion}`;
+  status.className = `status${value.asset_available ? " good" : " error"}`;
 }
 
 function renderProjection(value, sequence) {
@@ -253,6 +293,7 @@ function leaveEndedHost() {
   $("#participants").replaceChildren();
   $("#clues").replaceChildren();
   $("#devices").replaceChildren();
+  renderPresentationStatus(null);
   consolePanel.classList.add("hidden");
   setup.classList.remove("hidden");
   setStatus("setup", "This Host authority was removed or the session ended. Create a new session when you are ready.", true);

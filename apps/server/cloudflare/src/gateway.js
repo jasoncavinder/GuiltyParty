@@ -34,6 +34,7 @@ import {
 } from "./friends-auth.js";
 import { jsonResponse, methodNotAllowed, problemResponse } from "./http.js";
 import { encodeInvitationTransfer } from "./invitation-transfer.js";
+import { CURRENT_SCENARIO_REFERENCE } from "./scenario-reference.js";
 
 const SESSION_IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{16,128}$/;
 const FEATURE_IDENTIFIER_PATTERN = /^[a-z][a-z0-9_.-]{0,127}$/;
@@ -266,6 +267,8 @@ async function createSession(request, env, { lifecycleRehearsal = false } = {}) 
       host_room_id: roomId,
       host_origin: origin,
       gameplay_language: gameplayLanguage,
+      scenario_id: CURRENT_SCENARIO_REFERENCE.scenarioId,
+      scenario_version: CURRENT_SCENARIO_REFERENCE.scenarioVersion,
       endpoint: parsed.value.endpoint,
       invitation_digest: await sha256Hex(pairingCode),
       invitation_expires_at_unix_ms: invitationExpiresAt,
@@ -1359,6 +1362,11 @@ function validEndpoint(value) {
     value.capabilities.length <= 32 &&
     new Set(value.capabilities).size === value.capabilities.length &&
     value.capabilities.every((capability) => FEATURE_IDENTIFIER_PATTERN.test(capability)) &&
+    (value.features === undefined ||
+      (Array.isArray(value.features) &&
+        value.features.length <= 32 &&
+        new Set(value.features).size === value.features.length &&
+        value.features.every((feature) => FEATURE_IDENTIFIER_PATTERN.test(feature)))) &&
     (value.client_build === undefined || validClientBuild(value.client_build))
   );
 }

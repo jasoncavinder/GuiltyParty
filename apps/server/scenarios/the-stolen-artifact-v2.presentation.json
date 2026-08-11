@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "scenario_id": "the-stolen-artifact",
+  "scenario_version": 2,
+  "revision": "the-stolen-artifact-v2-presentation-r1",
+  "assets": {
+    "images": [
+      {
+        "id": "scene_image.discovery.cinematic_gallery.v1",
+        "sha256": "08b8670b046f7e9c271e641e31dbdea556ecd556024b4b13ee515d1c9ba278db"
+      }
+    ],
+    "audio": [
+      {
+        "id": "atmosphere.discovery.cinematic_vault.v1",
+        "sha256": "3187fe4ba7769021bcbf0919adf4a8ac6089e510b274783dfcc357ded02ebe98"
+      }
+    ]
+  },
+  "scenes": [
+    {
+      "scene_id": "scene_2",
+      "audience": "public_stage",
+      "scene_image_id": "scene_image.discovery.cinematic_gallery.v1",
+      "atmosphere_audio_id": "atmosphere.discovery.cinematic_vault.v1",
+      "audio_behavior": "loop_while_scene_active"
+    }
+  ]
+}

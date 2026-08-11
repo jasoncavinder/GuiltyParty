@@ -1,10 +1,12 @@
 import { DurableObject } from "cloudflare:workers";
 
+import { validClientBuild } from "./client-build.js";
 import { StagePairingStore } from "./stage-pairing-store.js";
 
 const INTERNAL_PREFIX = "/internal/stage-pairing/";
 const MAX_REDEMPTION_ATTEMPTS = 120;
 const IDENTIFIER_PATTERN = /^[A-Za-z0-9_-]{16,128}$/u;
+const FEATURE_IDENTIFIER_PATTERN = /^[a-z][a-z0-9_.-]{0,127}$/u;
 
 export class StagePairing extends DurableObject {
   constructor(ctx, env) {
@@ -181,6 +183,15 @@ function validCreate(value) {
     typeof value.endpoint === "object" &&
     value.endpoint.platform === "webos" &&
     Array.isArray(value.endpoint.capabilities) &&
+    value.endpoint.capabilities.length <= 32 &&
+    new Set(value.endpoint.capabilities).size === value.endpoint.capabilities.length &&
+    value.endpoint.capabilities.every((item) => FEATURE_IDENTIFIER_PATTERN.test(item)) &&
+    (value.endpoint.features === undefined ||
+      (Array.isArray(value.endpoint.features) &&
+        value.endpoint.features.length <= 32 &&
+        new Set(value.endpoint.features).size === value.endpoint.features.length &&
+        value.endpoint.features.every((item) => FEATURE_IDENTIFIER_PATTERN.test(item)))) &&
+    (value.endpoint.client_build === undefined || validClientBuild(value.endpoint.client_build)) &&
     Number.isSafeInteger(value.created_at_unix_ms) &&
     Number.isSafeInteger(value.expires_at_unix_ms) &&
     value.created_at_unix_ms > 0 &&

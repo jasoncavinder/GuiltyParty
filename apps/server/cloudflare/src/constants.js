@@ -37,6 +37,8 @@ export const COMPATIBILITY_RESPONSE = Object.freeze({
     "gp1_invitation_transfer",
     "host_approved_stage_pairing",
     "native_participant_resume",
+    "stage_presentation_media_v1",
+    "host_presentation_status_v1",
   ],
 });
 

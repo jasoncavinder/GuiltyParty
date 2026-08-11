@@ -137,9 +137,11 @@ Stage-only, public, and bundled:
 This is the safest first proof because it exercises story atmosphere and
 cross-surface design without microphone permission, private-output routing,
 remote media delivery, retention, or a third-party media provider. Exact
-scenario versioning, cue timing, packaging, and replay behavior are proposed in
-[ADR 0040](../adr/0040-bundled-stage-presentation-media.md) for review before
-implementation.
+scenario versioning, cue timing, packaging, and replay behavior are accepted in
+[ADR 0040](../adr/0040-bundled-stage-presentation-media.md). The owner selected
+the cleaned Cinematic Gallery image and Cinematic Vault atmosphere on
+2026-08-10; their exact digests and creation processes are recorded in the
+[provenance record](../legal/bundled-stage-media-provenance.md).
 
 Private playback follows only after audience authorization, lifecycle clearing,
 route validation, and physical-device behavior are specified and testable.
@@ -176,9 +178,9 @@ background capture remain excluded.
    storytelling presentation, television focus and safe-area behavior.
 4. **Accessibility/localization pass:** automated and manual virtual coverage,
    followed by available physical-device checks.
-5. **Presentation-media proof — slice accepted 2026-08-10:** implement only
-   after the bounded technical proposal and original asset provenance are
-   reviewed.
+5. **Presentation-media proof — implementation in progress:** the bounded
+   technical proposal and exact original assets were approved on 2026-08-10;
+   automated/package checks and physical webOS evidence remain required.
 6. **Local acceptance rehearsal:** complete deterministic session across all
    available surfaces, orientations, and form factors.
 7. **Live-media decision:** approve, defer, or narrow communications media for

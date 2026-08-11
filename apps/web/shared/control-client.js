@@ -4,9 +4,11 @@ export const DEFAULT_API_ORIGIN = "https://api.test.guiltyparty.app";
 
 export const HOST_BUILD = Object.freeze({
   application_id: "host_web",
-  application_version: "0.1.0",
-  build_number: 1,
+  application_version: "0.2.0",
+  build_number: 2,
 });
+
+export const HOST_PRESENTATION_STATUS_FEATURE = "host_presentation_status_v1";
 
 export const COMPANION_BUILD = Object.freeze({
   application_id: "companion_web",
@@ -97,17 +99,57 @@ export async function recoverContext(apiOrigin, audience) {
   }
 }
 
+export async function compatibilityFeatures(apiOrigin) {
+  const value = await apiRequest(apiOrigin, "/api/protocol");
+  if (
+    value?.preferred_protocol_version !== PROTOCOL_VERSION ||
+    value.required_upgrade !== false ||
+    !Array.isArray(value.supported_protocol_majors) ||
+    !value.supported_protocol_majors.includes(1) ||
+    !Array.isArray(value.features) ||
+    value.features.length > 128 ||
+    !value.features.every((feature) => /^[a-z][a-z0-9_.-]{0,127}$/u.test(feature)) ||
+    new Set(value.features).size !== value.features.length
+  ) {
+    throw new Error("The server compatibility response is not supported.");
+  }
+  return new Set(value.features);
+}
+
+export function sanitizePresentationStatus(value) {
+  if (
+    !value ||
+    typeof value !== "object" ||
+    Array.isArray(value) ||
+    !/^[a-z][a-z0-9_.-]{0,127}$/u.test(value.manifest_revision) ||
+    typeof value.asset_available !== "boolean" ||
+    typeof value.sound_enabled !== "boolean" ||
+    !["unknown", "stopped", "starting", "playing", "failed"].includes(value.atmosphere_state) ||
+    typeof value.reduced_motion !== "boolean" ||
+    (value.atmosphere_state === "unknown" &&
+      (value.asset_available || value.sound_enabled || value.reduced_motion))
+  ) return null;
+  return {
+    manifest_revision: value.manifest_revision,
+    asset_available: value.asset_available,
+    sound_enabled: value.sound_enabled,
+    atmosphere_state: value.atmosphere_state,
+    reduced_motion: value.reduced_motion,
+  };
+}
+
 export function identifier(prefix) {
   return `${prefix}_${crypto.randomUUID().replaceAll("-", "")}`;
 }
 
 export class ControlConnection {
-  constructor({ apiOrigin, context, onProjection, onStatus, onProblem, onTerminal = () => {} }) {
+  constructor({ apiOrigin, context, onProjection, onStatus, onProblem, onPresentationStatus = () => {}, onTerminal = () => {} }) {
     this.apiOrigin = apiOrigin;
     this.context = context;
     this.onProjection = onProjection;
     this.onStatus = onStatus;
     this.onProblem = onProblem;
+    this.onPresentationStatus = onPresentationStatus;
     this.onTerminal = onTerminal;
     this.socket = null;
     this.stopped = true;
@@ -243,6 +285,12 @@ export class ControlConnection {
       this.pending.delete(envelope.correlation_id);
       if (envelope.payload?.status === "accepted") pending.resolve(envelope);
       else pending.reject(new Error(envelope.payload?.title ?? "The server rejected that action."));
+      return;
+    }
+    if (envelope.type === "presentation_status") {
+      const status = sanitizePresentationStatus(envelope.payload);
+      if (status) this.onPresentationStatus(status);
+      else this.onProblem(new Error("The server sent an invalid Stage presentation status."));
       return;
     }
     if (envelope.type === "error") {

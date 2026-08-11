@@ -1,0 +1,14 @@
+{
+  "protocol_version": "1.0",
+  "type": "report_presentation_status",
+  "message_id": "message-stage-status-001",
+  "session_id": "session-synthetic-media-001",
+  "endpoint_id": "endpoint-synthetic-stage-media-001",
+  "payload": {
+    "manifest_revision": "the-stolen-artifact-v2-presentation-r1",
+    "asset_available": true,
+    "sound_enabled": false,
+    "atmosphere_state": "stopped",
+    "reduced_motion": true
+  }
+}

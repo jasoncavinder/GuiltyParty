@@ -74,6 +74,14 @@
           },
           "description": "Endpoint claims for server validation and routing; claims do not grant authority."
         },
+        "features": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/FeatureIdentifier"
+          },
+          "description": "Optional features claimed only after compatibility discovery. Claims are routing input, never authority."
+        },
         "client_build": {
           "$ref": "#/$defs/ClientBuild",
           "description": "Optional during pre-client migration. External-test environments require an approved build policy."
@@ -126,6 +134,16 @@
           "items": {
             "$ref": "#/$defs/FeatureIdentifier"
           }
+        },
+        "features": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/FeatureIdentifier"
+          }
+        },
+        "client_build": {
+          "$ref": "#/$defs/ClientBuild"
         },
         "authority_generation": {
           "type": "integer",
@@ -1292,6 +1310,83 @@
         }
       ]
     },
+    "StagePresentationReport": {
+      "type": "object",
+      "required": [
+        "manifest_revision",
+        "asset_available",
+        "sound_enabled",
+        "atmosphere_state",
+        "reduced_motion"
+      ],
+      "properties": {
+        "manifest_revision": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "asset_available": {
+          "type": "boolean"
+        },
+        "sound_enabled": {
+          "type": "boolean"
+        },
+        "atmosphere_state": {
+          "type": "string",
+          "pattern": "^(?:stopped|starting|playing|failed)$"
+        },
+        "reduced_motion": {
+          "type": "boolean"
+        }
+      },
+      "description": "Ephemeral, coarse status reported by an eligible Stage. It contains no raw media, device volume, room audio, private content, or retained scenario truth."
+    },
+    "PresentationStatus": {
+      "type": "object",
+      "required": [
+        "manifest_revision",
+        "asset_available",
+        "sound_enabled",
+        "atmosphere_state",
+        "reduced_motion"
+      ],
+      "properties": {
+        "manifest_revision": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "asset_available": {
+          "type": "boolean"
+        },
+        "sound_enabled": {
+          "type": "boolean"
+        },
+        "atmosphere_state": {
+          "type": "string",
+          "pattern": "^(?:unknown|stopped|starting|playing|failed)$"
+        },
+        "reduced_motion": {
+          "type": "boolean"
+        }
+      },
+      "description": "Ephemeral, coarse Stage presentation status relayed to an eligible Host. The server-created unknown state uses false for every boolean; clients validate that invariant."
+    },
+    "ReportPresentationStatusEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EnvelopeContext"
+        },
+        {
+          "type": "object",
+          "required": ["session_id", "endpoint_id"],
+          "properties": {
+            "type": {
+              "const": "report_presentation_status"
+            },
+            "payload": {
+              "$ref": "#/$defs/StagePresentationReport"
+            }
+          }
+        }
+      ]
+    },
     "ClientEnvelope": {
       "oneOf": [
         {
@@ -1302,8 +1397,33 @@
         },
         {
           "$ref": "#/$defs/SubmitCommandEnvelope"
+        },
+        {
+          "$ref": "#/$defs/ReportPresentationStatusEnvelope"
         }
       ]
+    },
+    "StagePresentation": {
+      "type": "object",
+      "required": ["manifest_revision", "audience", "scene_image_id"],
+      "properties": {
+        "manifest_revision": {
+          "$ref": "#/$defs/Identifier"
+        },
+        "audience": {
+          "const": "public_stage"
+        },
+        "scene_image_id": {
+          "$ref": "#/$defs/FeatureIdentifier"
+        },
+        "atmosphere_audio_id": {
+          "$ref": "#/$defs/FeatureIdentifier"
+        },
+        "audio_behavior": {
+          "const": "loop_while_scene_active"
+        }
+      },
+      "description": "Optional bounded public presentation decoration. It is not scenario truth and contains no URL, path, bytes, credential, or private audience."
     },
     "ProjectedScene": {
       "type": "object",
@@ -1317,6 +1437,9 @@
         },
         "public_narrative": {
           "type": "string"
+        },
+        "presentation": {
+          "$ref": "#/$defs/StagePresentation"
         }
       }
     },
@@ -1495,6 +1618,25 @@
         }
       ]
     },
+    "PresentationStatusEnvelope": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/EnvelopeContext"
+        },
+        {
+          "type": "object",
+          "required": ["session_id", "endpoint_id"],
+          "properties": {
+            "type": {
+              "const": "presentation_status"
+            },
+            "payload": {
+              "$ref": "#/$defs/PresentationStatus"
+            }
+          }
+        }
+      ]
+    },
     "CommandResultBody": {
       "oneOf": [
         {
@@ -1601,6 +1743,9 @@
         },
         {
           "$ref": "#/$defs/AiSuggestionEnvelope"
+        },
+        {
+          "$ref": "#/$defs/PresentationStatusEnvelope"
         },
         {
           "$ref": "#/$defs/CommandResultEnvelope"

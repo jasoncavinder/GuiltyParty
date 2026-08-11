@@ -1,20 +1,26 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
-import { readFile, readdir } from "node:fs/promises";
+import { createHash } from "node:crypto";
+import { readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import test from "node:test";
 import { promisify } from "node:util";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
+import { validateAssetBytes, validatedPng, validatedWav } from "../../../../tooling/build_webos_stage.mjs";
+
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const stageDirectory = path.join(repository, "apps/tv/lg-webos");
 const packagedStageDirectory = path.join(repository, ".tmp/lg-webos-stage-app");
 const execFileAsync = promisify(execFile);
 const coreSource = await readFile(path.join(stageDirectory, "stage-core.js"), "utf8");
+const mediaSource = await readFile(path.join(stageDirectory, "stage-media.js"), "utf8");
 const context = vm.createContext({});
 vm.runInContext(coreSource, context, { filename: "stage-core.js" });
+vm.runInContext(mediaSource, context, { filename: "stage-media.js" });
 const core = context.GuiltyPartyStageCore;
+const { StageMediaController } = context.GuiltyPartyStageMedia;
 const publicEnvelope = JSON.parse(
   await readFile(path.join(repository, "tests/contracts/v1/privacy/stage-projection.json"), "utf8"),
 );
@@ -26,14 +32,14 @@ function plain(value) {
 test("packaged Stage metadata is pinned to the approved development build", async () => {
   const appinfo = JSON.parse(await readFile(path.join(stageDirectory, "appinfo.json"), "utf8"));
   assert.equal(appinfo.id, "com.guiltyparty.stage");
-  assert.equal(appinfo.version, "0.1.1");
+  assert.equal(appinfo.version, "0.2.0");
   assert.equal(appinfo.type, "web");
   assert.equal(appinfo.main, "index.html");
   assert.equal(appinfo.icon, "icon.png");
   assert.deepEqual(plain(core.STAGE_BUILD), {
     application_id: "stage_webos",
-    application_version: "0.1.1",
-    build_number: 2,
+    application_version: "0.2.0",
+    build_number: 3,
   });
   assert.equal(core.API_ORIGIN, "https://api.test.guiltyparty.app");
   assert.equal(core.CONTROL_SUBPROTOCOL, "guiltyparty.control.v1");
@@ -64,8 +70,66 @@ test("physical-compatible package inlines only first-party runtime assets", asyn
   assert.doesNotMatch(packagedShell, /<(?:link|script)[^>]+(?:href|src)=/u);
   assert.match(packagedStage, /default-src 'none'/u);
   assert.match(packagedStage, /connect-src https:\/\/api\.test\.guiltyparty\.app wss:\/\/api\.test\.guiltyparty\.app/u);
+  assert.match(packagedStage, /img-src data:; media-src data:/u);
   assert.doesNotMatch(packagedStage, /<(?:link|script)[^>]+(?:href|src)=/u);
+  assert.equal(packagedStage.match(/data:image\/png;base64,/gu)?.length, 1);
+  assert.equal(packagedStage.match(/data:audio\/wav;base64,/gu)?.length, 1);
+  assert.doesNotMatch(packagedStage, /(?:blob:|https?:\/\/[^'"\s]*\.(?:png|wav|mp3|m4a))/u);
+  assert.ok((await stat(path.join(packagedStageDirectory, "stage.html"))).size < 8 * 1024 * 1024);
   assert.doesNotMatch(packagedShell + packagedStage, /(?:localStorage|sessionStorage|indexedDB|XMLHttpRequest)/u);
+});
+
+test("the packaged registry contains only the owner-approved digest-matched media", async () => {
+  const assetDirectory = path.join(stageDirectory, "assets/presentation");
+  const files = (await readdir(assetDirectory)).sort();
+  assert.deepEqual(files, [
+    "stage-discovery-cinematic-gallery-1920x1080.png",
+    "stage-discovery-cinematic-vault.wav",
+  ]);
+  const expected = new Map([
+    [files[0], "08b8670b046f7e9c271e641e31dbdea556ecd556024b4b13ee515d1c9ba278db"],
+    [files[1], "3187fe4ba7769021bcbf0919adf4a8ac6089e510b274783dfcc357ded02ebe98"],
+  ]);
+  for (const [file, digest] of expected) {
+    const bytes = await readFile(path.join(assetDirectory, file));
+    assert.equal(createHash("sha256").update(bytes).digest("hex"), digest);
+  }
+  const registry = JSON.parse(await readFile(path.join(stageDirectory, "presentation-assets.json"), "utf8"));
+  assert.deepEqual(registry.assets.map((asset) => asset.sha256), [...expected.values()]);
+  const manifest = JSON.parse(await readFile(
+    path.join(repository, "apps/server/scenarios/the-stolen-artifact-v2.presentation.json"),
+    "utf8",
+  ));
+  assert.equal(registry.manifest_revision, manifest.revision);
+  const manifestAssets = [...manifest.assets.images, ...manifest.assets.audio]
+    .map(({ id, sha256 }) => ({ id, sha256 }))
+    .sort((left, right) => left.id.localeCompare(right.id));
+  const packagedAssets = registry.assets
+    .map(({ id, sha256 }) => ({ id, sha256 }))
+    .sort((left, right) => left.id.localeCompare(right.id));
+  assert.deepEqual(packagedAssets, manifestAssets);
+});
+
+test("the Stage build fails closed on corrupt, mismatched, or oversized media", async () => {
+  const assetDirectory = path.join(stageDirectory, "assets/presentation");
+  const image = await readFile(path.join(assetDirectory, "stage-discovery-cinematic-gallery-1920x1080.png"));
+  const audio = await readFile(path.join(assetDirectory, "stage-discovery-cinematic-vault.wav"));
+  assert.throws(() => validatedPng(Buffer.from("not a png")), /1920-by-1080 PNG/u);
+  assert.throws(() => validatedWav(Buffer.from("not a wav")), /RIFF\/WAVE/u);
+  assert.throws(() => validateAssetBytes({
+    id: "synthetic",
+    kind: "image",
+    mime_type: "image/png",
+    sha256: "0".repeat(64),
+    maximum_bytes: image.length,
+  }, image), /digest mismatch/u);
+  assert.throws(() => validateAssetBytes({
+    id: "synthetic",
+    kind: "audio",
+    mime_type: "audio/wav",
+    sha256: createHash("sha256").update(audio).digest("hex"),
+    maximum_bytes: audio.length - 1,
+  }, audio), /exceeds its bound/u);
 });
 
 test("pending pairing accepts only context-free response state", () => {
@@ -118,6 +182,15 @@ test("successful Stage approval clears the consumed pairing code", async () => {
   const now = Date.now();
   const responses = [
     {
+      status: 200,
+      body: {
+        preferred_protocol_version: "1.0",
+        required_upgrade: false,
+        supported_protocol_majors: [1],
+        features: ["stage_presentation_media_v1"],
+      },
+    },
+    {
       status: 201,
       body: {
         protocol_version: "1.0",
@@ -152,9 +225,15 @@ test("successful Stage approval clears the consumed pairing code", async () => {
         addEventListener() {},
         appendChild() {},
         className: "",
+        currentTime: 0,
         firstChild: null,
         focus() {},
         hidden: false,
+        load() {},
+        pause() {},
+        play() { return Promise.resolve(); },
+        removeAttribute(name) { delete this[name]; },
+        setAttribute(name, value) { this[name] = value; },
         textContent: "",
       });
     }
@@ -194,6 +273,7 @@ test("successful Stage approval clears the consumed pairing code", async () => {
     WebSocket: { CONNECTING: 0, OPEN: 1 },
     window: {
       GuiltyPartyStageCore: core,
+      GuiltyPartyStageMedia: { StageMediaController },
       addEventListener() {},
       parent: { postMessage() {} },
     },
@@ -238,6 +318,146 @@ test("Stage projection is copied into a public-only retained shape", () => {
   additive.future_public_field = "ignored";
   assert.equal("future_public_field" in core.sanitizeProjection(additive), false);
 });
+
+test("Stage retains only bounded logical presentation identifiers", () => {
+  const withPresentation = structuredClone(publicEnvelope.payload.projection);
+  withPresentation.active_scene.presentation = {
+    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    audience: "public_stage",
+    scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
+    atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
+    audio_behavior: "loop_while_scene_active",
+    future_decoration: "ignored",
+  };
+  const sanitized = core.sanitizeProjection(withPresentation);
+  assert.deepEqual(plain(sanitized.active_scene.presentation), {
+    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    audience: "public_stage",
+    scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
+    atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
+    audio_behavior: "loop_while_scene_active",
+  });
+
+  for (const forbidden of ["url", "uri", "path", "src", "source", "bytes", "data"]) {
+    const unsafe = structuredClone(withPresentation);
+    unsafe.active_scene.presentation[forbidden] = "https://untrusted.example/media";
+    assert.equal(core.sanitizeProjection(unsafe).active_scene.presentation, undefined);
+  }
+  const privateProjection = structuredClone(withPresentation);
+  privateProjection.private_objective = null;
+  assert.throws(() => core.sanitizeProjection(privateProjection));
+});
+
+test("Stage media is muted by default and never overlaps an active cue", async () => {
+  const listeners = new Map();
+  const image = mediaElement();
+  const audio = mediaElement();
+  const soundButton = mediaElement();
+  const statusElement = mediaElement();
+  let playCount = 0;
+  let pauseCount = 0;
+  audio.play = () => {
+    playCount += 1;
+    return Promise.resolve();
+  };
+  audio.pause = () => { pauseCount += 1; };
+  soundButton.addEventListener = (type, listener) => listeners.set(type, listener);
+  const reports = [];
+  const presentation = {
+    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    audience: "public_stage",
+    scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
+    atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
+    audio_behavior: "loop_while_scene_active",
+  };
+  const controller = new StageMediaController({
+    registry: {
+      manifest_revision: presentation.manifest_revision,
+      assets: {
+        [presentation.scene_image_id]: { kind: "image", source: "data:image/png;base64,synthetic" },
+        [presentation.atmosphere_audio_id]: { kind: "audio", source: "data:audio/wav;base64,synthetic" },
+      },
+    },
+    image,
+    audio,
+    soundButton,
+    statusElement,
+    matchMedia: () => ({ matches: true, addEventListener() {} }),
+    onStatus: (status) => reports.push(plain(status)),
+  });
+
+  controller.apply(presentation);
+  image.onload();
+  assert.equal(controller.soundEnabled, false);
+  assert.equal(playCount, 0);
+  assert.equal(soundButton.textContent, "Enable atmosphere");
+  listeners.get("click")();
+  await Promise.resolve();
+  assert.equal(playCount, 1);
+  assert.equal(controller.atmosphereState, "playing");
+  controller.apply(presentation);
+  assert.equal(playCount, 1, "reapplying an identical projection must not start overlapping audio");
+  controller.suspend();
+  assert.equal(controller.atmosphereState, "stopped");
+  assert.equal(audio.currentTime, 0);
+  controller.terminate();
+  assert.equal(controller.soundEnabled, false);
+  assert.equal(image.src, undefined);
+  assert.equal(audio.src, undefined);
+  assert.ok(pauseCount >= 2);
+  assert.ok(reports.every((status) => status.reduced_motion === true));
+});
+
+test("a late audio-play promise cannot restart status after suspension", async () => {
+  const image = mediaElement();
+  const audio = mediaElement();
+  const soundButton = mediaElement();
+  let enableSound;
+  let completePlay;
+  soundButton.addEventListener = (_type, listener) => { enableSound = listener; };
+  audio.play = () => new Promise((resolve) => { completePlay = resolve; });
+  const presentation = {
+    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    audience: "public_stage",
+    scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
+    atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
+    audio_behavior: "loop_while_scene_active",
+  };
+  const controller = new StageMediaController({
+    registry: {
+      manifest_revision: presentation.manifest_revision,
+      assets: {
+        [presentation.scene_image_id]: { kind: "image", source: "data:image/png;base64,synthetic" },
+        [presentation.atmosphere_audio_id]: { kind: "audio", source: "data:audio/wav;base64,synthetic" },
+      },
+    },
+    image,
+    audio,
+    soundButton,
+    statusElement: mediaElement(),
+  });
+  controller.apply(presentation);
+  enableSound();
+  assert.equal(controller.atmosphereState, "starting");
+  controller.suspend();
+  assert.equal(controller.atmosphereState, "stopped");
+  completePlay();
+  await Promise.resolve();
+  assert.equal(controller.atmosphereState, "stopped");
+});
+
+function mediaElement() {
+  return {
+    addEventListener() {},
+    currentTime: 0,
+    hidden: false,
+    load() {},
+    pause() {},
+    removeAttribute(name) { delete this[name]; },
+    setAttribute(name, value) { this[name] = value; },
+    textContent: "",
+  };
+}
 
 test("projection filtering fails closed on every forbidden private category", () => {
   const privateCases = [

@@ -1,0 +1,12 @@
+{
+  "protocol_version": "1.0",
+  "endpoint": {
+    "platform": "webos",
+    "capabilities": ["public_display"],
+    "client_build": {
+      "application_id": "stage_webos",
+      "application_version": "0.1.1",
+      "build_number": 2
+    }
+  }
+}

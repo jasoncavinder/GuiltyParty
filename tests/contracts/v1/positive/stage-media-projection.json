@@ -1,0 +1,33 @@
+{
+  "protocol_version": "1.0",
+  "type": "projection",
+  "message_id": "message-server-stage-media-001",
+  "session_id": "session-synthetic-media-001",
+  "endpoint_id": "endpoint-synthetic-stage-media-001",
+  "server_sequence": 8,
+  "payload": {
+    "projection": {
+      "scenario_id": "the-stolen-artifact",
+      "scenario_version": 2,
+      "scenario_title": "The Stolen Artifact",
+      "gameplay_language": "en",
+      "active_scene": {
+        "id": "scene_2",
+        "name": "The Discovery",
+        "public_narrative": "The artifact is missing. The doors are locked.",
+        "presentation": {
+          "manifest_revision": "the-stolen-artifact-v2-presentation-r1",
+          "audience": "public_stage",
+          "scene_image_id": "scene_image.discovery.cinematic_gallery.v1",
+          "atmosphere_audio_id": "atmosphere.discovery.cinematic_vault.v1",
+          "audio_behavior": "loop_while_scene_active"
+        }
+      },
+      "revealed_clues": [],
+      "participants": [],
+      "voting_open": false,
+      "votes_cast": 0,
+      "outcome": null
+    }
+  }
+}

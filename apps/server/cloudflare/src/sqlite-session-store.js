@@ -27,6 +27,8 @@ export class SqliteSessionStore {
       CREATE TABLE IF NOT EXISTS session_metadata (
         singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
         session_id TEXT NOT NULL UNIQUE,
+        scenario_id TEXT NOT NULL,
+        scenario_version INTEGER NOT NULL,
         host_room_id TEXT NOT NULL,
         invitation_digest TEXT NOT NULL,
         invitation_expires_at_unix_ms INTEGER NOT NULL,
@@ -55,6 +57,8 @@ export class SqliteSessionStore {
         origin TEXT,
         platform TEXT NOT NULL,
         capabilities_json TEXT NOT NULL,
+        features_json TEXT NOT NULL DEFAULT '[]',
+        client_build_json TEXT,
         expires_at_unix_ms INTEGER NOT NULL,
         revoked_at_unix_ms INTEGER
       );
@@ -96,6 +100,32 @@ export class SqliteSessionStore {
         created_at_unix_ms INTEGER NOT NULL
       );
     `);
+    this.ensureEndpointMetadataColumns();
+    this.ensureSessionScenarioColumns();
+  }
+
+  ensureSessionScenarioColumns() {
+    const columns = new Set(
+      Array.from(this.sql.exec("PRAGMA table_info(session_metadata)"), (row) => row.name),
+    );
+    if (!columns.has("scenario_id")) {
+      this.sql.exec("ALTER TABLE session_metadata ADD COLUMN scenario_id TEXT NOT NULL DEFAULT 'the-stolen-artifact'");
+    }
+    if (!columns.has("scenario_version")) {
+      this.sql.exec("ALTER TABLE session_metadata ADD COLUMN scenario_version INTEGER NOT NULL DEFAULT 1");
+    }
+  }
+
+  ensureEndpointMetadataColumns() {
+    const columns = new Set(
+      Array.from(this.sql.exec("PRAGMA table_info(endpoint_authorities)"), (row) => row.name),
+    );
+    if (!columns.has("features_json")) {
+      this.sql.exec("ALTER TABLE endpoint_authorities ADD COLUMN features_json TEXT NOT NULL DEFAULT '[]'");
+    }
+    if (!columns.has("client_build_json")) {
+      this.sql.exec("ALTER TABLE endpoint_authorities ADD COLUMN client_build_json TEXT");
+    }
   }
 
   createFriendsSession(configuration) {
@@ -105,11 +135,13 @@ export class SqliteSessionStore {
       }
       this.sql.exec(
         `INSERT INTO session_metadata (
-           singleton, session_id, host_room_id, invitation_digest,
+           singleton, session_id, scenario_id, scenario_version, host_room_id, invitation_digest,
            invitation_expires_at_unix_ms, invitation_open,
            session_expires_at_unix_ms, delete_at_unix_ms, created_at_unix_ms
-         ) VALUES (1, ?, ?, ?, ?, 1, ?, ?, ?)`,
+         ) VALUES (1, ?, ?, ?, ?, ?, ?, 1, ?, ?, ?)`,
         configuration.sessionId,
+        configuration.scenarioId,
+        configuration.scenarioVersion,
         configuration.hostRoomId,
         configuration.invitationDigest,
         configuration.invitationExpiresAtUnixMs,
@@ -120,13 +152,18 @@ export class SqliteSessionStore {
       this.sql.exec(
         `INSERT INTO endpoint_authorities (
            endpoint_id, audience, participant_id, room_id, authority_generation,
-           origin, platform, capabilities_json, expires_at_unix_ms
-         ) VALUES (?, 'host', NULL, ?, 1, ?, ?, ?, ?)`,
+           origin, platform, capabilities_json, features_json, client_build_json,
+           expires_at_unix_ms
+         ) VALUES (?, 'host', NULL, ?, 1, ?, ?, ?, ?, ?, ?)`,
         configuration.hostEndpointId,
         configuration.hostRoomId,
         configuration.hostOrigin,
         configuration.endpoint.platform,
         JSON.stringify(configuration.endpoint.capabilities),
+        JSON.stringify(configuration.endpoint.features ?? []),
+        configuration.endpoint.client_build
+          ? JSON.stringify(configuration.endpoint.client_build)
+          : null,
         configuration.sessionExpiresAtUnixMs,
       );
       this.sql.exec(
@@ -204,8 +241,9 @@ export class SqliteSessionStore {
       this.sql.exec(
         `INSERT INTO endpoint_authorities (
            endpoint_id, audience, participant_id, room_id, authority_generation,
-           origin, platform, capabilities_json, expires_at_unix_ms
-         ) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?)`,
+           origin, platform, capabilities_json, features_json, client_build_json,
+           expires_at_unix_ms
+         ) VALUES (?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?)`,
         endpointId,
         audience,
         participantId,
@@ -213,6 +251,8 @@ export class SqliteSessionStore {
         origin,
         endpoint.platform,
         JSON.stringify(endpoint.capabilities),
+        JSON.stringify(endpoint.features ?? []),
+        endpoint.client_build ? JSON.stringify(endpoint.client_build) : null,
         metadata.session_expires_at_unix_ms,
       );
       if (resumeCredentialDigest !== null) {
@@ -514,12 +554,15 @@ export class SqliteSessionStore {
       this.sql.exec(
         `INSERT INTO endpoint_authorities (
            endpoint_id, audience, participant_id, room_id, authority_generation,
-           origin, platform, capabilities_json, expires_at_unix_ms
-         ) VALUES (?, 'stage', NULL, ?, 1, NULL, ?, ?, ?)`,
+           origin, platform, capabilities_json, features_json, client_build_json,
+           expires_at_unix_ms
+         ) VALUES (?, 'stage', NULL, ?, 1, NULL, ?, ?, ?, ?, ?)`,
         endpointId,
         roomId,
         endpoint.platform,
         JSON.stringify(endpoint.capabilities),
+        JSON.stringify(endpoint.features ?? []),
+        endpoint.client_build ? JSON.stringify(endpoint.client_build) : null,
         metadata.session_expires_at_unix_ms,
       );
       this.sql.exec(
@@ -574,6 +617,26 @@ export class SqliteSessionStore {
     return { ok: true };
   }
 
+  endpointRegistration(endpointId) {
+    const row = Array.from(
+      this.sql.exec(
+        `SELECT audience, platform, capabilities_json, features_json,
+                client_build_json, revoked_at_unix_ms
+         FROM endpoint_authorities WHERE endpoint_id = ?`,
+        endpointId,
+      ),
+    )[0];
+    if (!row) return null;
+    return {
+      audience: row.audience,
+      platform: row.platform,
+      capabilities: JSON.parse(row.capabilities_json),
+      features: JSON.parse(row.features_json ?? "[]"),
+      clientBuild: row.client_build_json ? JSON.parse(row.client_build_json) : null,
+      revoked: row.revoked_at_unix_ms !== null,
+    };
+  }
+
   listHostEndpoints(authority, nowUnixMs) {
     const validation = this.validateAuthority(authority, nowUnixMs);
     if (!validation.ok || authority.audience !== "host") {
@@ -582,7 +645,8 @@ export class SqliteSessionStore {
     const endpoints = Array.from(
       this.sql.exec(
         `SELECT e.endpoint_id, e.audience, e.participant_id, p.display_name,
-                e.platform, e.capabilities_json, e.authority_generation,
+                e.platform, e.capabilities_json, e.features_json,
+                e.client_build_json, e.authority_generation,
                 e.revoked_at_unix_ms
          FROM endpoint_authorities e
          LEFT JOIN guest_participants p ON p.participant_id = e.participant_id
@@ -596,6 +660,8 @@ export class SqliteSessionStore {
       display_name: row.display_name ?? null,
       platform: row.platform,
       capabilities: JSON.parse(row.capabilities_json),
+      features: JSON.parse(row.features_json ?? "[]"),
+      ...(row.client_build_json ? { client_build: JSON.parse(row.client_build_json) } : {}),
       authority_generation: Number(row.authority_generation),
       revoked: row.revoked_at_unix_ms !== null,
     }));
@@ -825,6 +891,13 @@ export class SqliteSessionStore {
 
   sessionMetadata() {
     return Array.from(this.sql.exec("SELECT * FROM session_metadata WHERE singleton = 1"))[0] ?? null;
+  }
+
+  scenarioReference() {
+    const metadata = this.sessionMetadata();
+    return metadata
+      ? { scenarioId: metadata.scenario_id, scenarioVersion: Number(metadata.scenario_version) }
+      : null;
   }
 
   gameplayLanguage() {

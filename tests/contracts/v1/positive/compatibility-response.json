@@ -2,5 +2,8 @@
   "supported_protocol_majors": [1],
   "preferred_protocol_version": "1.0",
   "required_upgrade": false,
-  "features": []
+  "features": [
+    "stage_presentation_media_v1",
+    "host_presentation_status_v1"
+  ]
 }
