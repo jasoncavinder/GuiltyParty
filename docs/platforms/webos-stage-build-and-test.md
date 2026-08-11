@@ -204,16 +204,30 @@ unchanged.
 The generated package is approximately 2.75 megabytes. LG package validation
 passes, the generated document contains exactly one `data:audio/mpeg` payload
 and no `data:audio/wav` payload, and the uncompressed package tree remains below
-its tightened six-megabyte bound. Record the exact hash only for the artifact
-actually installed during the integrated physical regression.
+its tightened six-megabyte bound. The exact package installed during the
+integrated physical regression has SHA-256
+`27e87d942c74327befb4c3df240c0c813edd781c8d1ee0f17ab371dbfd0e71c8`.
 
-The disposable physical format spike proved near-immediate MP3 Web Audio
-startup, seamless repeated looping, and reliable stop/reset on the LG
-65NANO85UNA running webOS 5.6.2-21. The integrated build still requires an
-exact-package physical regression covering pairing, artwork, initial mute,
-enable, more than 45 seconds of one-source looping, mute, re-enable, session
-end, and relaunch. Simulator, forced network-loss, reduced-motion, and full
-focus evidence also remain open unless recorded separately.
+On 2026-08-11 HST, that exact package was installed on the physical LG
+65NANO85UNA running webOS TV 5.6.2-21 (SDK 5.6.2) with firmware 04.64.00 and
+paired through the deployed Browser Host. The supporting API was reviewed
+`dev` commit `0eedab967c94536eb618c1c0f4e93ba8093f447d`, Worker version
+`445d7acc-1e3f-4c52-95dd-3027089f2b48`, and presentation manifest revision 2.
+Both the Custom Domain and `workers.dev` health and protocol endpoints reported
+the expected test-gated profile and presentation features before the test.
+
+The owner confirmed edge-to-edge Cinematic Gallery artwork, complete essential
+text, initial mute, and the exact coarse Host status. MP3 playback started
+promptly and completed more than 50 seconds of seamless single-source looping
+without a click, gap, overlap, or growing volume. Mute after extended playback
+stopped sound immediately and completely; it remained stopped for more than
+ten seconds; and re-enable produced one seamless source for multiple loops.
+Host status followed both transitions. Ending the session while sound played
+stopped it immediately and cleared the session presentation, and application
+relaunch returned to pairing without retained artwork or audio. This closes the
+integrated MP3 package, mute/re-enable, status, session-end, and relaunch gate.
+Simulator, forced network-loss, reduced-motion, and full focus evidence remain
+open unless recorded separately.
 
 ## Build 0.2.0 (3) evidence status
 

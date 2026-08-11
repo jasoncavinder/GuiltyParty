@@ -8,14 +8,14 @@ invitation until the project owner records the final decision below.
 ## Candidate Deployment
 
 - Reviewed API source commit:
-  `af43fa47ac956e967d361698d41b4144ae01eae4`
-- Worker version: `1aecea5a-e07b-4f61-97ad-b9da1da6ece1`
+  `0eedab967c94536eb618c1c0f4e93ba8093f447d`
+- Worker version: `445d7acc-1e3f-4c52-95dd-3027089f2b48`
 - Provider script ETag:
-  `1b3ce9ee062303213f091b2e5f1e0d28badbff10d81b8a5291b70d9dd433d26d`
+  `5b90c6ad7a2497de8e370bcaeee57611c68c7a6829f4798ae62c04f91b9296b8`
 - Wrangler 4.119.0 dry-run runtime artifact manifest:
 
   - `worker.js` SHA-256:
-    `eb5ceecb327b3c56b66c2a49de5b2df4508cd473aed0e8aa854a4402920adb6b`
+    `3a603336dd6baf004bb652f6bf8cab327618f301f8b31d779c862862201b2c67`
   - `85b31fdbd5ef4c5f690c397f89cbbb70b9af79d5-gp_scenario_wasm.wasm`
     SHA-256:
     `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`
@@ -29,7 +29,7 @@ invitation until the project owner records the final decision below.
   `eed998d9-d960-4cab-9c9f-537967ab2798`
 - Packaged Stage transport: opaque `null` Origin plus realtime connect ticket
 - Deployment operator and date: project owner through authenticated Wrangler,
-  2026-08-08 HST
+  2026-08-11 HST
 - Proven rollback version: `dddc679c-3ea9-424a-a432-b7c2fea832d7`
 
 Do not record account identifiers, raw secrets, pairing proofs, bearer
@@ -101,6 +101,16 @@ update immediately when a Companion joined and the packaged Stage update
 without a manual restart when participant state changed. The Stage liveness
 remediation was also reviewed, merged, packaged as 0.1.1 (2), installed on the
 physical LG television, and exercised against the deployed service.
+
+The 2026-08-11 Stage presentation checkpoint installed exact packaged Stage
+0.2.1 (4), SHA-256
+`27e87d942c74327befb4c3df240c0c813edd781c8d1ee0f17ab371dbfd0e71c8`,
+on the same physical LG television against the candidate deployment above.
+The first-party MP3 atmosphere started promptly, looped seamlessly for more
+than 50 seconds from one source, muted completely after extended playback,
+remained stopped, and re-enabled without overlap. Host coarse status followed
+the transitions. Session end stopped audio and cleared the presentation, and
+relaunch returned to unpaired state without retained artwork or sound.
 
 The same repeat rehearsal exposed a duplicate WebSocket-ping completion that
 froze the iPad simulator Companion under Xcode. After PR #33 merged, Companion

@@ -85,11 +85,13 @@ the project-owned icon. Media starts muted, remains nonessential to canonical
 story state, and is selected only through an authorized logical descriptor; it
 is never fetched from a runtime URL. Physical webOS 5.6 transport, authorized
 public projection, fresh-ticket reconnect, and session-end clearing are
-verified for the prior text presentation. The new build still requires
-simulator and physical-TV image/audio, focus, interruption, and clearing
-evidence; newer simulator Origin behavior currently fails closed. See the
-[webOS build and test runbook](docs/platforms/webos-stage-build-and-test.md) and
-[transport spike](docs/platforms/webos-transport-spike.md).
+verified for the prior text presentation. The exact Stage 0.2.1 package has now
+passed physical-TV image/audio, mute/re-enable, coarse Host status, session-end
+clearing, and clean relaunch checks on webOS 5.6. Simulator, forced
+network-loss, reduced-motion, and complete focus evidence remain open; newer
+simulator Origin behavior currently fails closed. See the [webOS build and test
+runbook](docs/platforms/webos-stage-build-and-test.md) and [transport
+spike](docs/platforms/webos-transport-spike.md).
 
 The native iOS/iPadOS Companion project is committed under `apps/mobile/iOS`, with
 simulator and physical-iPhone evidence recorded in the
