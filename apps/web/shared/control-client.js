@@ -288,6 +288,10 @@ export class ControlConnection {
       return;
     }
     if (envelope.type === "presentation_status") {
+      if (this.context.audience !== "host") {
+        this.onProblem(new Error("The server sent a Host-only message to this player connection."));
+        return;
+      }
       const status = sanitizePresentationStatus(envelope.payload);
       if (status) this.onPresentationStatus(status);
       else this.onProblem(new Error("The server sent an invalid Stage presentation status."));

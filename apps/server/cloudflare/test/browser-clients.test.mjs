@@ -74,6 +74,70 @@ test("Host accepts only bounded coarse Stage presentation status", () => {
   assert.equal(sanitizePresentationStatus({ ...value, manifest_revision: "https://example.test" }), null);
 });
 
+test("browser Companion rejects Host-only Stage presentation status", () => {
+  const status = {
+    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    asset_available: true,
+    sound_enabled: false,
+    atmosphere_state: "stopped",
+    reduced_motion: true,
+  };
+  const statuses = [];
+  const participantProblems = [];
+  const participant = new ControlConnection({
+    apiOrigin: DEFAULT_API_ORIGIN,
+    context: {
+      session_id: "ses_synthetic",
+      endpoint_id: "end_synthetic_participant",
+      audience: "participant",
+    },
+    onProjection() {},
+    onStatus() {},
+    onProblem(error) { participantProblems.push(error.message); },
+    onPresentationStatus(value) { statuses.push(value); },
+  });
+
+  participant.receive(JSON.stringify({
+    protocol_version: "1.0",
+    type: "presentation_status",
+    message_id: "msg_synthetic_participant_status",
+    session_id: "ses_synthetic",
+    endpoint_id: "end_synthetic_participant",
+    payload: status,
+  }));
+
+  assert.deepEqual(statuses, []);
+  assert.deepEqual(participantProblems, [
+    "The server sent a Host-only message to this player connection.",
+  ]);
+
+  const hostProblems = [];
+  const host = new ControlConnection({
+    apiOrigin: DEFAULT_API_ORIGIN,
+    context: {
+      session_id: "ses_synthetic",
+      endpoint_id: "end_synthetic_host",
+      audience: "host",
+    },
+    onProjection() {},
+    onStatus() {},
+    onProblem(error) { hostProblems.push(error.message); },
+    onPresentationStatus(value) { statuses.push(value); },
+  });
+
+  host.receive(JSON.stringify({
+    protocol_version: "1.0",
+    type: "presentation_status",
+    message_id: "msg_synthetic_host_status",
+    session_id: "ses_synthetic",
+    endpoint_id: "end_synthetic_host",
+    payload: status,
+  }));
+
+  assert.deepEqual(hostProblems, []);
+  assert.deepEqual(statuses, [status]);
+});
+
 test("browser connection ignores stale socket events after a lifecycle restart", () => {
   const originalWebSocket = globalThis.WebSocket;
   class FakeWebSocket {
