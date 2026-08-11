@@ -23,6 +23,7 @@
   var reconnectAttempt = 0;
   var suspended = document.visibilityState === "hidden";
   var shuttingDown = false;
+  var mediaResumePending = false;
 
   var elements = {
     connectionState: document.getElementById("connection-state"),
@@ -60,6 +61,17 @@
     soundButton: elements.soundToggle,
     statusElement: elements.mediaStatus,
     matchMedia: typeof window.matchMedia === "function" ? window.matchMedia.bind(window) : null,
+    createAudioContext: window.AudioContext || window.webkitAudioContext ? function () {
+      var AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+      return new AudioContextConstructor();
+    } : null,
+    decodeBase64: typeof window.atob === "function" ? function (encoded) {
+      var decoded = window.atob(encoded);
+      var bytes = new Uint8Array(decoded.length);
+      var index;
+      for (index = 0; index < decoded.length; index += 1) bytes[index] = decoded.charCodeAt(index);
+      return bytes;
+    } : null,
     onStatus: reportPresentationStatus
   });
 
@@ -229,7 +241,7 @@
     socket.onerror = function () {
       if (generation !== connectionGeneration || connection !== socket) return;
       connectionIsUncertain = true;
-      media.suspend();
+      suspendMedia();
       setConnectionState("Connection uncertain", "uncertain");
       showReconnect("Connection uncertain", "The Stage is waiting for a confirmed server connection.");
     };
@@ -240,7 +252,7 @@
       clearTimeout(stableTimer);
       stableTimer = null;
       if (shuttingDown || suspended) return;
-      media.suspend();
+      suspendMedia();
       if (core.terminalSocketClose(event.code)) {
         terminalState("Stage access ended", "Pair this television again if the session is still available.");
         return;
@@ -294,13 +306,17 @@
     recordAuthenticatedActivity();
     sequenceResult = state.sequence.accept(envelope.sequence);
     if (sequenceResult === "duplicate") {
-      media.resume();
+      if (mediaResumePending) {
+        mediaResumePending = false;
+        media.resume();
+      }
       return;
     }
     if (sequenceResult === "resync") {
       restartConnection("Refreshing public state", "The Stage rejected a regressed sequence and will request a complete projection.");
       return;
     }
+    mediaResumePending = false;
     state.projection = envelope.projection;
     renderProjection(envelope.projection);
   }
@@ -325,7 +341,7 @@
       }
       if (action === "uncertain" && !connectionIsUncertain) {
         connectionIsUncertain = true;
-        media.suspend();
+        suspendMedia();
         setConnectionState("Connection uncertain", "uncertain");
         showReconnect("Connection uncertain", "The last public view remains visible while the Stage verifies current state.");
       }
@@ -350,7 +366,7 @@
   }
 
   function restartConnection(title, message) {
-    media.suspend();
+    suspendMedia();
     setConnectionState("Reconnecting", "uncertain");
     showReconnect(title, message);
     closeSocket(1011, "Fresh public state required");
@@ -464,7 +480,7 @@
   function handleVisibilityChange() {
     suspended = document.visibilityState === "hidden";
     if (suspended) {
-      media.suspend();
+      suspendMedia();
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
       closeSocket(1000, "Application suspended");
@@ -480,7 +496,7 @@
   }
 
   function handleOffline() {
-    media.suspend();
+    suspendMedia();
     closeSocket(1000, "Network unavailable");
     setConnectionState("Offline", "offline");
     showReconnect("Network unavailable", "The Stage will reconnect when this television is online.");
@@ -545,10 +561,16 @@
     stableTimer = null;
     reconnectAttempt = 0;
     closeSocket(1000, "Runtime reset");
+    mediaResumePending = false;
     media.terminate();
     core.clearSensitiveState(state);
     hideReconnect();
     if (!preserveSetup) clearProjectionView();
+  }
+
+  function suspendMedia() {
+    mediaResumePending = true;
+    media.suspend();
   }
 
   function clearPairing() {

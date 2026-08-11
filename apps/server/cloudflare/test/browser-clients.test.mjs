@@ -248,6 +248,14 @@ test("Host session end uses an accessible in-page confirmation", async () => {
   assert.equal(/\bconfirm\s*\(/u.test(application), false, "browser-native confirmation can be invisible in embedded browser surfaces");
 });
 
+test("Host session creation fails closed when Stage presentation support is not negotiated", async () => {
+  const application = await readFile(path.join(repository, "apps/web/host/app.js"), "utf8");
+  assert.match(application, /await requireHostPresentationSupport\(\);/u);
+  assert.match(application, /features: \[HOST_PRESENTATION_STATUS_FEATURE\]/u);
+  assert.doesNotMatch(application, /serverFeatures = new Set\(\);/u);
+  assert.match(application, /created without Stage presentation-status support/u);
+});
+
 test("browser client build produces isolated Cloudflare Pages artifacts", async () => {
   await execFileAsync(process.execPath, ["tooling/build_remote_clients.mjs"], { cwd: repository });
   for (const surface of ["host", "play"]) {

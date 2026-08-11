@@ -178,9 +178,12 @@ background capture remain excluded.
    storytelling presentation, television focus and safe-area behavior.
 4. **Accessibility/localization pass:** automated and manual virtual coverage,
    followed by available physical-device checks.
-5. **Presentation-media proof — implementation in progress:** the bounded
-   technical proposal and exact original assets were approved on 2026-08-10;
-   automated/package checks and physical webOS evidence remain required.
+5. **Presentation-media proof — physical candidate validated:** the bounded
+   technical proposal and exact original assets were approved on 2026-08-10.
+   Automated/package checks and physical webOS artwork, seamless single-loop,
+   mute, re-enable, and session-end evidence were recorded on 2026-08-11. Exact
+   merged deployment and a newly feature-negotiated Host session remain before
+   deployed presentation-status evidence is complete.
 6. **Local acceptance rehearsal:** complete deterministic session across all
    available surfaces, orientations, and form factors.
 7. **Live-media decision:** approve, defer, or narrow communications media for
@@ -206,6 +209,13 @@ time without losing later questions:
    before named-friend testing.
 5. **LPR-DIST-001:** decide when local evidence is sufficient to resume mobile
    beta-distribution preparation.
+6. **LPR-MEDIA-004 — accepted 2026-08-11:** preserve the physically verified
+   PCM WAV and Web Audio path for the current bounded proof. In a separate
+   optimization spike, derive AAC-LC/M4A and MP3 candidates from the owned WAV
+   master, compare native HTML-audio loop seams, stop behavior, quality, and
+   package size on the physical LG, and prefer AAC/M4A only if that evidence is
+   satisfactory. Do not combine the format change with the current reliability
+   remediation.
 
 New questions receive stable IDs and are appended rather than replacing or
 silently reordering this queue.

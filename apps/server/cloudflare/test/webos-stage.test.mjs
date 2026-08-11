@@ -175,6 +175,13 @@ test("deallocated and expired pairing responses render as code expiry", async ()
   assert.match(stageScript, /expirePairing\(\)/u);
 });
 
+test("duplicate heartbeat projections cannot restart atmosphere playback", async () => {
+  const stageScript = await readFile(path.join(stageDirectory, "stage.js"), "utf8");
+  assert.match(stageScript, /if \(sequenceResult === "duplicate"\) \{\s*if \(mediaResumePending\)/u);
+  assert.doesNotMatch(stageScript, /if \(sequenceResult === "duplicate"\) \{\s*media\.resume\(\);/u);
+  assert.match(stageScript, /function suspendMedia\(\) \{\s*mediaResumePending = true;\s*media\.suspend\(\);/u);
+});
+
 test("successful Stage approval clears the consumed pairing code", async () => {
   const stageScript = await readFile(path.join(stageDirectory, "stage.js"), "utf8");
   const elements = new Map();
@@ -406,6 +413,85 @@ test("Stage media is muted by default and never overlaps an active cue", async (
   assert.equal(audio.src, undefined);
   assert.ok(pauseCount >= 2);
   assert.ok(reports.every((status) => status.reduced_motion === true));
+});
+
+test("webOS WAV atmosphere keeps one seamless loop and disposes it synchronously on mute", async () => {
+  const listeners = new Map();
+  const image = mediaElement();
+  const audio = mediaElement();
+  const soundButton = mediaElement();
+  const statusElement = mediaElement();
+  const source = {
+    connectCount: 0,
+    disconnectCount: 0,
+    startCount: 0,
+    stopCount: 0,
+    connect() { this.connectCount += 1; },
+    disconnect() { this.disconnectCount += 1; },
+    start() { this.startCount += 1; },
+    stop() { this.stopCount += 1; },
+  };
+  const context = {
+    closeCount: 0,
+    suspendCount: 0,
+    destination: {},
+    close() { this.closeCount += 1; },
+    createBufferSource() { return source; },
+    decodeAudioData(_bytes, success) { success({ duration: 8 }); },
+    suspend() { this.suspendCount += 1; return Promise.resolve(); },
+  };
+  let nativePlayCount = 0;
+  audio.play = () => { nativePlayCount += 1; };
+  soundButton.addEventListener = (type, listener) => listeners.set(type, listener);
+  const presentation = {
+    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    audience: "public_stage",
+    scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
+    atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
+    audio_behavior: "loop_while_scene_active",
+  };
+  const controller = new StageMediaController({
+    registry: {
+      manifest_revision: presentation.manifest_revision,
+      assets: {
+        [presentation.scene_image_id]: { kind: "image", source: "data:image/png;base64,synthetic" },
+        [presentation.atmosphere_audio_id]: { kind: "audio", source: "data:audio/wav;base64,c3ludGhldGlj" },
+      },
+    },
+    image,
+    audio,
+    soundButton,
+    statusElement,
+    createAudioContext: () => context,
+    decodeBase64: () => new Uint8Array([1, 2, 3, 4]),
+  });
+
+  controller.apply(presentation);
+  listeners.get("click")();
+  assert.equal(nativePlayCount, 0);
+  assert.equal(source.loop, true);
+  assert.equal(source.connectCount, 1);
+  assert.equal(source.startCount, 1);
+  assert.equal(controller.atmosphereState, "playing");
+  controller.resume();
+  assert.equal(source.startCount, 1, "resume must not create a second Web Audio loop");
+  listeners.get("click")();
+  assert.equal(context.suspendCount, 1);
+  assert.equal(source.loop, false);
+  assert.equal(source.stopCount, 1);
+  assert.equal(source.disconnectCount, 1);
+  assert.equal(context.closeCount, 1);
+  assert.equal(controller.atmosphereState, "stopped");
+});
+
+test("Stage artwork backdrop is pinned to the viewport instead of the padded content shell", async () => {
+  const [markup, styles] = await Promise.all([
+    readFile(path.join(stageDirectory, "stage.html"), "utf8"),
+    readFile(path.join(stageDirectory, "styles.css"), "utf8"),
+  ]);
+  assert.match(styles, /\.scene-media\s*\{[^}]*position:\s*fixed;[^}]*inset:\s*0;/su);
+  assert.match(markup, /<body>\s*<div class="scene-media"[^>]*>[\s\S]*?<main id="app" class="app-shell">/u);
+  assert.doesNotMatch(markup, /<main id="app" class="app-shell">\s*<div class="scene-media"/u);
 });
 
 test("a late audio-play promise cannot restart status after suspension", async () => {

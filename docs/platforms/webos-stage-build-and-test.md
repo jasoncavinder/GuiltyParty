@@ -192,10 +192,38 @@ Never record raw request/response headers when credentials may be present.
 ## Build 0.2.0 (3) evidence status
 
 Automated contract, server-boundary, Stage-core, media-controller, digest,
-format, CSP, generated-document-size, and package-allowlist checks are required
-before review. Simulator launch and physical LG webOS 5.6 verification remain
-open until they are performed against the exact reviewed package. Evidence for
-the earlier text-only build below does not satisfy the new media gates.
+format, CSP, generated-document-size, and package-allowlist checks pass for the
+presentation-media candidate. The candidate package with SHA-256
+`b24fafb850ee0ac18b83a67b0cd26f70d301b5b82b161876689cb7530edda05f`
+was installed and launched on the physical LG 65NANO85UNA running webOS
+5.6.2-21 on 2026-08-11 HST.
+
+The physical rehearsal confirmed that the cleaned Cinematic Gallery artwork
+fills the viewport edge to edge while the complete public text presentation
+remains visible. The television rejected the PCM WAV as an HTML audio-element
+source with `MEDIA_ERR_SRC_NOT_SUPPORTED`; the same approved bytes decoded
+successfully through the platform Web Audio implementation. A single looping
+`AudioBufferSourceNode` produced a seamless loop, although its initial start
+has perceptible latency consistent with the documented webOS Web Audio
+tradeoff.
+
+An earlier candidate incorrectly called the media resume path for every
+duplicate projection returned by the 20-second Stage heartbeat. That created
+overlapping Web Audio contexts and left only the newest source reachable by
+mute or session-end cleanup. The remediated candidate resumes only after an
+actual lifecycle or connection suspension and independently refuses to create
+a second Web Audio context while one remains active. After a clean application
+close, install, and launch, the owner confirmed more than 45 seconds of
+seamless single-source playback, complete mute, one-source re-enable, and
+session-end cleanup.
+
+The Stage emitted bounded presentation-status messages during physical remote
+inspection, and a local Worker/Durable Object integration rehearsal delivered
+them to a feature-negotiated Host. The previously deployed Host endpoint was
+created without that feature registration, so exact merged deployment and a
+newly created session remain required before recording deployed Host-status
+evidence. Simulator, forced network-loss, reduced-motion, and full focus
+evidence also remain open unless recorded separately.
 
 ## 2026-08-08 Physical Rehearsal Evidence
 

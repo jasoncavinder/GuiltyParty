@@ -8,12 +8,17 @@
     this.soundButton = options.soundButton;
     this.statusElement = options.statusElement;
     this.onStatus = options.onStatus || function () {};
+    this.createAudioContext = options.createAudioContext || null;
+    this.decodeBase64 = options.decodeBase64 || null;
     this.current = null;
     this.currentKey = null;
+    this.resolvedAudio = null;
     this.soundEnabled = false;
     this.assetAvailable = false;
     this.atmosphereState = "stopped";
     this.playbackGeneration = 0;
+    this.webAudioContext = null;
+    this.webAudioSource = null;
     this.motionQuery = options.matchMedia ? options.matchMedia("(prefers-reduced-motion: reduce)") : null;
     this.reducedMotion = Boolean(this.motionQuery && this.motionQuery.matches);
     this.soundButton.addEventListener("click", this.toggleSound.bind(this));
@@ -48,6 +53,7 @@
     this.clear(false);
     this.current = presentation;
     this.currentKey = key;
+    this.resolvedAudio = resolved.audio;
     this.assetAvailable = false;
     this.image.onload = function () {
       if (self.currentKey !== key) return;
@@ -63,7 +69,7 @@
     };
     this.image.hidden = true;
     this.image.src = resolved.image.source;
-    if (resolved.audio) {
+    if (resolved.audio && !this.usesWebAudio()) {
       this.audio.onerror = function () {
         if (self.currentKey !== key) return;
         self.atmosphereState = "failed";
@@ -111,6 +117,11 @@
     var result;
     var self = this;
     if (!this.current || !this.current.atmosphere_audio_id || !this.soundEnabled) return;
+    if (this.usesWebAudio()) {
+      this.startWebAudio();
+      return;
+    }
+    this.audio.loop = true;
     this.playbackGeneration += 1;
     generation = this.playbackGeneration;
     this.atmosphereState = "starting";
@@ -142,8 +153,89 @@
     }
   };
 
-  StageMediaController.prototype.stopAudio = function (resetPosition) {
+  StageMediaController.prototype.usesWebAudio = function () {
+    return Boolean(
+      this.resolvedAudio &&
+      /^data:audio\/wav;base64,/.test(this.resolvedAudio.source) &&
+      this.createAudioContext &&
+      this.decodeBase64
+    );
+  };
+
+  StageMediaController.prototype.startWebAudio = function () {
+    var context;
+    var encoded;
+    var bytes;
+    var generation;
+    var self = this;
+    if (!this.usesWebAudio() || !this.soundEnabled || this.webAudioContext) return;
     this.playbackGeneration += 1;
+    generation = this.playbackGeneration;
+    this.atmosphereState = "starting";
+    this.updateControls();
+    this.report();
+    try {
+      context = this.createAudioContext();
+      this.webAudioContext = context;
+      encoded = this.resolvedAudio.source.slice(this.resolvedAudio.source.indexOf(",") + 1);
+      bytes = this.decodeBase64(encoded);
+      context.decodeAudioData(bytes.buffer, function (buffer) {
+        var source;
+        if (generation !== self.playbackGeneration || !self.current || !self.soundEnabled) {
+          self.closeWebAudioContext(context);
+          return;
+        }
+        try {
+          source = context.createBufferSource();
+          source.buffer = buffer;
+          source.loop = true;
+          source.connect(context.destination);
+          source.start(0);
+          self.webAudioSource = source;
+          self.atmosphereState = "playing";
+          self.updateControls();
+          self.report();
+        } catch (error) {
+          self.failWebAudio(generation, context);
+        }
+      }, function () {
+        self.failWebAudio(generation, context);
+      });
+    } catch (error) {
+      this.failWebAudio(generation, context);
+    }
+  };
+
+  StageMediaController.prototype.failWebAudio = function (generation, context) {
+    this.closeWebAudioContext(context);
+    if (generation !== this.playbackGeneration) return;
+    this.atmosphereState = "failed";
+    this.updateControls();
+    this.report();
+  };
+
+  StageMediaController.prototype.closeWebAudioContext = function (context) {
+    if (!context) return;
+    try { context.close(); } catch (error) {}
+    if (this.webAudioContext === context) this.webAudioContext = null;
+  };
+
+  StageMediaController.prototype.stopAudio = function (resetPosition) {
+    var context = this.webAudioContext;
+    var source = this.webAudioSource;
+    this.playbackGeneration += 1;
+    this.webAudioSource = null;
+    this.webAudioContext = null;
+    if (source) {
+      try { source.loop = false; } catch (error) {}
+      try { source.stop(0); } catch (error) {}
+      try { source.disconnect(); } catch (error) {}
+    }
+    if (context && typeof context.suspend === "function") {
+      try { context.suspend(); } catch (error) {}
+    }
+    this.closeWebAudioContext(context);
+    try { this.audio.loop = false; } catch (error) {}
     try { this.audio.pause(); } catch (error) {}
     if (resetPosition) {
       try { this.audio.currentTime = 0; } catch (error) {}
@@ -166,6 +258,7 @@
     this.stopAudio(true);
     this.current = null;
     this.currentKey = null;
+    this.resolvedAudio = null;
     this.assetAvailable = false;
     this.atmosphereState = "stopped";
     this.image.onload = null;
