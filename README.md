@@ -93,6 +93,17 @@ simulator and physical-iPhone evidence recorded in the
 The live authorized multi-client rehearsal passed with a physical iPhone and
 iPad simulator; physical-iPad validation remains incomplete.
 
+### Local Scenario Workspace
+
+Unpublished or local-only scenario work may be kept under the root
+`local-scenarios/` directory. Git ignores that entire directory so scenario
+drafts, working media, and private test packages are not committed accidentally.
+
+The directory is a local workspace only: it is not encrypted, backed up,
+validated, published, or loaded by the applications automatically. Do not put
+credentials, participant data, or third-party material with unverified rights
+there.
+
 ## Documentation
 
 - [Documentation index](docs/)
