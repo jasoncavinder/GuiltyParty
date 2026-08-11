@@ -43,7 +43,8 @@ object ControlPlaneCodec {
                 validateContext(session, endpoint, authority)
                 IncomingControlEvent.Error(envelope.value)
             }
-            is GPV1ServerEnvelope.AiSuggestion ->
+            is GPV1ServerEnvelope.AiSuggestion,
+            is GPV1ServerEnvelope.PresentationStatus ->
                 throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
         }
     }

@@ -504,7 +504,7 @@ enum ControlPlaneCodec {
                 authority: authority
             )
             return .error(error)
-        case .aiSuggestion:
+        case .aiSuggestion, .presentationStatus:
             throw SessionModelError.protocolViolation
         }
     }

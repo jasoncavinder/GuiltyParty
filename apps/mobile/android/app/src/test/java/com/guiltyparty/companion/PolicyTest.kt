@@ -6,6 +6,27 @@ import org.junit.Test
 
 class PolicyTest {
     @Test
+    fun hostPresentationStatusIsRejectedByPlayerCompanion() {
+        val authority = SessionAuthority(
+            sessionId = "session-synthetic-001",
+            endpointId = "endpoint-synthetic-player-001",
+            participantId = "participant-synthetic-001",
+            bearer = "synthetic-memory-only-bearer",
+            expiresAtUnixMs = 2_000_000_000_000,
+            primaryAuthorityGeneration = 3,
+            gameplayLanguage = "en",
+            serverEndpoint = ServerEndpoint.parse("https://api.test.guiltyparty.app", false),
+        )
+        val failure = assertThrows(CompanionFailure::class.java) {
+            ControlPlaneCodec.decodeServerEvent(
+                """{"protocol_version":"1.0","type":"presentation_status","message_id":"message-host-status-001","session_id":"session-synthetic-001","endpoint_id":"endpoint-synthetic-player-001","payload":{"manifest_revision":"the-stolen-artifact-v2-presentation-r1","asset_available":true,"sound_enabled":true,"atmosphere_state":"playing","reduced_motion":false}}""",
+                authority,
+            )
+        }
+        assertEquals(FailureKind.PROTOCOL_VIOLATION, failure.kind)
+    }
+
+    @Test
     fun connectionHealthMatchesAcceptedDurations() {
         assertEquals(5_000, ConnectionHealthPolicy.NEGOTIATION_TIMEOUT_MS)
         assertEquals(ConnectionHealthAction.HEALTHY, ConnectionHealthPolicy.action(29_999))
