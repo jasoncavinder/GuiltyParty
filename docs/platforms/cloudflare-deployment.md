@@ -3,10 +3,9 @@
 ## Status
 
 The Remote Friends MVP development service was most recently promoted on
-2026-08-08 HST from reviewed `dev` commit
-`af43fa47ac956e967d361698d41b4144ae01eae4` after the participant-resumption
-slice and repository relocations merged. The deployment remains limited to the
-synthetic
+2026-08-11 HST from reviewed `dev` commit
+`0eedab967c94536eb618c1c0f4e93ba8093f447d` after the Stage MP3 atmosphere
+adoption merged. The deployment remains limited to the synthetic
 `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
 `workers.dev` endpoint, the owner-approved `api.test.guiltyparty.app` Custom
 Domain, exact browser origins, and the minimum test authority secrets described
@@ -344,6 +343,25 @@ on the new version after 20 seconds; both hostnames were verified separately.
 An unauthenticated `POST /api/v1/resume` returned `401`, and the Browser Host
 and Companion fallback remained available. No secret, binding, Durable Object
 migration, Pages deployment, or new Cloudflare resource was added.
+
+The 2026-08-11 Stage MP3 atmosphere promotion advanced the API to Worker
+version `445d7acc-1e3f-4c52-95dd-3027089f2b48` from exact reviewed `dev` commit
+`0eedab967c94536eb618c1c0f4e93ba8093f447d`. A pinned Wrangler 4.119.0 dry run
+produced `worker.js` SHA-256
+`3a603336dd6baf004bb652f6bf8cab327618f301f8b31d779c862862201b2c67`;
+the first-party WebAssembly SHA-256 remained
+`3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`.
+The provider script ETag is
+`5b90c6ad7a2497de8e370bcaeee57611c68c7a6829f4798ae62c04f91b9296b8`.
+
+Both routed hostnames immediately reported the expected `test-gated` health
+profile and advertised Stage presentation media and Host presentation status.
+No secret, binding, Durable Object migration, Pages deployment, or new
+Cloudflare resource was added. Stage 0.2.1 (4), exact IPK SHA-256
+`27e87d942c74327befb4c3df240c0c813edd781c8d1ee0f17ab371dbfd0e71c8`,
+then paired through the deployed service and passed the integrated physical
+MP3 presentation, status, mute/re-enable, session-end, and relaunch regression
+recorded in the webOS Stage build runbook.
 
 The physical-iPhone and iPad-simulator exercise passed same-participant and
 same-endpoint restart recovery, no duplicate roster entry, interrupted-vote

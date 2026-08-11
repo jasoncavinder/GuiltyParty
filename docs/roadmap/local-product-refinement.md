@@ -225,10 +225,11 @@ time without losing later questions:
    adoption on 2026-08-11 HST. Stage build 0.2.1 (4) packages the exact MP3
    digest through the existing Web Audio path and retains the WAV as its
    non-packaged source master. LAME 4.0 is documented as a local encoder only;
-   no encoder or new runtime dependency enters the product. Integrated
-   package, mute/re-enable, lifecycle, and session-end physical regression
-   evidence remains required for the adopted build. Do not relax the sandbox
-   or use relative, network, or `blob:` media sources.
+   no encoder or new runtime dependency enters the product. The exact adopted
+   package subsequently passed physical pairing, presentation, more than 50
+   seconds of seamless single-source looping, mute, re-enable, Host status,
+   session-end, and relaunch checks on the LG webOS 5.6 television. Do not
+   relax the sandbox or use relative, network, or `blob:` media sources.
 
 New questions receive stable IDs and are appended rather than replacing or
 silently reordering this queue.
