@@ -269,8 +269,12 @@ Potential:
 - Guilty Party Events
 - Guilty Party Creator
 - Guilty Party Stage
-- Guilty Party Companion
 - Guilty Party Academy
+
+The installed player app is publicly named **Guilty Party**. **Companion** is
+an internal architectural term for its private-player role, not a public
+product name. See
+[Mobile Companion Product Decisions](../product/mobile-companion.md#mc-prod-017-public-mobile-app-name).
 
 Avoid unrelated product names that weaken brand cohesion.
 

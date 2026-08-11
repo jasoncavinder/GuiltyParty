@@ -1,10 +1,16 @@
 # Product Roadmap
 
-This directory is reserved for approved product direction and sequencing.
+This directory records approved product direction and sequencing.
 
-No delivery dates, release commitments, or milestone order have been approved
-in the repository yet. Placeholder implementation ideas in architecture or
-product documents should not be interpreted as committed roadmap items.
+Active direction:
+
+- [Local Product Refinement](local-product-refinement.md) — owner-only design,
+  interaction, accessibility, and bounded media refinement before external
+  mobile beta distribution
+
+No delivery dates or release commitments have been approved. Only roadmap
+entries explicitly marked approved establish sequencing; placeholder ideas in
+architecture or product documents should not be interpreted as commitments.
 
 Future roadmap entries should identify:
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted product direction as of 2026-08-06.
+Accepted product direction as of 2026-08-09.
 
 This document records product decisions for the intended mobile Companion. It
 does not expand the approved local MVP, define production networking, or
