@@ -99,9 +99,10 @@ such as:
 
 The deterministic Rust engine does not become a media player or infer media
 from fixture names. The server application validates the shared presentation
-manifest and decorates only Host and Stage projections after the canonical
-projection has been built. Participant projections omit the descriptor because
-the first proof has no participant media behavior.
+manifest and decorates only an eligible Stage projection after the canonical
+projection has been built. Host and participant projections omit the descriptor
+because neither surface plays presentation media in the first proof. Host
+visibility uses the separately gated coarse status described below.
 
 Unknown, absent, incompatible, or invalid presentation data yields the normal
 text-only projection. It never causes the server to reveal private data or the
@@ -110,12 +111,43 @@ Stage to construct a path or fetch a URL.
 The optional field follows the additive compatibility rules in ADR 0005.
 Existing clients that do not understand it continue to render canonical state.
 
+## Feature and Capability Negotiation
+
+The optional field is not sent merely because an endpoint has the Stage
+audience. The control plane advertises a stable feature identifier equivalent
+to `stage_presentation_media_v1` through the compatibility response. A Stage
+that supports the feature may claim the corresponding endpoint feature during
+pairing only after observing server support. It also advertises the concrete
+device capabilities it can provide, including `public_display` and
+`public_audio_output` where applicable.
+
+The server treats every claim as routing input, never as authority. Before it
+adds any presentation descriptor it rechecks the current Stage audience,
+endpoint authority, negotiated feature, approved client-build range, scenario
+and manifest revision, and required device capabilities. The image cue requires
+the public-display capability. The atmosphere cue additionally requires the
+public-audio-output capability. An older build, unsupported feature, missing
+capability, stale authority, or unapproved package receives the ordinary
+text-only projection with no unsupported cue.
+
+The approved Stage build is bound to the packaged registry and manifest digest
+through supported-build admission, so a client cannot gain media behavior by
+claiming the feature or an output capability alone. The first implementation
+updates the packaged Stage's current `public_display`-only registration and its
+contract fixtures deliberately; it does not infer support from the `webos`
+platform name.
+
+Host status is also negotiated independently. Only a current authorized Host
+endpoint that advertises support for the bounded presentation-status feature
+receives the status message. Older Host builds continue receiving their normal
+projection without a descriptor or presentation-status message.
+
 ## Packaged Asset Registry
 
 The Stage build contains a first-party registry that maps the exact logical
-asset identifiers approved for the package to fixed local resources. Server
-input never becomes a relative path, absolute path, URL, CSS fragment, or HTML
-fragment.
+asset identifiers approved for the package to generated embedded resources.
+Server input never becomes a relative path, absolute path, URL, CSS fragment,
+HTML fragment, or media byte source.
 
 The first proof uses conservative, locally bundled formats subject to physical
 webOS validation:
@@ -124,6 +156,34 @@ webOS validation:
 - one no-speech PCM WAV atmosphere loop, no longer than eight seconds, using
   16-bit samples at 44.1 kHz
 
+## Opaque-Origin Packaging Boundary
+
+The accepted physical webOS transport keeps the networking Stage document in a
+sandbox without `allow-same-origin`. Physical webOS 5.6 evidence also shows
+that local external resources are rejected in that boundary and CSP `'self'`
+is unreliable for them. The proof therefore does not add relative packaged
+image or audio URLs and does not relax the sandbox.
+
+The build reads the two approved source assets, verifies their exact digests,
+file signatures, dimensions or audio encoding, duration, and size, and embeds
+their bytes as MIME-labelled base64 `data:` sources in the generated Stage
+document. The generated closed registry maps logical identifiers only to those
+build-created values. The runtime never decodes a descriptor value into a URI
+or accepts media bytes from the server.
+
+The generated Stage CSP keeps `default-src 'none'`, preserves the existing
+exact API `connect-src`, and permits `data:` only in the separate `img-src` and
+`media-src` directives required for these generated payloads. It does not allow
+`data:` scripts, styles, frames, or connections and does not allow `blob:`,
+relative file media, or network media. The source assets, registry metadata,
+and generated document have explicit size bounds so the build fails before an
+oversized package or document reaches a television.
+
+Neither the embedded `data:` value nor its raw bytes appears in the scenario,
+presentation manifest, control-plane schema, projection, status, journal,
+diagnostics, or retained service state. Only the bounded logical identifier
+crosses the server boundary.
+
 The committed files receive cryptographic digests and an original-asset
 provenance record. The image and sound require owner review before they are
 committed. No third-party source, font, sample, recording, melody, model output,
@@ -131,10 +191,10 @@ or stock asset may enter the proof without the separate review required by ADR
 0025 and the project licensing policy.
 
 The packaged Stage Content Security Policy permits images and audio only from
-its own application resources. It continues to deny arbitrary media, object,
-frame, and network origins. The build fails if an expected asset is missing,
-has the wrong digest or media signature, exceeds its approved bound, or is not
-listed in the registry.
+the generated embedded source class described above. It continues to deny
+arbitrary media, object, frame, and network origins. The build fails if an
+expected asset is missing, has the wrong digest or media signature, exceeds its
+approved bound, or is not listed in the registry.
 
 ## Stage Behavior
 
@@ -214,10 +274,16 @@ Implementation is incomplete until all of the following pass:
 - scenario version 2 produces the same canonical outcome with media available,
   muted, unsupported, and absent
 - native and WebAssembly canonical engine parity remains unchanged
-- Host and Stage receive only the bounded public descriptor; participant
-  projections do not receive it
+- an eligible Stage receives only the bounded public descriptor; Host and
+  participant projections do not receive it
+- only a feature-negotiated, approved Stage build receives the descriptor, and
+  image or atmosphere cues are omitted when their required device capability
+  is absent
+- older Stage and Host builds continue receiving their existing projections,
+  and unnegotiated endpoints receive no presentation descriptor or status
 - an authenticated but unauthorized endpoint cannot request a Stage descriptor
-  or Stage presentation status
+  or Stage presentation status, and capability claims alone cannot cross that
+  authorization and supported-build boundary
 - unknown identifiers, mismatched digests, corrupt files, and path-like input
   fail to the text-only presentation
 - repeated projections, reconnects, and scene changes never create overlapping
@@ -228,8 +294,16 @@ Implementation is incomplete until all of the following pass:
 - sound-off and reduced-motion paths preserve all essential information
 - the build and packaged-file allowlist include only the approved first-party
   assets and continue to reject external media origins
+- the generated package embeds only the digest-matched approved image and
+  sound, contains no relative, network, or `blob:` media source, keeps the
+  opaque sandbox, and limits `data:` to `img-src` and `media-src`
+- generated-document and package-size limits fail before sideloading when an
+  embedded asset exceeds its approved bound
 - automated Stage-core and package tests pass without adding a runtime
   dependency
+- contract fixtures cover feature and capability negotiation, including a
+  `public_display`-only Stage, an audio-capable approved Stage, an older Stage,
+  a status-capable Host, and an older Host
 - the packaged app is exercised on an installed webOS simulator and the
   physical LG webOS 5.6 television for image decode, audio decode, looping,
   mute, focus, reconnect, suspension, and terminal clearing
