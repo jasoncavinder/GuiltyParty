@@ -219,11 +219,15 @@ session-end cleanup.
 
 The Stage emitted bounded presentation-status messages during physical remote
 inspection, and a local Worker/Durable Object integration rehearsal delivered
-them to a feature-negotiated Host. The previously deployed Host endpoint was
-created without that feature registration, so exact merged deployment and a
-newly created session remain required before recording deployed Host-status
-evidence. Simulator, forced network-loss, reduced-motion, and full focus
-evidence also remain open unless recorded separately.
+them to a feature-negotiated Host. After the PR #51 and #52 changes were merged
+and deployed, a newly created feature-negotiated Host session paired with the
+physical Stage and received the expected bounded artwork, sound, atmosphere,
+and motion status. After PR #53 was merged and deployed, repeat pairing in a
+new synthetic session also added the admitted Stage to the Host roster without
+a manual refresh. These rehearsals close the deployed Host-status and
+admitted-Stage roster-propagation evidence. Simulator, forced network-loss,
+reduced-motion, and full focus evidence remain open unless recorded
+separately.
 
 ## 2026-08-08 Physical Rehearsal Evidence
 
