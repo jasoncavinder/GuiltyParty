@@ -374,6 +374,23 @@ Rejected because ADR 0002 makes published scenario versions immutable.
 Rejected because local bundling is sufficient for this proof and avoids remote
 delivery, caching, integrity, availability, privacy, and cost decisions.
 
+## Replace the WAV with Native AAC/M4A or MP3 Playback
+
+Rejected for the bounded MVP proof after a disposable physical-device spike on
+2026-08-11. AAC-LC/M4A and MP3 candidates derived from the approved owned WAV
+were approximately 90 percent smaller, but neither produced a supported native
+playback path on the physical LG webOS 5.6 television. Embedded `data:` native
+playback failed; relative packaged-file playback was correctly blocked by the
+opaque-origin sandbox; and `blob:` playback reached the media engine but
+returned media error code 4, `Format error`, for both formats despite
+`canPlayType()` reporting probable support. The candidates and local encoding
+tools were disposable and were not added to the repository or product.
+
+The verified PCM WAV/Web Audio implementation remains authoritative. Its
+larger package size and one-time decode/start latency are accepted for this
+proof rather than weakening the sandbox or relying on optimistic capability
+claims that contradict target-device behavior.
+
 ## Start with Private Audio or Live Communications
 
 Rejected because those features require audience routing, device-route
