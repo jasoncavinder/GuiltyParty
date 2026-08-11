@@ -163,8 +163,9 @@ The first proof uses conservative, locally bundled formats subject to physical
 webOS validation:
 
 - one 1920-by-1080 PNG scene image without embedded private or essential text
-- one no-speech PCM WAV atmosphere loop, no longer than eight seconds, using
-  16-bit samples at 44.1 kHz
+- one no-speech MPEG-1 Layer III atmosphere loop, 128 kbps, 44.1-kHz stereo,
+  and exactly eight gapless decoded seconds, mechanically encoded from the
+  retained project-owned PCM WAV source master
 
 ## Opaque-Origin Packaging Boundary
 
@@ -174,7 +175,7 @@ that local external resources are rejected in that boundary and CSP `'self'`
 is unreliable for them. The proof therefore does not add relative packaged
 image or audio URLs and does not relax the sandbox.
 
-The build reads the two approved source assets, verifies their exact digests,
+The build reads the two approved packaged assets, verifies their exact digests,
 file signatures, dimensions or audio encoding, duration, and size, and embeds
 their bytes as MIME-labelled base64 `data:` sources in the generated Stage
 document. The generated closed registry maps logical identifiers only to those
@@ -391,12 +392,13 @@ The same 128-kbps, 44.1-kHz stereo MP3 was then embedded, decoded through the
 existing Web Audio architecture, and exercised directly on the physical TV.
 It started almost immediately, looped seamlessly for repeated cycles, and
 stopped/reset reliably while reducing encoded audio size by approximately 90
-percent. This establishes a viable follow-up optimization without weakening
-the sandbox or adding a runtime dependency. The verified PCM WAV remains
-authoritative until a separate reviewed adoption change updates asset
-validation, MIME handling, provenance, package bounds, automated tests, and
-physical regression evidence. The candidate and local encoding tools remain
-disposable and are not part of the repository or product.
+percent. The owner approved adoption on 2026-08-11 HST. Stage build 0.2.1 (4)
+therefore packages that exact digest under presentation manifest revision 2,
+while retaining the verified PCM WAV as the non-packaged first-party source
+master. The change updates asset validation, MIME handling, provenance,
+package bounds, automated tests, and required physical regression evidence.
+LAME remains a local encoding tool and is not part of the repository runtime
+or product package.
 
 ## Start with Private Audio or Live Communications
 

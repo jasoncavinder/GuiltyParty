@@ -383,7 +383,7 @@ final class SessionStateMachineTests: XCTestCase {
 final class CommandAndRequestTests: XCTestCase {
     func testHostPresentationStatusIsRejectedByPlayerCompanion() throws {
         let data = Data(
-            #"{"protocol_version":"1.0","type":"presentation_status","message_id":"message-host-status-001","session_id":"session-synthetic-001","endpoint_id":"endpoint-synthetic-player-001","payload":{"manifest_revision":"the-stolen-artifact-v2-presentation-r1","asset_available":true,"sound_enabled":true,"atmosphere_state":"playing","reduced_motion":false}}"#.utf8
+            #"{"protocol_version":"1.0","type":"presentation_status","message_id":"message-host-status-001","session_id":"session-synthetic-001","endpoint_id":"endpoint-synthetic-player-001","payload":{"manifest_revision":"the-stolen-artifact-v2-presentation-r2","asset_available":true,"sound_enabled":true,"atmosphere_state":"playing","reduced_motion":false}}"#.utf8
         )
 
         XCTAssertThrowsError(

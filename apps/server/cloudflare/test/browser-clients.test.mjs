@@ -50,7 +50,7 @@ test("browser invitation decoder interoperates with the server encoder", () => {
 
 test("Host accepts only bounded coarse Stage presentation status", () => {
   const value = {
-    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    manifest_revision: "the-stolen-artifact-v2-presentation-r2",
     asset_available: true,
     sound_enabled: false,
     atmosphere_state: "stopped",
@@ -58,7 +58,7 @@ test("Host accepts only bounded coarse Stage presentation status", () => {
     raw_media_url: "ignored",
   };
   assert.deepEqual(sanitizePresentationStatus(value), {
-    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    manifest_revision: "the-stolen-artifact-v2-presentation-r2",
     asset_available: true,
     sound_enabled: false,
     atmosphere_state: "stopped",
@@ -76,7 +76,7 @@ test("Host accepts only bounded coarse Stage presentation status", () => {
 
 test("browser Companion rejects Host-only Stage presentation status", () => {
   const status = {
-    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    manifest_revision: "the-stolen-artifact-v2-presentation-r2",
     asset_available: true,
     sound_enabled: false,
     atmosphere_state: "stopped",

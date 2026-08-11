@@ -65,8 +65,8 @@ async function createStagePairing() {
         features: ["stage_presentation_media_v1"],
         client_build: {
           application_id: "stage_webos",
-          application_version: "0.2.0",
-          build_number: 3,
+          application_version: "0.2.1",
+          build_number: 4,
         },
       },
     }),

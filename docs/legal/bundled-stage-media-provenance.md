@@ -39,9 +39,9 @@ resampled to the exact 1920-by-1080 packaged-Stage dimensions.
 No named artist, copyrighted character, third-party image, stock asset, or
 external reference artwork was supplied to either image-generation pass.
 
-## Cinematic Vault Atmosphere
+## Cinematic Vault Atmosphere Source Master
 
-- File: `apps/tv/lg-webos/assets/presentation/stage-discovery-cinematic-vault.wav`
+- File: `apps/tv/lg-webos/assets/source/stage-discovery-cinematic-vault.wav`
 - Format: stereo, 44.1-kHz, signed 16-bit PCM WAV
 - Duration: 8 seconds
 - Size: 1,411,244 bytes
@@ -55,10 +55,39 @@ noise-like room tone. It contains no sample, recording, imported waveform,
 third-party package, network call, model output, or copied melody. The audio is
 nonverbal, nonessential atmosphere and remains optional during play.
 
+The WAV is retained as the lossless first-party source master and is not
+embedded in the packaged Stage after build 0.2.1 (4).
+
+## Cinematic Vault Packaged MP3
+
+- File: `apps/tv/lg-webos/assets/presentation/stage-discovery-cinematic-vault.mp3`
+- Format: MPEG-1 Layer III, 128 kbps, 44.1-kHz joint stereo
+- Gapless decoded duration: 8 seconds
+- Size: 129,148 bytes
+- SHA-256: `041c5ac6385ff3b4bd6c54f29fedb8d20efb108c82e98f354d84071c538e57b8`
+- Encoding date and owner approval: 2026-08-11 HST
+- Encoding tool: LAME 4.0, LGPL-2.0-or-later, local generation only
+- Exact command from the repository root:
+
+  ```sh
+  lame --silent -b 128 \
+    apps/tv/lg-webos/assets/source/stage-discovery-cinematic-vault.wav \
+    apps/tv/lg-webos/assets/presentation/stage-discovery-cinematic-vault.mp3
+  ```
+
+The encoded MP3 is a mechanical derivative of the approved project-owned WAV.
+LAME source, binaries, libraries, and runtime code are not copied into the
+repository or Stage package. The encoder received only the public synthetic
+WAV and made no network request. A disposable physical LG webOS 5.6 test
+confirmed that the embedded MP3 decodes through the existing Web Audio path,
+starts almost immediately, loops seamlessly, and stops/reset reliably.
+
 ## Verification and Boundary
 
-The webOS build verifies both exact digests, format signatures, dimensions or
-audio parameters, duration, and bounded size before embedding either asset.
+The webOS build verifies both packaged-asset digests, format signatures,
+dimensions or MP3 parameters, gapless duration, and bounded size before
+embedding either asset. Automated evidence separately verifies the retained
+WAV source-master digest and PCM parameters.
 The committed presentation manifest carries logical identifiers and digests,
 not media bytes, file paths, or network URLs. Runtime server input cannot select
 an arbitrary media source.

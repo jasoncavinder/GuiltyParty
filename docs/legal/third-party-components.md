@@ -64,6 +64,30 @@ development environment prerequisites rather than redistributed components.
 Plugins, extensions, templates, generated artifacts, or runtimes copied from
 those tools into a release still require review.
 
+## Stage Atmosphere Encoding Tool
+
+The project owner approved LAME 4.0 on 2026-08-11 HST solely as a local
+encoding tool for the first-party Cinematic Vault atmosphere adopted by
+packaged Stage build 0.2.1 (4).
+
+| Component | Exact approved version | Scope | License |
+| --- | --- | --- | --- |
+| LAME | 4.0 | Local WAV-to-MP3 encoding of one approved public Stage asset | LGPL-2.0-or-later |
+
+LAME is invoked manually and is not a repository build prerequisite, runtime
+dependency, remotely loaded component, or distributed part of the Stage. Its
+input is the deterministic project-owned synthetic WAV; its output is the
+committed 128-kbps, 44.1-kHz stereo MPEG-1 Layer III derivative recorded in
+[the asset provenance record](bundled-stage-media-provenance.md). The tool
+receives no credential, participant data, private scenario content, recording,
+or network access. No LAME binary, library, source, transitive component, or
+license text is copied into the application package.
+
+Regeneration requires the exact reviewed version and command, a new digest and
+provenance check, automated package validation, and repeat physical webOS
+audio evidence. A different encoder, version, parameters, source master,
+output format, asset, or distribution purpose requires renewed review.
+
 ## Android Companion Baseline
 
 ### Status and Owner Decision

@@ -8,8 +8,8 @@ const sourceDirectory = path.join(repositoryRoot, "apps", "tv", "lg-webos");
 const assetDirectory = path.join(sourceDirectory, "assets", "presentation");
 const outputDirectory = path.join(repositoryRoot, ".tmp", "lg-webos-stage-app");
 const registryPath = path.join(sourceDirectory, "presentation-assets.json");
-const MAXIMUM_STAGE_DOCUMENT_BYTES = 8 * 1024 * 1024;
-const MAXIMUM_PACKAGE_BYTES = 9 * 1024 * 1024;
+const MAXIMUM_STAGE_DOCUMENT_BYTES = 5 * 1024 * 1024;
+const MAXIMUM_PACKAGE_BYTES = 6 * 1024 * 1024;
 const LOGICAL_IDENTIFIER = /^[a-z][a-z0-9_.-]{0,127}$/u;
 const SHA256 = /^[a-f0-9]{64}$/u;
 
@@ -82,6 +82,52 @@ export function validatedWav(bytes) {
   }
 }
 
+export function validatedMp3(bytes) {
+  if (bytes.length < 180) throw new Error("Approved Stage atmosphere must be an MPEG-1 Layer III file");
+  const header = bytes.readUInt32BE(0);
+  const version = (header >>> 19) & 0x3;
+  const layer = (header >>> 17) & 0x3;
+  const protection = (header >>> 16) & 0x1;
+  const bitrateIndex = (header >>> 12) & 0xf;
+  const sampleRateIndex = (header >>> 10) & 0x3;
+  const channelMode = (header >>> 6) & 0x3;
+  if (
+    ((header & 0xffe00000) >>> 0) !== 0xffe00000 ||
+    version !== 0x3 ||
+    layer !== 0x1 ||
+    bitrateIndex !== 0x9 ||
+    sampleRateIndex !== 0x0 ||
+    channelMode === 0x3
+  ) {
+    throw new Error("Approved Stage atmosphere must be 128-kbps 44.1-kHz stereo MPEG-1 Layer III");
+  }
+
+  const infoOffset = 4 + (protection === 0 ? 2 : 0) + 32;
+  if (bytes.toString("ascii", infoOffset, infoOffset + 4) !== "Info") {
+    throw new Error("Approved Stage MP3 must contain deterministic LAME gapless metadata");
+  }
+  const flags = bytes.readUInt32BE(infoOffset + 4);
+  let cursor = infoOffset + 8;
+  if ((flags & 0x1) === 0) throw new Error("Approved Stage MP3 frame count is missing");
+  const frameCount = bytes.readUInt32BE(cursor);
+  cursor += 4;
+  if ((flags & 0x2) === 0) throw new Error("Approved Stage MP3 byte count is missing");
+  const declaredBytes = bytes.readUInt32BE(cursor);
+  cursor += 4;
+  if (flags & 0x4) cursor += 100;
+  if (flags & 0x8) cursor += 4;
+  if (cursor + 24 > bytes.length || bytes.toString("ascii", cursor, cursor + 4) !== "LAME") {
+    throw new Error("Approved Stage MP3 must contain a LAME encoder tag");
+  }
+  const delayPadding = bytes.readUIntBE(cursor + 21, 3);
+  const encoderDelay = delayPadding >>> 12;
+  const endPadding = delayPadding & 0xfff;
+  const effectiveSamples = frameCount * 1152 - encoderDelay - endPadding;
+  if (declaredBytes !== bytes.length || effectiveSamples !== 44_100 * 8) {
+    throw new Error("Approved Stage atmosphere must decode to exactly eight seconds");
+  }
+}
+
 export function validateAssetBytes(asset, bytes) {
   if (bytes.length > asset.maximum_bytes) {
     throw new Error(`Packaged Stage asset exceeds its bound: ${asset.id}`);
@@ -90,7 +136,7 @@ export function validateAssetBytes(asset, bytes) {
     throw new Error(`Packaged Stage asset digest mismatch: ${asset.id}`);
   }
   if (asset.kind === "image" && asset.mime_type === "image/png") validatedPng(bytes);
-  else if (asset.kind === "audio" && asset.mime_type === "audio/wav") validatedWav(bytes);
+  else if (asset.kind === "audio" && asset.mime_type === "audio/mpeg") validatedMp3(bytes);
   else throw new Error("Packaged Stage media kind and MIME type disagree");
 }
 
@@ -111,7 +157,7 @@ async function embeddedRegistry() {
       Object.hasOwn(assets, asset.id) ||
       !["image", "audio"].includes(asset.kind) ||
       kinds.has(asset.kind) ||
-      !["image/png", "audio/wav"].includes(asset.mime_type) ||
+      !["image/png", "audio/mpeg"].includes(asset.mime_type) ||
       !SHA256.test(asset.sha256) ||
       !Number.isSafeInteger(asset.maximum_bytes) ||
       asset.maximum_bytes < 1 ||

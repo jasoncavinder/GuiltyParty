@@ -5,7 +5,7 @@
   "session_id": "ses_0123456789abcdef",
   "endpoint_id": "end_stage_0123456789abcdef",
   "payload": {
-    "manifest_revision": "the-stolen-artifact-v2-presentation-r1",
+    "manifest_revision": "the-stolen-artifact-v2-presentation-r2",
     "asset_available": false,
     "sound_enabled": false,
     "atmosphere_state": "unknown",

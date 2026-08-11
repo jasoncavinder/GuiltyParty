@@ -16,7 +16,7 @@
         "name": "The Discovery",
         "public_narrative": "The artifact is missing. The doors are locked.",
         "presentation": {
-          "manifest_revision": "the-stolen-artifact-v2-presentation-r1",
+          "manifest_revision": "the-stolen-artifact-v2-presentation-r2",
           "audience": "public_stage",
           "scene_image_id": "scene_image.discovery.cinematic_gallery.v1",
           "atmosphere_audio_id": "atmosphere.discovery.cinematic_vault.v1",

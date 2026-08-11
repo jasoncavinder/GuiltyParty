@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "manifest_revision": "the-stolen-artifact-v2-presentation-r1",
+  "manifest_revision": "the-stolen-artifact-v2-presentation-r2",
   "assets": [
     {
       "id": "scene_image.discovery.cinematic_gallery.v1",
@@ -13,10 +13,10 @@
     {
       "id": "atmosphere.discovery.cinematic_vault.v1",
       "kind": "audio",
-      "mime_type": "audio/wav",
-      "source_path": "assets/presentation/stage-discovery-cinematic-vault.wav",
-      "sha256": "3187fe4ba7769021bcbf0919adf4a8ac6089e510b274783dfcc357ded02ebe98",
-      "maximum_bytes": 1572864
+      "mime_type": "audio/mpeg",
+      "source_path": "assets/presentation/stage-discovery-cinematic-vault.mp3",
+      "sha256": "041c5ac6385ff3b4bd6c54f29fedb8d20efb108c82e98f354d84071c538e57b8",
+      "maximum_bytes": 196608
     }
   ]
 }
