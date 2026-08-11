@@ -374,6 +374,30 @@ Rejected because ADR 0002 makes published scenario versions immutable.
 Rejected because local bundling is sufficient for this proof and avoids remote
 delivery, caching, integrity, availability, privacy, and cost decisions.
 
+## Replace Web Audio with Native AAC/M4A or MP3 Playback
+
+Rejected after a disposable physical-device spike on 2026-08-11. Native
+embedded AAC-LC/M4A and MPEG-1 Layer III MP3 playback failed. Relative packaged
+files were correctly blocked by the opaque-origin sandbox, and the
+unsandboxed outer application shell still rejected a packaged MP3 through the
+webOS URL-safety layer before codec decoding. Sandbox-compatible `blob:`
+playback reached the physical LG webOS 5.6 media engine but returned media
+error code 4, `Format error`, for both formats despite `canPlayType()` reporting
+probable support. These results do not show that the listed standalone codecs
+are absent; they show that the native HTML media source paths conflict with the
+accepted application security and packaging boundaries.
+
+The same 128-kbps, 44.1-kHz stereo MP3 was then embedded, decoded through the
+existing Web Audio architecture, and exercised directly on the physical TV.
+It started almost immediately, looped seamlessly for repeated cycles, and
+stopped/reset reliably while reducing encoded audio size by approximately 90
+percent. This establishes a viable follow-up optimization without weakening
+the sandbox or adding a runtime dependency. The verified PCM WAV remains
+authoritative until a separate reviewed adoption change updates asset
+validation, MIME handling, provenance, package bounds, automated tests, and
+physical regression evidence. The candidate and local encoding tools remain
+disposable and are not part of the repository or product.
+
 ## Start with Private Audio or Live Communications
 
 Rejected because those features require audience routing, device-route

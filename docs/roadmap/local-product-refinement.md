@@ -42,7 +42,7 @@ suffers. Native surfaces should feel related rather than pixel-identical.
 | Surface | Current working experience | Principal refinement gaps |
 | --- | --- | --- |
 | Browser Host | Creates and ends sessions; manages invitations and Stage pairing; assigns characters; advances scenes and clues; controls voting; shows participants and endpoint status. | Prototype/operator terminology remains prominent; story flow, urgency, confirmations, and recovery need stronger hierarchy; controls are fixture-specific; no presentation-media controls or shared component specification. |
-| LG webOS Stage | Packages and pairs on the physical television; renders public cast, scene, clues, voting status, outcome, reconnect overlay, and terminal clearing. | Mostly text and panels; no authored scene art, atmosphere, or sound; visual tokens differ from web; needs representative overscan, focus, reduced-motion, and long-content evidence. |
+| LG webOS Stage | Packages and pairs on the physical television; renders public cast, scene, clues, voting status, outcome, reconnect overlay, terminal clearing, and the bounded bundled Cinematic Gallery image and Cinematic Vault atmosphere proof. | Presentation media is still limited to one public proof; visual tokens differ from web; representative overscan, focus, reduced-motion, long-content, and future media-delivery evidence remain. |
 | iOS/iPadOS | Joins remotely; protects private content; resumes endpoint authority; shows assignment, objective, scene, clues, voting, and outcome; provides compact and split tablet layouts. | Primarily system styling; invitation paste and raw vote-target entry are development UX; no final icon/launch identity, camera join, authored media, or complete localization structure; tablet hierarchy needs product design rather than only structural adaptation. |
 | Android phone/tablet | Matches the native control-plane, resumption, privacy, voting, and adaptive-layout baseline; Android secure-window protection is active during private sessions. | Light Material prototype is visually disconnected from other surfaces; development origin and raw vote-target controls remain visible in debug UX; no final identity, camera join, authored media, or complete localization structure; physical-device evidence is unavailable. |
 | Browser player fallback | Joins, receives private projections, votes from valid choices, hides private content, reconnects, and clears at session end without persistent browser storage. | It is visually closer to Host than native apps but lacks a documented shared component/token source; browser capability limitations and fallback messaging need clearer product treatment. |
@@ -182,8 +182,9 @@ background capture remain excluded.
    technical proposal and exact original assets were approved on 2026-08-10.
    Automated/package checks and physical webOS artwork, seamless single-loop,
    mute, re-enable, and session-end evidence were recorded on 2026-08-11. Exact
-   merged deployment and a newly feature-negotiated Host session remain before
-   deployed presentation-status evidence is complete.
+   merged deployment, newly feature-negotiated Host status, and immediate
+   admitted-Stage roster propagation were also physically confirmed on
+   2026-08-11.
 6. **Local acceptance rehearsal:** complete deterministic session across all
    available surfaces, orientations, and form factors.
 7. **Live-media decision:** approve, defer, or narrow communications media for
@@ -209,13 +210,24 @@ time without losing later questions:
    before named-friend testing.
 5. **LPR-DIST-001:** decide when local evidence is sufficient to resume mobile
    beta-distribution preparation.
-6. **LPR-MEDIA-004 — accepted 2026-08-11:** preserve the physically verified
-   PCM WAV and Web Audio path for the current bounded proof. In a separate
-   optimization spike, derive AAC-LC/M4A and MP3 candidates from the owned WAV
-   master, compare native HTML-audio loop seams, stop behavior, quality, and
-   package size on the physical LG, and prefer AAC/M4A only if that evidence is
-   satisfactory. Do not combine the format change with the current reliability
-   remediation.
+6. **LPR-MEDIA-004 — accepted; evaluation completed 2026-08-11:** a
+   disposable optimization spike derived AAC-LC/M4A and MPEG-1 Layer III MP3
+   candidates from the owned WAV master. Native embedded playback failed; the
+   opaque-origin sandbox correctly blocked relative packaged-file playback;
+   and sandbox-compatible `blob:` playback reached the physical LG webOS 5.6
+   media engine but returned media error code 4, `Format error`, despite
+   optimistic `canPlayType()` results. A separate standalone-shell test
+   confirmed that packaged-file MP3 was rejected by the webOS URL-safety layer
+   before decoding. Finally, the 128-kbps, 44.1-kHz stereo MP3 was embedded and
+   decoded through the existing Web Audio architecture. On the physical TV it
+   started almost immediately, looped seamlessly, and stopped/reset reliably
+   while reducing encoded audio size by roughly 90 percent. The spike used
+   FFmpeg 8.1.2 and LAME 4.0 only as disposable local tooling; no candidate,
+   runtime dependency, or third-party encoder has yet been added to the
+   repository or product. Preserve the verified WAV implementation until a
+   separate reviewed adoption change updates validation, MIME handling,
+   provenance, package bounds, and physical regression evidence. Do not relax
+   the sandbox or use relative, network, or `blob:` media sources.
 
 New questions receive stable IDs and are appended rather than replacing or
 silently reordering this queue.
