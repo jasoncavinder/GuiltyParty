@@ -99,6 +99,7 @@ iPad simulator; physical-iPad validation remains incomplete.
 - [Product vision](docs/product/vision.md)
 - [Experience model](docs/product/experience-model.md)
 - [Mobile Companion product decisions](docs/product/mobile-companion.md)
+- [Visual language](docs/product/visual-language.md)
 - [Architecture notes](docs/architecture/README.md)
 - [Security and privacy](docs/security/)
 - [Architectural decision records](docs/adr/)

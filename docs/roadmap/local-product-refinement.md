@@ -2,10 +2,12 @@
 
 ## Status
 
-Approved direction as of 2026-08-09. This roadmap sequences owner-only product
-refinement before TestFlight, Google Play, or named-friend distribution. It
-does not set a delivery date or authorize a store submission, dependency,
-provider, or external tester.
+Approved direction as of 2026-08-09. The owner accepted the shared
+[visual language](../product/visual-language.md) under LPR-DESIGN-001 on
+2026-08-10. This roadmap sequences owner-only product refinement before
+TestFlight, Google Play, or named-friend distribution. It does not set a
+delivery date or authorize a store submission, dependency, provider, or
+external tester.
 
 Implementation details remain in [PLANS.md](../../PLANS.md). Long-lived
 architecture remains governed by the accepted ADRs.
@@ -49,6 +51,10 @@ suffers. Native surfaces should feel related rather than pixel-identical.
 
 The first implementation deliverable should be a small, documented semantic
 foundation rather than a framework or a pixel-identical component library.
+
+The approved direction is **Refined Case File**, using editorial clarity for
+Host tools and more cinematic atmosphere for the Stage. The decision governs
+look and feel, not final layouts, navigation, media controls, or full-game UX.
 
 It should define:
 
@@ -157,9 +163,10 @@ background capture remain excluded.
 
 ## Ordered Delivery Checkpoints
 
-1. **Foundation proposal:** representative Host, Stage, phone, and tablet
-   states plus semantic tokens and copy principles; owner approves one visual
-   direction.
+1. **Foundation proposal — accepted 2026-08-10:** representative Host, Stage,
+   phone, and tablet states plus semantic roles and copy principles; the owner
+   approved the Refined Case File visual language while keeping layouts and UX
+   open for later full-game and media studies.
 2. **Player-flow refinement:** joining, assignment, character, clues, direct
    voting choices, recovery, privacy, and terminal states on iOS/iPadOS and
    Android, followed by browser-fallback reconciliation.
@@ -180,8 +187,9 @@ background capture remain excluded.
 These decisions are intentionally ordered so they can be discussed one at a
 time without losing later questions:
 
-1. **LPR-DESIGN-001:** approve one representative visual direction and its
-   semantic foundation.
+1. **LPR-DESIGN-001 — accepted 2026-08-10:** Refined Case File is the shared
+   visual foundation, with Editorial clarity for Host and Cinematic atmosphere
+   for Stage. This approves look and feel, not final layouts or UX.
 2. **LPR-MEDIA-001:** approve or revise the recommended Stage-only public
    presentation-media slice.
 3. **LPR-MEDIA-002:** decide whether private pre-recorded audio belongs before
