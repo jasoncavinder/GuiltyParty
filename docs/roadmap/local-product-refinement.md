@@ -172,10 +172,10 @@ background capture remain excluded.
    approved the Refined Case File visual language while keeping layouts and UX
    open for later full-game and media studies.
 2. **Player-flow refinement — specification proposed 2026-08-11:** joining,
-   assignment, character, clues, direct voting choices, recovery, privacy, and
-   terminal states on iOS/iPadOS and Android, followed by browser-fallback
-   reconciliation. The bounded cross-platform state, hierarchy, contract, and
-   acceptance proposal is in the
+   assignment, character, clues, explicit voting state, direct vote choices,
+   recovery, privacy, and terminal states on iOS/iPadOS and Android, followed
+   by browser-fallback reconciliation. The bounded cross-platform state,
+   hierarchy, contract, and acceptance proposal is in the
    [Player Experience Specification](../product/player-experience.md) and
    remains subject to owner review before implementation.
 3. **Host and Stage refinement:** run-of-show and support hierarchy, public

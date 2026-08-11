@@ -162,9 +162,17 @@ not imply that the scenario contains no other clues.
 
 Raw scenario identifiers are never player input.
 
-The next control-contract slice adds a bounded, optional, server-created
-`vote_targets` collection to a participant's authorized projection when voting
-is open and that participant may vote. Each item contains only:
+The next control-contract slice adds two optional, server-created fields to a
+participant's authorized projection under one negotiated feature:
+
+- `voting_phase`: one of `not_open`, `open`, `closed`, or `resolved`
+- `vote_targets`: a bounded collection present only during `open` while that
+  participant may vote
+
+The explicit phase is necessary because `voting_open: false` with no outcome
+cannot distinguish a vote that has not opened from a closed vote with no
+resolved outcome, including a tie or an empty vote. Each `vote_targets` item
+contains only:
 
 - `character_id`: the existing stable command value, retained internally
 - `character_name`: the player-visible scenario label
@@ -179,8 +187,9 @@ client policy and is not journaled as separate truth. The client:
 - treats an absent or empty collection as no safe action rather than restoring
   a raw-entry fallback
 - disables additional submission while a vote is pending
-- presents distinct **Submitting**, **Recorded**, **Closed**, and **Resolved**
-  states
+- derives **Submitting** and **Recorded** from its endpoint-local pending
+  command and authorized `has_voted` state, and uses `voting_phase` to present
+  distinct **Closed** and **Resolved** states
 
 The server still revalidates the command against canonical rules. Supplying a
 choice is not authority to make an otherwise invalid command succeed.
@@ -191,11 +200,15 @@ This is an additive protocol feature governed by ADR 0005. Its implementation:
   redefining protocol `1.0`
 - advertises the feature identifier `participant_vote_targets_v1` through the
   compatibility response
-- sends the field only to a participant endpoint that claimed that feature
-  after compatibility discovery
-- omits the field for Host, Stage, and older participant endpoints
-- defines field absence as **feature unavailable**, never as permission for the
-  client to derive choices from another projection field
+- sends `voting_phase` and `vote_targets` only to a participant endpoint that
+  claimed that feature after compatibility discovery
+- omits both fields for Host, Stage, and older participant endpoints
+- continues accepting protocol `1.0` from supported older clients while
+  advertising the new preferred minor; it does not replace exact `1.0` checks
+  with exact `1.1` checks that would make the additive change breaking
+- defines either field's absence as **feature unavailable**, never as
+  permission for the client to derive phase or choices from another projection
+  field
 
 The refined client does not enable ordinary voting until compatibility
 discovery and its endpoint registration establish support. During a staged
@@ -319,9 +332,11 @@ credentials or captured private test data.
 
 ## Implementation Sequence
 
-1. **Vote-choice contract:** add the server-projected `vote_targets` field,
-   schema fixtures, generated Swift/Kotlin models, recipient-boundary tests,
-   deterministic engine/projection tests, and compatibility gating.
+1. **Voting-state and vote-choice contract:** add the server-projected
+   `voting_phase` and `vote_targets` fields, schema fixtures, generated
+   Swift/Kotlin models, recipient-boundary tests, deterministic
+   engine/projection tests, and minor-version compatibility gating. Fixtures
+   cover not-open, open, recorded, closed-without-outcome, and resolved states.
 2. **iOS/iPadOS player refinement:** introduce native semantic roles and string
    resources, then implement the accepted flow and phone/tablet hierarchy while
    preserving privacy and resumption behavior.
@@ -352,8 +367,9 @@ evidence is recorded.
   clearing.
 - Character, objective, current scene, clues, action, and outcome follow the
   documented hierarchy on phone and tablet layouts.
-- Direct voting presents only server-supplied character choices and reconciles
-  pending or accepted commands without duplication.
+- Direct voting presents only server-supplied character choices, distinguishes
+  not-open, open, recorded, closed-without-outcome, and resolved states, and
+  reconciles pending or accepted commands without duplication.
 - Light, dark, large-text, reduced-motion, accessibility, orientation, and
   narrow-tablet states remain usable and meaning-equivalent.
 - User-visible interface strings use normal platform localization resources.
