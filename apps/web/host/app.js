@@ -14,7 +14,7 @@ let connection = null;
 let projection = null;
 let invitationPayload = "";
 let endingSession = false;
-let serverFeatures = new Set();
+let serverFeatures = null;
 
 $("#create-form").addEventListener("submit", createSession);
 $("#copy-invitation").addEventListener("click", copyInvitation);
@@ -38,7 +38,14 @@ async function discoverServerFeatures() {
   try {
     serverFeatures = await compatibilityFeatures(apiOrigin);
   } catch {
-    serverFeatures = new Set();
+    serverFeatures = null;
+  }
+}
+
+async function requireHostPresentationSupport() {
+  if (!serverFeatures) await discoverServerFeatures();
+  if (!serverFeatures?.has(HOST_PRESENTATION_STATUS_FEATURE)) {
+    throw new Error("The server could not confirm Stage presentation support. Check the connection and try again.");
   }
 }
 
@@ -69,6 +76,7 @@ async function createSession(event) {
   const proof = proofInput.value;
   setStatus("setup", "Creating the private session…");
   try {
+    await requireHostPresentationSupport();
     const created = await apiRequest(apiOrigin, "/api/v1/sessions", {
       method: "POST",
       headers: { Authorization: `Bearer ${proof}` },
@@ -78,9 +86,7 @@ async function createSession(event) {
         endpoint: {
           platform: "browser",
           capabilities: ["host_control", "private_display"],
-          ...(serverFeatures.has(HOST_PRESENTATION_STATUS_FEATURE)
-            ? { features: [HOST_PRESENTATION_STATUS_FEATURE] }
-            : {}),
+          features: [HOST_PRESENTATION_STATUS_FEATURE],
           client_build: HOST_BUILD,
         },
       }),
@@ -223,6 +229,12 @@ async function loadRoster() {
   if (!context) return;
   try {
     const body = await apiRequest(apiOrigin, "/api/v1/session/endpoints");
+    const hostEndpoint = body.endpoints.find((endpoint) => endpoint.audience === "host" && !endpoint.revoked);
+    if (!hostEndpoint?.features?.includes(HOST_PRESENTATION_STATUS_FEATURE)) {
+      const status = $("#presentation-status");
+      status.textContent = "This Host endpoint was created without Stage presentation-status support. End this synthetic session and create a new one to enable it.";
+      status.className = "status error";
+    }
     const root = $("#devices");
     root.className = "";
     root.replaceChildren(...body.endpoints.map((endpoint) => {
