@@ -7,6 +7,7 @@
 - [Experience model](product/experience-model.md)
 - [Language and localization product direction](product/language-and-localization.md)
 - [Mobile Companion product decisions](product/mobile-companion.md)
+- [Visual language](product/visual-language.md)
 - [Product roadmap](roadmap/)
 - [Local product refinement](roadmap/local-product-refinement.md)
 
