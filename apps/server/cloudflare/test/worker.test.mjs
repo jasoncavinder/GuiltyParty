@@ -87,6 +87,30 @@ test("compatibility response conforms to the canonical v1 schema", async () => {
   assert.equal(validate(value), true, JSON.stringify(validate.errors));
 });
 
+test("browser compatibility discovery uses the exact-origin credentialed CORS boundary", async () => {
+  const env = { ALLOWED_ORIGINS: allowedOrigin };
+  const accepted = await worker.fetch(
+    new Request("https://example.test/api/protocol", {
+      headers: { Origin: allowedOrigin },
+    }),
+    env,
+  );
+  assert.equal(accepted.status, 200);
+  assert.equal(accepted.headers.get("Access-Control-Allow-Origin"), allowedOrigin);
+  assert.equal(accepted.headers.get("Access-Control-Allow-Credentials"), "true");
+  assert.equal(accepted.headers.get("Vary"), "Origin");
+
+  const rejected = await worker.fetch(
+    new Request("https://example.test/api/protocol", {
+      headers: { Origin: "https://untrusted.example.test" },
+    }),
+    env,
+  );
+  assert.equal(rejected.status, 200);
+  assert.equal(rejected.headers.get("Access-Control-Allow-Origin"), null);
+  assert.equal(rejected.headers.get("Access-Control-Allow-Credentials"), null);
+});
+
 test("OpenAPI declares the session admission failures returned at runtime", () => {
   const createResponses = openapi.paths["/api/v1/sessions"].post.responses;
   const joinResponses = openapi.paths["/api/v1/join"].post.responses;

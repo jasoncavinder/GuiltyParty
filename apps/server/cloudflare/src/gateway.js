@@ -66,9 +66,9 @@ export default {
 
     if (url.pathname === "/api/protocol") {
       if (request.method !== "GET") {
-        return methodNotAllowed("GET");
+        return withCors(methodNotAllowed("GET"), request, env);
       }
-      return jsonResponse(COMPATIBILITY_RESPONSE);
+      return withCors(jsonResponse(COMPATIBILITY_RESPONSE), request, env);
     }
 
     if (url.pathname === "/api/v1/sessions") {
