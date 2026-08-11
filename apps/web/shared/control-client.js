@@ -102,7 +102,7 @@ export async function recoverContext(apiOrigin, audience) {
 export async function compatibilityFeatures(apiOrigin) {
   const value = await apiRequest(apiOrigin, "/api/protocol");
   if (
-    value?.preferred_protocol_version !== PROTOCOL_VERSION ||
+    !/^1\.[0-9]+$/u.test(value?.preferred_protocol_version ?? "") ||
     value.required_upgrade !== false ||
     !Array.isArray(value.supported_protocol_majors) ||
     !value.supported_protocol_majors.includes(1) ||

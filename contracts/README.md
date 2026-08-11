@@ -14,11 +14,13 @@ defined by [ADR 0005](../docs/adr/0005-versioned-control-plane-contract.md).
   transport models derived from the canonical schema.
 - `../tests/contracts/v1/` contains synthetic conformance and privacy fixtures.
 
-Protocol `1.0` is implemented by the Rust prototype server, the remote Worker,
-the browser Host and fallback Companion, the packaged Stage, and the native
-iOS/iPadOS Companion. Committed native-client generation and fixture checks
-prove the transport-model boundary; live release claims still require the
-applicable simulator and physical-device evidence.
+Protocol `1.1` is the advertised preferred minor and adds the negotiated
+participant-only `participant_vote_targets_v1` projection feature. The Rust
+prototype server and remote Worker continue accepting protocol `1.0`; existing
+browser, Stage, and native clients remain on that baseline until they explicitly
+claim and consume the new feature. Committed native-client generation and
+fixture checks prove the transport-model boundary; live release claims still
+require the applicable simulator and physical-device evidence.
 
 Native participant admission returns a device-bound rotating resume credential
 in addition to the memory-only access bearer. `POST /api/v1/resume` binds that

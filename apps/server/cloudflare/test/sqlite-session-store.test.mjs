@@ -36,7 +36,7 @@ class TestSqlStorage {
   }
 }
 
-function configuredStore() {
+function configuredStore({ participantProtocolVersion = "1.0", participantFeatures = [] } = {}) {
   const storage = new TestSqlStorage();
   const store = new SqliteSessionStore(storage);
   store.initializeSchema();
@@ -64,10 +64,15 @@ function configuredStore() {
   }).ok, true);
   const admitted = store.admitGuest({
     sessionId: "ses_0123456789abcdef",
+    protocolVersion: participantProtocolVersion,
     pairingDigest: "f".repeat(64),
     kind: "participant",
     displayName: "Synthetic Player",
-    endpoint: { platform: "ios_companion", capabilities: ["private_display"] },
+    endpoint: {
+      platform: "ios_companion",
+      capabilities: ["private_display"],
+      features: participantFeatures,
+    },
     origin: null,
     endpointId: "end_player_0123456789abcdef",
     participantId: "par_0123456789abcdef",
@@ -129,6 +134,7 @@ test("participant resume preserves identity, rotates generation, and resolves pe
     participantId: "par_0123456789abcdef",
     roomId: "room_player_0123456789abcdef",
     authorityGeneration: 2,
+    protocolVersion: "1.0",
     expiresAtUnixMs: expires,
     resumeExpiresAtUnixMs: expires,
     serverSequence: 1,
@@ -224,6 +230,7 @@ test("endpoint registration preserves bounded feature and build negotiation inpu
   });
   assert.deepEqual(store.endpointRegistration("end_host_0123456789abcdef"), {
     audience: "host",
+    protocolVersion: "1.0",
     platform: "browser",
     capabilities: ["host_control"],
     features: ["host_presentation_status_v1"],
@@ -232,12 +239,31 @@ test("endpoint registration preserves bounded feature and build negotiation inpu
   });
   assert.deepEqual(store.endpointRegistration("end_player_0123456789abcdef"), {
     audience: "participant",
+    protocolVersion: "1.0",
     platform: "ios_companion",
     capabilities: ["private_display"],
     features: [],
     clientBuild: null,
     revoked: false,
   });
+});
+
+test("protocol minor and participant voting negotiation survive admission and resume", () => {
+  const { store } = configuredStore({
+    participantProtocolVersion: "1.1",
+    participantFeatures: ["participant_vote_targets_v1"],
+  });
+  assert.deepEqual(store.endpointRegistration("end_player_0123456789abcdef"), {
+    audience: "participant",
+    protocolVersion: "1.1",
+    platform: "ios_companion",
+    capabilities: ["private_display"],
+    features: ["participant_vote_targets_v1"],
+    clientBuild: null,
+    revoked: false,
+  });
+  assert.equal(resume(store).code, "invalid_resume_context");
+  assert.equal(resume(store, { protocolVersion: "1.1", nowUnixMs: 2_001 }).ok, true);
 });
 
 test("schema initialization migrates legacy endpoint rows to fail-safe metadata", () => {
@@ -264,6 +290,7 @@ test("schema initialization migrates legacy endpoint rows to fail-safe metadata"
   store.initializeSchema();
   assert.deepEqual(store.endpointRegistration("end_legacy"), {
     audience: "stage",
+    protocolVersion: "1.0",
     platform: "webos",
     capabilities: ["public_display"],
     features: [],

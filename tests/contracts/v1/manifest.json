@@ -117,6 +117,31 @@
       "expected_valid": true
     },
     {
+      "file": "positive/participant-voting-not-open.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/participant-voting-open.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/participant-voting-recorded.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/participant-voting-closed.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/participant-voting-resolved.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
       "file": "negative/missing-message-id.json",
       "definition": "ClientEnvelope",
       "expected_valid": false
@@ -178,6 +203,8 @@
       "forbidden_member_names": [
         "private_objective",
         "has_voted",
+        "voting_phase",
+        "vote_targets",
         "authorized_characters",
         "is_public",
         "url",
@@ -211,10 +238,100 @@
       }
     },
     {
+      "file": "positive/participant-voting-not-open.json",
+      "forbidden_values": [
+        "SYNTHETIC_OTHER_PRIVATE_OBJECTIVE"
+      ],
+      "member_scope": {
+        "private_objective": [
+          "/payload/projection/participants/0"
+        ],
+        "has_voted": [
+          "/payload/projection/participants/0"
+        ],
+        "voting_phase": [
+          "/payload/projection"
+        ]
+      }
+    },
+    {
+      "file": "positive/participant-voting-open.json",
+      "forbidden_values": [
+        "SYNTHETIC_OTHER_PRIVATE_OBJECTIVE"
+      ],
+      "member_scope": {
+        "private_objective": [
+          "/payload/projection/participants/0"
+        ],
+        "has_voted": [
+          "/payload/projection/participants/0"
+        ],
+        "voting_phase": [
+          "/payload/projection"
+        ],
+        "vote_targets": [
+          "/payload/projection"
+        ]
+      }
+    },
+    {
+      "file": "positive/participant-voting-recorded.json",
+      "forbidden_values": [
+        "SYNTHETIC_OTHER_PRIVATE_OBJECTIVE"
+      ],
+      "member_scope": {
+        "private_objective": [
+          "/payload/projection/participants/0"
+        ],
+        "has_voted": [
+          "/payload/projection/participants/0"
+        ],
+        "voting_phase": [
+          "/payload/projection"
+        ]
+      }
+    },
+    {
+      "file": "positive/participant-voting-closed.json",
+      "forbidden_values": [
+        "SYNTHETIC_OTHER_PRIVATE_OBJECTIVE"
+      ],
+      "member_scope": {
+        "private_objective": [
+          "/payload/projection/participants/0"
+        ],
+        "has_voted": [
+          "/payload/projection/participants/0"
+        ],
+        "voting_phase": [
+          "/payload/projection"
+        ]
+      }
+    },
+    {
+      "file": "positive/participant-voting-resolved.json",
+      "forbidden_values": [
+        "SYNTHETIC_OTHER_PRIVATE_OBJECTIVE"
+      ],
+      "member_scope": {
+        "private_objective": [
+          "/payload/projection/participants/0"
+        ],
+        "has_voted": [
+          "/payload/projection/participants/0"
+        ],
+        "voting_phase": [
+          "/payload/projection"
+        ]
+      }
+    },
+    {
       "file": "positive/stage-media-projection.json",
       "forbidden_member_names": [
         "private_objective",
         "has_voted",
+        "voting_phase",
+        "vote_targets",
         "authorized_characters",
         "is_public",
         "url",

@@ -7,6 +7,8 @@ use crate::projection::ProjectionAudience;
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuthorityContext {
     pub audience: ProjectionAudience,
+    pub protocol_version: String,
+    pub features: Vec<String>,
     pub session_id: String,
     pub endpoint_id: String,
     pub primary_authority_generation: u64,
@@ -31,6 +33,8 @@ impl AuthorityRegistry {
             host_token,
             AuthorityContext {
                 audience: ProjectionAudience::Host,
+                protocol_version: crate::protocol::PROTOCOL_VERSION.into(),
+                features: Vec::new(),
                 session_id,
                 endpoint_id: host_endpoint_id,
                 primary_authority_generation: 0,
@@ -39,9 +43,17 @@ impl AuthorityRegistry {
         Ok(Self { authorities })
     }
 
-    pub fn issue_stage(&mut self, session_id: String, endpoint_id: String) -> String {
+    pub fn issue_stage(
+        &mut self,
+        protocol_version: String,
+        features: Vec<String>,
+        session_id: String,
+        endpoint_id: String,
+    ) -> String {
         self.issue(AuthorityContext {
             audience: ProjectionAudience::Stage,
+            protocol_version,
+            features,
             session_id,
             endpoint_id,
             primary_authority_generation: 0,
@@ -51,11 +63,15 @@ impl AuthorityRegistry {
     pub fn issue_participant(
         &mut self,
         participant_id: String,
+        protocol_version: String,
+        features: Vec<String>,
         session_id: String,
         endpoint_id: String,
     ) -> String {
         self.issue(AuthorityContext {
             audience: ProjectionAudience::Participant(participant_id),
+            protocol_version,
+            features,
             session_id,
             endpoint_id,
             primary_authority_generation: 0,
@@ -98,6 +114,8 @@ mod tests {
         .unwrap();
         let token = registry.issue_participant(
             "p1".into(),
+            "1.1".into(),
+            vec![crate::protocol::PARTICIPANT_VOTING_FEATURE.into()],
             "session-1".into(),
             "participant-endpoint".into(),
         );
@@ -105,6 +123,8 @@ mod tests {
             registry.authenticate(&token),
             Some(AuthorityContext {
                 audience: ProjectionAudience::Participant("p1".into()),
+                protocol_version: "1.1".into(),
+                features: vec![crate::protocol::PARTICIPANT_VOTING_FEATURE.into()],
                 session_id: "session-1".into(),
                 endpoint_id: "participant-endpoint".into(),
                 primary_authority_generation: 0,

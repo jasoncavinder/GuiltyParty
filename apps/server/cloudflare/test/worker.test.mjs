@@ -13,6 +13,8 @@ import {
   LIFECYCLE_REHEARSAL_RETENTION_MS,
   SESSION_ACTIVE_DURATION_MS,
   SESSION_RETENTION_MS,
+  PARTICIPANT_VOTING_FEATURE,
+  PREFERRED_PROTOCOL_VERSION,
   WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
 } from "../src/constants.js";
 import {
@@ -85,6 +87,9 @@ test("compatibility response conforms to the canonical v1 schema", async () => {
   const validate = ajv.getSchema(`${schema.$id}#/$defs/CompatibilityResponse`);
   assert.ok(validate);
   assert.equal(validate(value), true, JSON.stringify(validate.errors));
+  assert.equal(value.preferred_protocol_version, PREFERRED_PROTOCOL_VERSION);
+  assert.equal(value.required_upgrade, false);
+  assert.ok(value.features.includes(PARTICIPANT_VOTING_FEATURE));
 });
 
 test("browser compatibility discovery uses the exact-origin credentialed CORS boundary", async () => {
@@ -233,7 +238,7 @@ test("operator lifecycle rehearsal uses fixed short windows without changing nor
   );
 });
 
-test("join hashes pairing proof before Durable Object admission and issues native bearer authority", async () => {
+test("protocol 1.1 participant voting join is admitted and hashes private proofs", async () => {
   let captured;
   const expiresAt = Date.now() + 60_000;
   const env = await friendsEnvironment(async (name, request) => {
@@ -258,10 +263,14 @@ test("join hashes pairing proof before Durable Object admission and issues nativ
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        protocol_version: "1.0",
+        protocol_version: "1.1",
         kind: "participant",
         display_name: "Test Guest",
-        endpoint: { platform: "ios", capabilities: ["private_display", "touch_input"] },
+        endpoint: {
+          platform: "ios",
+          capabilities: ["private_display", "touch_input"],
+          features: [PARTICIPANT_VOTING_FEATURE],
+        },
       }),
     }),
     env,
@@ -272,6 +281,7 @@ test("join hashes pairing proof before Durable Object admission and issues nativ
   assert.equal(body.authority_transport, "bearer");
   assert.equal(body.websocket_transport, "authorization_header");
   assert.equal(body.participant_id, "par_0123456789abcdef");
+  assert.equal(body.protocol_version, "1.1");
   assert.ok(body.token.startsWith("gp1."));
   assert.equal(typeof body.resume_token, "string");
   assert.equal(body.resume_expires_at_unix_ms, expiresAt);
@@ -288,7 +298,41 @@ test("join hashes pairing proof before Durable Object admission and issues nativ
     await resumeCredentialDigest(body.resume_token, signingKey),
   );
   assert.match(captured.body.resume_credential_family_id, /^rsf_/u);
+  assert.equal(captured.body.join.protocol_version, "1.1");
+  assert.deepEqual(captured.body.join.endpoint.features, [PARTICIPANT_VOTING_FEATURE]);
   assert.equal(JSON.stringify(captured).includes(body.resume_token), false);
+});
+
+test("protocol 1.0 cannot claim the participant voting feature", async () => {
+  let routed = false;
+  const env = await friendsEnvironment(async () => {
+    routed = true;
+    return Response.json({});
+  });
+  const response = await worker.fetch(
+    new Request("https://example.test/api/v1/join", {
+      method: "POST",
+      headers: {
+        Authorization: "Pairing synthetic-pairing-proof",
+        "X-GP-Session-ID": "ses_0123456789abcdef",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        protocol_version: "1.0",
+        kind: "participant",
+        display_name: "Test Guest",
+        endpoint: {
+          platform: "ios",
+          capabilities: ["private_display"],
+          features: [PARTICIPANT_VOTING_FEATURE],
+        },
+      }),
+    }),
+    env,
+  );
+
+  assert.equal(response.status, 400);
+  assert.equal(routed, false);
 });
 
 test("native participant resume rotates endpoint authority without forwarding raw credentials", async () => {

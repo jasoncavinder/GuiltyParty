@@ -7,6 +7,8 @@ import {
   LIFECYCLE_REHEARSAL_INVITATION_DURATION_MS,
   LIFECYCLE_REHEARSAL_RETENTION_MS,
   MAX_REQUEST_BODY_BYTES,
+  PARTICIPANT_VOTING_FEATURE,
+  PREFERRED_PROTOCOL_VERSION,
   PROTOCOL_VERSION,
   SESSION_ACTIVE_DURATION_MS,
   SESSION_RETENTION_MS,
@@ -14,6 +16,7 @@ import {
   STAGE_PAIRING_POLL_AFTER_MS,
   WEBSOCKET_TICKET_DURATION_MS,
   WEBSOCKET_TICKET_SUBPROTOCOL_PREFIX,
+  supportedProtocolVersion,
 } from "./constants.js";
 import { evaluateClientBuild, validClientBuild } from "./client-build.js";
 import {
@@ -262,6 +265,7 @@ async function createSession(request, env, { lifecycleRehearsal = false } = {}) 
     method: "POST",
     headers: internalHeaders(),
     body: JSON.stringify({
+      protocol_version: parsed.value.protocol_version,
       session_id: sessionId,
       host_endpoint_id: endpointId,
       host_room_id: roomId,
@@ -295,7 +299,7 @@ async function createSession(request, env, { lifecycleRehearsal = false } = {}) 
   );
   return jsonResponse(
     {
-      protocol_version: PROTOCOL_VERSION,
+      protocol_version: parsed.value.protocol_version,
       session_id: sessionId,
       endpoint_id: endpointId,
       room_id: roomId,
@@ -433,7 +437,7 @@ async function joinSession(request, env) {
       : "authorization_header";
   return jsonResponse(
     {
-      protocol_version: PROTOCOL_VERSION,
+      protocol_version: parsed.value.protocol_version,
       ...(!browser ? { token } : {}),
       session_id: sessionId,
       endpoint_id: admission.endpoint_id,
@@ -553,7 +557,7 @@ async function resumeParticipant(request, env) {
     env.AUTHORITY_SIGNING_KEY,
   );
   return jsonResponse({
-    protocol_version: PROTOCOL_VERSION,
+    protocol_version: resumed.protocol_version ?? parsed.value.protocol_version,
     token,
     resume_token: replacementResumeToken,
     session_id: parsed.value.session_id,
@@ -612,6 +616,7 @@ async function createStagePairing(request, env) {
         method: "POST",
         headers: internalHeaders(),
         body: JSON.stringify({
+          protocol_version: parsed.value.protocol_version,
           transaction_id: randomIdentifier("stp"),
           polling_digest: await sha256Hex(pollingSecret),
           endpoint: parsed.value.endpoint,
@@ -628,7 +633,7 @@ async function createStagePairing(request, env) {
     }
     return jsonResponse(
       {
-        protocol_version: PROTOCOL_VERSION,
+        protocol_version: parsed.value.protocol_version,
         pairing_code: pairingCode,
         polling_secret: pollingSecret,
         redeem_path: `/api/v1/stage-pairings/${pairingCode}/redeem`,
@@ -748,7 +753,7 @@ async function redeemStagePairing(request, env, pairingCode) {
     const result = await response.json();
     return jsonResponse(
       {
-        protocol_version: PROTOCOL_VERSION,
+        protocol_version: result.protocol_version ?? PROTOCOL_VERSION,
         status: "pending",
         expires_at_unix_ms: result.expires_at_unix_ms,
         retry_after_ms: STAGE_PAIRING_POLL_AFTER_MS,
@@ -776,6 +781,7 @@ async function redeemStagePairing(request, env, pairingCode) {
       method: "POST",
       headers: internalHeaders(),
       body: JSON.stringify({
+        protocol_version: approved.protocol_version ?? PROTOCOL_VERSION,
         transaction_id: approved.transaction_id,
         endpoint: approved.endpoint,
         now_unix_ms: admissionNow,
@@ -799,7 +805,7 @@ async function redeemStagePairing(request, env, pairingCode) {
     env.AUTHORITY_SIGNING_KEY,
   );
   return jsonResponse({
-    protocol_version: PROTOCOL_VERSION,
+    protocol_version: admission.protocol_version ?? approved.protocol_version ?? PROTOCOL_VERSION,
     token,
     session_id: approved.session_id,
     endpoint_id: admission.endpoint_id,
@@ -1300,27 +1306,38 @@ async function readJsonObject(request) {
 
 function validCreateSessionRequest(value) {
   return (
-    value.protocol_version === PROTOCOL_VERSION &&
+    supportedProtocolVersion(value.protocol_version) &&
     (value.gameplay_language === undefined ||
       (typeof value.gameplay_language === "string" &&
         value.gameplay_language.length <= 63 &&
         GAMEPLAY_LANGUAGE_PATTERN.test(value.gameplay_language))) &&
-    validEndpoint(value.endpoint)
+    validEndpoint(value.endpoint) &&
+    !value.endpoint.features?.includes(PARTICIPANT_VOTING_FEATURE)
   );
 }
 
 function validStagePairingRequest(value) {
   return (
     value &&
-    value.protocol_version === PROTOCOL_VERSION &&
+    supportedProtocolVersion(value.protocol_version) &&
     validEndpoint(value.endpoint) &&
     value.endpoint.platform === "webos" &&
-    value.endpoint.capabilities.includes("public_display")
+    value.endpoint.capabilities.includes("public_display") &&
+    !value.endpoint.features?.includes(PARTICIPANT_VOTING_FEATURE)
   );
 }
 
 function validJoinRequest(value) {
-  if (value.protocol_version !== PROTOCOL_VERSION || !validEndpoint(value.endpoint)) {
+  if (!supportedProtocolVersion(value.protocol_version) || !validEndpoint(value.endpoint)) {
+    return false;
+  }
+  const votingFeature = value.endpoint.features?.includes(PARTICIPANT_VOTING_FEATURE) === true;
+  if (
+    votingFeature &&
+    (value.protocol_version !== PREFERRED_PROTOCOL_VERSION ||
+      value.kind !== "participant" ||
+      !value.endpoint.capabilities.includes("private_display"))
+  ) {
     return false;
   }
   if (value.kind === "stage") {
@@ -1332,7 +1349,7 @@ function validJoinRequest(value) {
 function validParticipantResumeRequest(value) {
   return (
     value &&
-    value.protocol_version === PROTOCOL_VERSION &&
+    supportedProtocolVersion(value.protocol_version) &&
     SESSION_IDENTIFIER_PATTERN.test(value.session_id) &&
     SESSION_IDENTIFIER_PATTERN.test(value.endpoint_id) &&
     SESSION_IDENTIFIER_PATTERN.test(value.participant_id) &&

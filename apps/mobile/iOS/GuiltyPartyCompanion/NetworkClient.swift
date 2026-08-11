@@ -73,7 +73,7 @@ enum JoinClient {
                 displayName: nickname,
                 endpoint: endpoint,
                 kind: "participant",
-                protocolVersion: GPV1ProtocolVersion()
+                protocolVersion: try GPV1ProtocolVersion("1.0")
             )
         )
 
@@ -174,7 +174,7 @@ enum ResumeClient {
             participantId: GPV1Identifier(credential.participantID),
             pendingIdempotencyIds: try credential.pendingIdempotencyIDs.map(GPV1MessageIdentifier.init),
             primaryAuthorityGeneration: credential.primaryAuthorityGeneration,
-            protocolVersion: GPV1ProtocolVersion(),
+            protocolVersion: try GPV1ProtocolVersion("1.0"),
             sessionId: GPV1Identifier(credential.sessionID)
         )
         var request = URLRequest(
@@ -515,7 +515,7 @@ enum ControlPlaneCodec {
                 endpointId: GPV1Identifier(authority.endpointID),
                 messageId: GPV1MessageIdentifier(messageID),
                 payload: GPV1GetProjectionEnvelopePayload(),
-                protocolVersion: GPV1ProtocolVersion(),
+                protocolVersion: try GPV1ProtocolVersion("1.0"),
                 sessionId: GPV1Identifier(authority.sessionID),
                 type: "get_projection"
             )
@@ -579,7 +579,7 @@ struct CommandFactory: Sendable {
                 messageId: GPV1MessageIdentifier(command.messageID),
                 payload: GPV1SubmitCommandEnvelopePayload(command: .castVote(vote)),
                 primaryAuthorityGeneration: authority.primaryAuthorityGeneration,
-                protocolVersion: GPV1ProtocolVersion(),
+                protocolVersion: try GPV1ProtocolVersion("1.0"),
                 sessionId: GPV1Identifier(authority.sessionID),
                 type: "submit_command"
             )

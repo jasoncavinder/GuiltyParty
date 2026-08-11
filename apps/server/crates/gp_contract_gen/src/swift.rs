@@ -501,7 +501,11 @@ fn render_string_validation(
     indent: &str,
     output: &mut String,
 ) {
-    if rules.minimum_length.is_none() && rules.maximum_length.is_none() && rules.pattern.is_none() {
+    if rules.minimum_length.is_none()
+        && rules.maximum_length.is_none()
+        && rules.pattern.is_none()
+        && rules.allowed_values.is_empty()
+    {
         return;
     }
     writeln!(
@@ -516,6 +520,19 @@ fn render_string_validation(
             .unwrap_or_else(|| "nil".to_string())
     )
     .unwrap();
+    if !rules.allowed_values.is_empty() {
+        let values = rules
+            .allowed_values
+            .iter()
+            .map(|value| quoted(value))
+            .collect::<Vec<_>>()
+            .join(", ");
+        writeln!(
+            output,
+            "{indent}guard [{values}].contains({expression}) else {{ throw GPContractError.constraint(\"string is not an allowed enum value\") }}"
+        )
+        .unwrap();
+    }
 }
 
 fn render_integer_validation(
@@ -580,6 +597,7 @@ fn needs_inline_validation(schema: &Schema) -> bool {
             rules.minimum_length.is_some()
                 || rules.maximum_length.is_some()
                 || rules.pattern.is_some()
+                || !rules.allowed_values.is_empty()
         }
         Schema::StringConstant(_) => true,
         Schema::Integer(rules) => rules.minimum.is_some() || rules.maximum.is_some(),

@@ -162,7 +162,7 @@ not imply that the scenario contains no other clues.
 
 Raw scenario identifiers are never player input.
 
-The next control-contract slice adds two optional, server-created fields to a
+The control contract defines two optional, server-created fields in a
 participant's authorized projection under one negotiated feature:
 
 - `voting_phase`: one of `not_open`, `open`, `closed`, or `resolved`
@@ -206,9 +206,10 @@ This is an additive protocol feature governed by ADR 0005. Its implementation:
 - continues accepting protocol `1.0` from supported older clients while
   advertising the new preferred minor; it does not replace exact `1.0` checks
   with exact `1.1` checks that would make the additive change breaking
-- defines either field's absence as **feature unavailable**, never as
-  permission for the client to derive phase or choices from another projection
-  field
+- defines an absent `voting_phase` as **feature unavailable**; once the feature
+  is negotiated, an absent or empty `vote_targets` collection means there is
+  no currently authorized voting action, never permission for the client to
+  derive phase or choices from another projection field
 
 The refined client does not enable ordinary voting until compatibility
 discovery and its endpoint registration establish support. During a staged

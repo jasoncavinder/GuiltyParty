@@ -1,0 +1,31 @@
+{
+  "protocol_version": "1.1",
+  "type": "projection",
+  "message_id": "message-voting-not-open-001",
+  "session_id": "session-synthetic-001",
+  "endpoint_id": "endpoint-synthetic-player-001",
+  "server_sequence": 4,
+  "payload": {
+    "projection": {
+      "scenario_id": "scenario-synthetic-001",
+      "scenario_version": 1,
+      "scenario_title": "The Synthetic Artifact",
+      "gameplay_language": "en",
+      "active_scene": null,
+      "revealed_clues": [],
+      "participants": [
+        {
+          "participant_id": "participant-synthetic-001",
+          "name": "Synthetic ʻIolana",
+          "character_name": "Curator",
+          "private_objective": "SYNTHETIC_OWN_PRIVATE_OBJECTIVE",
+          "has_voted": false
+        }
+      ],
+      "voting_open": false,
+      "voting_phase": "not_open",
+      "votes_cast": 0,
+      "outcome": null
+    }
+  }
+}

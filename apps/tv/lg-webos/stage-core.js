@@ -145,7 +145,7 @@
     var features = [];
     if (
       !value ||
-      value.preferred_protocol_version !== PROTOCOL_VERSION ||
+      !/^1\.[0-9]+$/.test(value.preferred_protocol_version || "") ||
       value.required_upgrade !== false ||
       !Array.isArray(value.supported_protocol_majors) ||
       value.supported_protocol_majors.indexOf(1) < 0 ||
