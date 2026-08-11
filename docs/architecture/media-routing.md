@@ -94,6 +94,31 @@ The Companion provides:
 
 ---
 
+# Bundled Presentation Media
+
+Authored scene images, evidence images, atmosphere, sound effects, and
+pre-recorded narration are presentation media. When an approved asset is
+bundled with a Stage application and selected by an already-authorized public
+projection, it does not require WebRTC or become live participant media.
+
+Presentation references remain scenario-owned and versioned, while image
+decode, playback position, mute, volume, and reduced-motion preference remain
+endpoint presentation state rather than canonical scenario truth. Missing or
+unsupported presentation media degrades to the authorized text experience.
+The server sends presentation descriptors and coarse Host status only after
+the receiving build negotiates the feature and advertises the required device
+capabilities; platform names and client claims never grant authority.
+For the accepted opaque-origin webOS boundary, approved asset bytes are
+digest-verified and embedded by the package build rather than loaded through a
+server-derived, relative-file, or network media URL.
+
+[Proposed ADR 0040](../adr/0040-bundled-stage-presentation-media.md) defines the
+bounded first public Stage proof. Private playback, remote delivery, live
+communications, recording, and processing remain under their separate audience,
+consent, routing, retention, and provider decisions.
+
+---
+
 # Audio Architecture
 
 Audio is the most sensitive part of the system.

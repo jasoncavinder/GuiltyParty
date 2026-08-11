@@ -125,7 +125,8 @@ Presentation media means authored scene images, evidence images, ambient music,
 sound effects, and pre-recorded public or private narration. It is distinct
 from live participant communications.
 
-The recommended first slice is Stage-only, public, and bundled:
+The owner accepted the first slice under **LPR-MEDIA-001** on 2026-08-10. It is
+Stage-only, public, and bundled:
 
 - one original scene image
 - one short original transition or atmosphere sound
@@ -136,8 +137,9 @@ The recommended first slice is Stage-only, public, and bundled:
 This is the safest first proof because it exercises story atmosphere and
 cross-surface design without microphone permission, private-output routing,
 remote media delivery, retention, or a third-party media provider. Exact
-scenario schema, cue timing, packaging, and replay behavior require a bounded
-technical proposal before implementation.
+scenario versioning, cue timing, packaging, and replay behavior are proposed in
+[ADR 0040](../adr/0040-bundled-stage-presentation-media.md) for review before
+implementation.
 
 Private playback follows only after audience authorization, lifecycle clearing,
 route validation, and physical-device behavior are specified and testable.
@@ -174,7 +176,9 @@ background capture remain excluded.
    storytelling presentation, television focus and safe-area behavior.
 4. **Accessibility/localization pass:** automated and manual virtual coverage,
    followed by available physical-device checks.
-5. **Presentation-media proof:** separately approved Stage-only public slice.
+5. **Presentation-media proof — slice accepted 2026-08-10:** implement only
+   after the bounded technical proposal and original asset provenance are
+   reviewed.
 6. **Local acceptance rehearsal:** complete deterministic session across all
    available surfaces, orientations, and form factors.
 7. **Live-media decision:** approve, defer, or narrow communications media for
@@ -190,8 +194,10 @@ time without losing later questions:
 1. **LPR-DESIGN-001 — accepted 2026-08-10:** Refined Case File is the shared
    visual foundation, with Editorial clarity for Host and Cinematic atmosphere
    for Stage. This approves look and feel, not final layouts or UX.
-2. **LPR-MEDIA-001:** approve or revise the recommended Stage-only public
-   presentation-media slice.
+2. **LPR-MEDIA-001 — accepted 2026-08-10:** the first presentation-media proof
+   is Stage-only, public, locally bundled, and limited to one original scene
+   image and one short original atmosphere sound with visible mute/playback
+   state and sound-off/reduced-motion equivalence.
 3. **LPR-MEDIA-002:** decide whether private pre-recorded audio belongs before
    named-friend testing.
 4. **LPR-MEDIA-003:** decide whether live voice communications are required
