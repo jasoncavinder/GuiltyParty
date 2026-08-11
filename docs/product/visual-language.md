@@ -157,6 +157,7 @@ visual language recorded here.
 ## Related Documents
 
 - [Local Product Refinement Roadmap](../roadmap/local-product-refinement.md)
+- [Player Experience Specification](player-experience.md)
 - [Experience Model](experience-model.md)
 - [Mobile Companion Product Decisions](mobile-companion.md)
 - [Media-Plane Protocol and Provider](../adr/0010-media-plane-protocol-and-provider.md)

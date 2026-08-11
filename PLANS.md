@@ -28,8 +28,11 @@ Approved direction; the interface inventory is complete, the Refined Case File
 visual language was accepted under LPR-DESIGN-001, and the bounded Stage-only
 public presentation-media slice was accepted under LPR-MEDIA-001 on 2026-08-10.
 The exact cleaned Cinematic Gallery image and Cinematic Vault atmosphere were
-subsequently approved for implementation under ADR 0040. Automated and package
-validation proceeds before the required physical LG television rehearsal.
+subsequently approved under ADR 0040, implemented, and physically validated on
+the LG television on 2026-08-11. The next proposed slice is the bounded
+[Player Experience Specification](docs/product/player-experience.md), covering
+the native phone/tablet flow and one additive server-projected voting-state and
+vote-choice contract before platform UI implementation.
 The owner selected **Guilty Party** as the sole public mobile app name and
 directed the project on 2026-08-09 to improve the owner-tested product
 experience before TestFlight or Google Play testing. Layout, navigation, and
@@ -76,24 +79,28 @@ in the [Local Product Refinement Roadmap](docs/roadmap/local-product-refinement.
 
 ### Implementation Sequence
 
-1. Record the cross-surface interface inventory, design principles, media
+1. **Completed:** record the cross-surface inventory, design principles, media
    boundary, acceptance gates, and unresolved owner decisions.
-2. Propose a shared visual foundation using original project-owned work and
-   semantic tokens; review representative Host, Stage, phone, and tablet states
-   before broad implementation.
-3. Apply the accepted foundation surface by surface without introducing a
-   shared UI runtime or weakening native accessibility and platform behavior.
-4. Replace development-only player interactions with the intended joining,
-   character, clue, voting, recovery, privacy, and terminal-session experience.
-5. Verify accessibility and localization behavior across phone, tablet, web,
+2. **Completed:** accept the shared Refined Case File visual foundation using
+   original project-owned work and semantic native mappings.
+3. **Next:** add bounded server-projected voting state and vote choices,
+   contract fixtures, generated Swift/Kotlin models, privacy tests, and
+   compatibility gating.
+4. Refine the iOS/iPadOS joining, character, clue, voting, recovery, privacy,
+   appearance, localization, and terminal-session experience.
+5. Refine the equivalent Android phone/tablet outcomes with native Compose
+   adaptation and a debug-only developer panel.
+6. Reconcile the browser fallback's product copy, state meanings, direct vote
+   choices, and visual roles within its accepted capability limits.
+7. Verify accessibility and localization behavior across phone, tablet, web,
    and television layouts with synthetic content.
-6. Implement an approved, bounded presentation-media vertical slice using only
-   original placeholder assets and explicit scenario-owned references.
-7. Decide separately whether live communications media is required before the
-   first named-friend test; if so, approve its dependency and implementation
-   plan before coding.
-8. Run a complete owner-only physical-and-virtual rehearsal and update the
-   readiness record before resuming beta-distribution preparation.
+8. **Completed for the bounded proof:** implement and physically validate the
+   approved Stage-only presentation-media vertical slice.
+9. Decide separately whether private pre-recorded media or live communications
+   media is required before the first named-friend test; approve any provider,
+   dependency, and implementation plan before coding.
+10. Run a complete owner-only physical-and-virtual rehearsal and update the
+    readiness record before resuming beta-distribution preparation.
 
 ### Acceptance Criteria
 
@@ -123,8 +130,7 @@ The owner must approve:
 - any material departure from the Refined Case File visual direction accepted
   under LPR-DESIGN-001 on 2026-08-10
 - any new font, asset source, library, SDK, media provider, or hosted service
-- the proposed technical boundary and original asset provenance for the first
-  presentation-media implementation
+- any expansion beyond the accepted Stage-only presentation-media proof
 - whether live voice communications are required before named-friend testing
 - resumption of TestFlight or Google Play preparation
 
