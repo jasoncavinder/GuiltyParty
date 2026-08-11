@@ -8,7 +8,12 @@ import { promisify } from "node:util";
 import vm from "node:vm";
 import { fileURLToPath } from "node:url";
 
-import { validateAssetBytes, validatedPng, validatedWav } from "../../../../tooling/build_webos_stage.mjs";
+import {
+  validateAssetBytes,
+  validatedMp3,
+  validatedPng,
+  validatedWav,
+} from "../../../../tooling/build_webos_stage.mjs";
 
 const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
 const stageDirectory = path.join(repository, "apps/tv/lg-webos");
@@ -32,14 +37,14 @@ function plain(value) {
 test("packaged Stage metadata is pinned to the approved development build", async () => {
   const appinfo = JSON.parse(await readFile(path.join(stageDirectory, "appinfo.json"), "utf8"));
   assert.equal(appinfo.id, "com.guiltyparty.stage");
-  assert.equal(appinfo.version, "0.2.0");
+  assert.equal(appinfo.version, "0.2.1");
   assert.equal(appinfo.type, "web");
   assert.equal(appinfo.main, "index.html");
   assert.equal(appinfo.icon, "icon.png");
   assert.deepEqual(plain(core.STAGE_BUILD), {
     application_id: "stage_webos",
-    application_version: "0.2.0",
-    build_number: 3,
+    application_version: "0.2.1",
+    build_number: 4,
   });
   assert.equal(core.API_ORIGIN, "https://api.test.guiltyparty.app");
   assert.equal(core.CONTROL_SUBPROTOCOL, "guiltyparty.control.v1");
@@ -73,9 +78,9 @@ test("physical-compatible package inlines only first-party runtime assets", asyn
   assert.match(packagedStage, /img-src data:; media-src data:/u);
   assert.doesNotMatch(packagedStage, /<(?:link|script)[^>]+(?:href|src)=/u);
   assert.equal(packagedStage.match(/data:image\/png;base64,/gu)?.length, 1);
-  assert.equal(packagedStage.match(/data:audio\/wav;base64,/gu)?.length, 1);
+  assert.equal(packagedStage.match(/data:audio\/mpeg;base64,/gu)?.length, 1);
   assert.doesNotMatch(packagedStage, /(?:blob:|https?:\/\/[^'"\s]*\.(?:png|wav|mp3|m4a))/u);
-  assert.ok((await stat(path.join(packagedStageDirectory, "stage.html"))).size < 8 * 1024 * 1024);
+  assert.ok((await stat(path.join(packagedStageDirectory, "stage.html"))).size < 5 * 1024 * 1024);
   assert.doesNotMatch(packagedShell + packagedStage, /(?:localStorage|sessionStorage|indexedDB|XMLHttpRequest)/u);
 });
 
@@ -84,16 +89,22 @@ test("the packaged registry contains only the owner-approved digest-matched medi
   const files = (await readdir(assetDirectory)).sort();
   assert.deepEqual(files, [
     "stage-discovery-cinematic-gallery-1920x1080.png",
-    "stage-discovery-cinematic-vault.wav",
+    "stage-discovery-cinematic-vault.mp3",
   ]);
   const expected = new Map([
     [files[0], "08b8670b046f7e9c271e641e31dbdea556ecd556024b4b13ee515d1c9ba278db"],
-    [files[1], "3187fe4ba7769021bcbf0919adf4a8ac6089e510b274783dfcc357ded02ebe98"],
+    [files[1], "041c5ac6385ff3b4bd6c54f29fedb8d20efb108c82e98f354d84071c538e57b8"],
   ]);
   for (const [file, digest] of expected) {
     const bytes = await readFile(path.join(assetDirectory, file));
     assert.equal(createHash("sha256").update(bytes).digest("hex"), digest);
   }
+  const master = await readFile(path.join(stageDirectory, "assets/source/stage-discovery-cinematic-vault.wav"));
+  validatedWav(master);
+  assert.equal(
+    createHash("sha256").update(master).digest("hex"),
+    "3187fe4ba7769021bcbf0919adf4a8ac6089e510b274783dfcc357ded02ebe98",
+  );
   const registry = JSON.parse(await readFile(path.join(stageDirectory, "presentation-assets.json"), "utf8"));
   assert.deepEqual(registry.assets.map((asset) => asset.sha256), [...expected.values()]);
   const manifest = JSON.parse(await readFile(
@@ -113,9 +124,14 @@ test("the packaged registry contains only the owner-approved digest-matched medi
 test("the Stage build fails closed on corrupt, mismatched, or oversized media", async () => {
   const assetDirectory = path.join(stageDirectory, "assets/presentation");
   const image = await readFile(path.join(assetDirectory, "stage-discovery-cinematic-gallery-1920x1080.png"));
-  const audio = await readFile(path.join(assetDirectory, "stage-discovery-cinematic-vault.wav"));
+  const audio = await readFile(path.join(assetDirectory, "stage-discovery-cinematic-vault.mp3"));
   assert.throws(() => validatedPng(Buffer.from("not a png")), /1920-by-1080 PNG/u);
   assert.throws(() => validatedWav(Buffer.from("not a wav")), /RIFF\/WAVE/u);
+  assert.throws(() => validatedMp3(Buffer.from("not an mp3")), /MPEG-1 Layer III/u);
+  validatedMp3(audio);
+  const wrongBitrate = Buffer.from(audio);
+  wrongBitrate[2] = (wrongBitrate[2] & 0x0f) | 0x80;
+  assert.throws(() => validatedMp3(wrongBitrate), /128-kbps/u);
   assert.throws(() => validateAssetBytes({
     id: "synthetic",
     kind: "image",
@@ -126,10 +142,17 @@ test("the Stage build fails closed on corrupt, mismatched, or oversized media", 
   assert.throws(() => validateAssetBytes({
     id: "synthetic",
     kind: "audio",
-    mime_type: "audio/wav",
+    mime_type: "audio/mpeg",
     sha256: createHash("sha256").update(audio).digest("hex"),
     maximum_bytes: audio.length - 1,
   }, audio), /exceeds its bound/u);
+  assert.doesNotThrow(() => validateAssetBytes({
+    id: "synthetic",
+    kind: "audio",
+    mime_type: "audio/mpeg",
+    sha256: createHash("sha256").update(audio).digest("hex"),
+    maximum_bytes: audio.length,
+  }, audio));
 });
 
 test("pending pairing accepts only context-free response state", () => {
@@ -329,7 +352,7 @@ test("Stage projection is copied into a public-only retained shape", () => {
 test("Stage retains only bounded logical presentation identifiers", () => {
   const withPresentation = structuredClone(publicEnvelope.payload.projection);
   withPresentation.active_scene.presentation = {
-    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    manifest_revision: "the-stolen-artifact-v2-presentation-r2",
     audience: "public_stage",
     scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
     atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
@@ -338,7 +361,7 @@ test("Stage retains only bounded logical presentation identifiers", () => {
   };
   const sanitized = core.sanitizeProjection(withPresentation);
   assert.deepEqual(plain(sanitized.active_scene.presentation), {
-    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    manifest_revision: "the-stolen-artifact-v2-presentation-r2",
     audience: "public_stage",
     scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
     atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
@@ -371,7 +394,7 @@ test("Stage media is muted by default and never overlaps an active cue", async (
   soundButton.addEventListener = (type, listener) => listeners.set(type, listener);
   const reports = [];
   const presentation = {
-    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    manifest_revision: "the-stolen-artifact-v2-presentation-r2",
     audience: "public_stage",
     scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
     atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
@@ -382,7 +405,7 @@ test("Stage media is muted by default and never overlaps an active cue", async (
       manifest_revision: presentation.manifest_revision,
       assets: {
         [presentation.scene_image_id]: { kind: "image", source: "data:image/png;base64,synthetic" },
-        [presentation.atmosphere_audio_id]: { kind: "audio", source: "data:audio/wav;base64,synthetic" },
+        [presentation.atmosphere_audio_id]: { kind: "audio", source: "data:audio/mpeg;base64,synthetic" },
       },
     },
     image,
@@ -415,7 +438,7 @@ test("Stage media is muted by default and never overlaps an active cue", async (
   assert.ok(reports.every((status) => status.reduced_motion === true));
 });
 
-test("webOS WAV atmosphere keeps one seamless loop and disposes it synchronously on mute", async () => {
+test("webOS MP3 atmosphere keeps one seamless loop and disposes it synchronously on mute", async () => {
   const listeners = new Map();
   const image = mediaElement();
   const audio = mediaElement();
@@ -444,7 +467,7 @@ test("webOS WAV atmosphere keeps one seamless loop and disposes it synchronously
   audio.play = () => { nativePlayCount += 1; };
   soundButton.addEventListener = (type, listener) => listeners.set(type, listener);
   const presentation = {
-    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    manifest_revision: "the-stolen-artifact-v2-presentation-r2",
     audience: "public_stage",
     scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
     atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
@@ -455,7 +478,7 @@ test("webOS WAV atmosphere keeps one seamless loop and disposes it synchronously
       manifest_revision: presentation.manifest_revision,
       assets: {
         [presentation.scene_image_id]: { kind: "image", source: "data:image/png;base64,synthetic" },
-        [presentation.atmosphere_audio_id]: { kind: "audio", source: "data:audio/wav;base64,c3ludGhldGlj" },
+        [presentation.atmosphere_audio_id]: { kind: "audio", source: "data:audio/mpeg;base64,c3ludGhldGlj" },
       },
     },
     image,
@@ -503,7 +526,7 @@ test("a late audio-play promise cannot restart status after suspension", async (
   soundButton.addEventListener = (_type, listener) => { enableSound = listener; };
   audio.play = () => new Promise((resolve) => { completePlay = resolve; });
   const presentation = {
-    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    manifest_revision: "the-stolen-artifact-v2-presentation-r2",
     audience: "public_stage",
     scene_image_id: "scene_image.discovery.cinematic_gallery.v1",
     atmosphere_audio_id: "atmosphere.discovery.cinematic_vault.v1",
@@ -514,7 +537,7 @@ test("a late audio-play promise cannot restart status after suspension", async (
       manifest_revision: presentation.manifest_revision,
       assets: {
         [presentation.scene_image_id]: { kind: "image", source: "data:image/png;base64,synthetic" },
-        [presentation.atmosphere_audio_id]: { kind: "audio", source: "data:audio/wav;base64,synthetic" },
+        [presentation.atmosphere_audio_id]: { kind: "audio", source: "data:audio/mpeg;base64,synthetic" },
       },
     },
     image,

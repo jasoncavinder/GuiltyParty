@@ -9,8 +9,8 @@ const IDENTIFIER_PATTERN = /^[a-z][a-z0-9_.-]{0,127}$/u;
 const DIGEST_PATTERN = /^[a-f0-9]{64}$/u;
 const APPROVED_STAGE_BUILD = Object.freeze({
   application_id: "stage_webos",
-  application_version: "0.2.0",
-  build_number: 3,
+  application_version: "0.2.1",
+  build_number: 4,
 });
 const APPROVED_HOST_BUILD = Object.freeze({
   application_id: "host_web",

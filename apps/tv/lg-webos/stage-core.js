@@ -8,8 +8,8 @@
   var STAGE_PRESENTATION_FEATURE = "stage_presentation_media_v1";
   var STAGE_BUILD = {
     application_id: "stage_webos",
-    application_version: "0.2.0",
-    build_number: 3
+    application_version: "0.2.1",
+    build_number: 4
   };
   var RECONNECT_SECONDS = [1, 2, 4, 8, 15, 30];
   var HEARTBEAT_INTERVAL_MS = 15000;

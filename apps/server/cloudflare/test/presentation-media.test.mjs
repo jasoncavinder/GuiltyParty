@@ -29,8 +29,8 @@ function stageRegistration(overrides = {}) {
     features: [STAGE_PRESENTATION_FEATURE],
     clientBuild: {
       application_id: "stage_webos",
-      application_version: "0.2.0",
-      build_number: 3,
+      application_version: "0.2.1",
+      build_number: 4,
     },
     revoked: false,
     ...overrides,
@@ -76,13 +76,13 @@ test("only the exact negotiated Stage build receives the approved logical cue", 
     stageRegistration({ capabilities: ["public_audio_output"] }),
     stageRegistration({ features: [] }),
     stageRegistration({ clientBuild: { ...registration.clientBuild, build_number: 2 } }),
-    stageRegistration({ clientBuild: { ...registration.clientBuild, application_version: "0.2.1" } }),
+    stageRegistration({ clientBuild: { ...registration.clientBuild, application_version: "0.2.0" } }),
     stageRegistration({ revoked: true }),
   ]) {
     assert.equal(decorateStageProjection(projection, ineligible, policy), projection);
   }
   assert.equal(
-    decorateStageProjection(projection, registration, JSON.stringify({ stage_webos: { minimum_build_number: 4 } })),
+    decorateStageProjection(projection, registration, JSON.stringify({ stage_webos: { minimum_build_number: 5 } })),
     projection,
   );
 });

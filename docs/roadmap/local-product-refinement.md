@@ -221,13 +221,14 @@ time without losing later questions:
    before decoding. Finally, the 128-kbps, 44.1-kHz stereo MP3 was embedded and
    decoded through the existing Web Audio architecture. On the physical TV it
    started almost immediately, looped seamlessly, and stopped/reset reliably
-   while reducing encoded audio size by roughly 90 percent. The spike used
-   FFmpeg 8.1.2 and LAME 4.0 only as disposable local tooling; no candidate,
-   runtime dependency, or third-party encoder has yet been added to the
-   repository or product. Preserve the verified WAV implementation until a
-   separate reviewed adoption change updates validation, MIME handling,
-   provenance, package bounds, and physical regression evidence. Do not relax
-   the sandbox or use relative, network, or `blob:` media sources.
+   while reducing encoded audio size by roughly 90 percent. The owner approved
+   adoption on 2026-08-11 HST. Stage build 0.2.1 (4) packages the exact MP3
+   digest through the existing Web Audio path and retains the WAV as its
+   non-packaged source master. LAME 4.0 is documented as a local encoder only;
+   no encoder or new runtime dependency enters the product. Integrated
+   package, mute/re-enable, lifecycle, and session-end physical regression
+   evidence remains required for the adopted build. Do not relax the sandbox
+   or use relative, network, or `blob:` media sources.
 
 New questions receive stable IDs and are appended rather than replacing or
 silently reordering this queue.

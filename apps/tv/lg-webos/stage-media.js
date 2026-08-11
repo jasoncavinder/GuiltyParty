@@ -98,7 +98,7 @@
     if (!image || image.kind !== "image" || !/^data:image\/png;base64,/.test(image.source)) return null;
     if (presentation.atmosphere_audio_id) {
       audio = this.registry.assets[presentation.atmosphere_audio_id];
-      if (!audio || audio.kind !== "audio" || !/^data:audio\/wav;base64,/.test(audio.source)) return null;
+      if (!audio || audio.kind !== "audio" || !/^data:audio\/mpeg;base64,/.test(audio.source)) return null;
     }
     return { image: image, audio: audio };
   };
@@ -156,7 +156,7 @@
   StageMediaController.prototype.usesWebAudio = function () {
     return Boolean(
       this.resolvedAudio &&
-      /^data:audio\/wav;base64,/.test(this.resolvedAudio.source) &&
+      /^data:audio\/mpeg;base64,/.test(this.resolvedAudio.source) &&
       this.createAudioContext &&
       this.decodeBase64
     );

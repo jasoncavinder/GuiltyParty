@@ -46,21 +46,22 @@ older-runtime-compatible inline package tree at
 `.tmp/lg-webos-stage-app`, validates that generated app, and writes:
 
 ```text
-.tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
+.tmp/webos-packages/com.guiltyparty.stage_0.2.1_all.ipk
 ```
 
 Inspect the artifact without installing it:
 
 ```sh
-ares-package -I .tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
-shasum -a 256 .tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
+ares-package -I .tmp/webos-packages/com.guiltyparty.stage_0.2.1_all.ipk
+shasum -a 256 .tmp/webos-packages/com.guiltyparty.stage_0.2.1_all.ipk
 ```
 
 The expected package ID is `com.guiltyparty.stage`; the application and client
-version are `0.2.0`, and the client build number is `3`. The build accepts only
+version are `0.2.1`, and the client build number is `4`. The build accepts only
 the two registry entries and digests recorded in
 [the provenance record](../legal/bundled-stage-media-provenance.md), validates
-their PNG/WAV structure, and embeds them into the opaque-origin document.
+their PNG/MP3 structure, and embeds them into the opaque-origin document. The
+lossless WAV source master remains in the repository but is not packaged.
 
 ## Simulator launch
 
@@ -99,7 +100,7 @@ the developer-key interaction:
 
 ```sh
 ares-install -d '<configured-target>' \
-  .tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
+  .tmp/webos-packages/com.guiltyparty.stage_0.2.1_all.ipk
 ares-launch -d '<configured-target>' com.guiltyparty.stage
 ```
 
@@ -110,7 +111,7 @@ remove this exact application ID and retry the install:
 ```sh
 ares-install -r com.guiltyparty.stage -d '<configured-target>'
 ares-install -d '<configured-target>' \
-  .tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
+  .tmp/webos-packages/com.guiltyparty.stage_0.2.1_all.ipk
 ```
 
 Removal terminates the Stage and intentionally loses all in-memory authority.
@@ -139,7 +140,7 @@ private content, or device credential.
    artwork appears without a watch-like object and that all essential scene
    information remains present as text.
 9. Confirm atmosphere starts muted, the television user can enable and mute it
-   with the focusable control, the eight-second WAV loops without overlapping,
+   with the focusable control, the eight-second MP3 loops without overlapping,
    and the Host receives only coarse availability/mute/playback/motion status.
 10. Confirm image or audio failure leaves a complete text presentation, and
     reduced-motion mode removes nonessential transitions without hiding state.
@@ -183,11 +184,36 @@ Record only:
 - selected WebSocket subprotocol and close-code visibility;
 - suspend/resume, network-loss, reconnect, revocation, session-end, and restart
   outcomes;
-- image and WAV decode, mute, looping, focus, reduced-motion, fallback, and
+- image and MP3 decode, mute, looping, focus, reduced-motion, fallback, and
   coarse Host-status outcomes for the exact package build; and
 - known limitations and owner interaction still required.
 
 Never record raw request/response headers when credentials may be present.
+
+## Build 0.2.1 (4) MP3 adoption status
+
+Build 0.2.1 (4) changes only the bounded atmosphere encoding and exact
+presentation/build identity. It retains the deterministic PCM WAV as a
+non-packaged source master, packages the approved 128-kbps, 44.1-kHz stereo
+MPEG-1 Layer III derivative under presentation manifest revision 2, and
+continues decoding through one Web Audio context and one looping buffer source.
+The opaque-origin sandbox, closed logical registry, muted startup, server-side
+audience boundary, status reduction, and synchronous cleanup behavior remain
+unchanged.
+
+The generated package is approximately 2.75 megabytes. LG package validation
+passes, the generated document contains exactly one `data:audio/mpeg` payload
+and no `data:audio/wav` payload, and the uncompressed package tree remains below
+its tightened six-megabyte bound. Record the exact hash only for the artifact
+actually installed during the integrated physical regression.
+
+The disposable physical format spike proved near-immediate MP3 Web Audio
+startup, seamless repeated looping, and reliable stop/reset on the LG
+65NANO85UNA running webOS 5.6.2-21. The integrated build still requires an
+exact-package physical regression covering pairing, artwork, initial mute,
+enable, more than 45 seconds of one-source looping, mute, re-enable, session
+end, and relaunch. Simulator, forced network-loss, reduced-motion, and full
+focus evidence also remain open unless recorded separately.
 
 ## Build 0.2.0 (3) evidence status
 

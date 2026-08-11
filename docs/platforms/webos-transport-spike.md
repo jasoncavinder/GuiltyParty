@@ -20,7 +20,7 @@ projection, hardware identifier, or unpublished scenario content was recorded.
 ## Baseline
 
 This section records the original transport-evidence build and is intentionally
-historical. The current presentation-media candidate is `0.2.0` / build `3`;
+historical. The current presentation-media candidate is `0.2.1` / build `4`;
 it preserves this transport boundary but requires the separate simulator and
 physical gates in the [current build runbook](webos-stage-build-and-test.md).
 
