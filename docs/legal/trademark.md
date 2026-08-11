@@ -33,8 +33,8 @@ of its strong double meaning:
 
 Preliminary research identified meaningful complications:
 
-- Disney released an exact-name `Guilty Party` multiplayer mystery/party video
-  game.
+- Disney Interactive Studios released the multiplayer mystery/party video game
+  `Disney Guilty Party`, whose title incorporates the exact phrase `Guilty Party`.
 - An active business called `Guilty Party Mysteries` provides hosted immersive
   murder-mystery events, closely adjacent to the product's initial market.
 
