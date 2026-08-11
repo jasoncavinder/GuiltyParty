@@ -208,7 +208,7 @@ has perceptible latency consistent with the documented webOS Web Audio
 tradeoff.
 
 An earlier candidate incorrectly called the media resume path for every
-duplicate projection returned by the 20-second Stage heartbeat. That created
+duplicate projection returned by the 15-second Stage heartbeat. That created
 overlapping Web Audio contexts and left only the newest source reachable by
 mute or session-end cleanup. The remediated candidate resumes only after an
 actual lifecycle or connection suspension and independently refuses to create
