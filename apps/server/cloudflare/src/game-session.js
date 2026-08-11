@@ -252,6 +252,10 @@ export class GameSession extends DurableObject {
     if (!result.ok) {
       return internalProblem(result.status, result.code, result.title);
     }
+    // Approved Stage admission changes the operational endpoint roster but
+    // not canonical scenario truth. Re-send the complete current projection
+    // so already-connected Host clients refresh that roster automatically.
+    this.ctx.waitUntil(this.broadcastProjections());
     return internalJson({
       audience: "stage",
       endpoint_id: result.endpointId,

@@ -90,3 +90,22 @@ test("participant admission schedules a fresh projection for connected endpoints
   assert.notEqual(response, -1);
   assert.ok(joinStart < notify && notify < response);
 });
+
+test("approved Stage admission schedules a fresh projection for the Host roster", async () => {
+  const source = await readFile(
+    new URL("../src/game-session.js", import.meta.url),
+    "utf8",
+  );
+  const admissionStart = source.indexOf("async pairApprovedStage(request)");
+  const notify = source.indexOf(
+    "this.ctx.waitUntil(this.broadcastProjections());",
+    admissionStart,
+  );
+  const response = source.indexOf("return internalJson({", notify);
+  const nextMethod = source.indexOf("async authorizeStagePairing(request)", admissionStart);
+
+  assert.notEqual(admissionStart, -1);
+  assert.notEqual(notify, -1);
+  assert.notEqual(response, -1);
+  assert.ok(admissionStart < notify && notify < response && response < nextMethod);
+});
