@@ -1,7 +1,6 @@
 use gp_scenario::schema::Scenario;
 
 const MVP_SCENARIO_JSON: &str = include_str!("../../../scenarios/the-stolen-artifact-v2.json");
-const ORIGINAL_SCENARIO_JSON: &str = include_str!("../../../scenarios/the-stolen-artifact-v1.json");
 
 pub fn load() -> Result<Scenario, serde_json::Error> {
     serde_json::from_str(MVP_SCENARIO_JSON)
@@ -10,6 +9,9 @@ pub fn load() -> Result<Scenario, serde_json::Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    const ORIGINAL_SCENARIO_JSON: &str =
+        include_str!("../../../scenarios/the-stolen-artifact-v1.json");
 
     #[test]
     fn current_immutable_fixture_parses_and_validates() {
