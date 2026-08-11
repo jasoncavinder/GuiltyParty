@@ -21,11 +21,17 @@ This document is a living reference and should evolve as the Guilty Party brand 
 
 ## Name
 
-Official product name:
+Current official working product name:
 
 ```
 Guilty Party
 ```
+
+`Guilty Party` remains the preferred working name and the current
+product-facing name. It has not been legally cleared. Do not describe it as
+available, registered, registrable, protectable, or safe to use, and do not add
+trademark or registration symbols. See [trademark.md](trademark.md) for the
+planning status and required professional review.
 
 Capitalization:
 
@@ -276,6 +282,10 @@ an internal architectural term for its private-player role, not a public
 product name. See
 [Mobile Companion Product Decisions](../product/mobile-companion.md#mc-prod-017-public-mobile-app-name).
 
+Contingency names recorded in the trademark-planning notes are unadopted
+alternatives. They are not current product names or co-brands and should not
+appear on current product surfaces.
+
 Avoid unrelated product names that weaken brand cohesion.
 
 ---
@@ -324,7 +334,8 @@ Guilty Party should promote creators rather than replace them.
 
 # Trademark Considerations
 
-The following may become protected marks:
+The following are possible subjects of future trademark review, not claims of
+protection:
 
 - Guilty Party
 - Guilty Party logo
@@ -332,7 +343,10 @@ The following may become protected marks:
 - Major service names
 - Visual branding elements
 
-Before commercial launch, trademark availability should be evaluated.
+Professional trademark and common-law clearance is required before a major
+commercial launch or substantial branding investment. No availability,
+clearance, or registration claim should be made without documented legal
+approval.
 
 See [trademark.md](trademark.md) for the current planning status and unresolved
 clearance work.
