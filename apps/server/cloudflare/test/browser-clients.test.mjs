@@ -13,6 +13,7 @@ import {
   HOST_BUILD,
   decodeInvitationTransfer,
   normalizeApiOrigin,
+  sanitizePresentationStatus,
 } from "../../../web/shared/control-client.js";
 import { privateViewShouldBeHidden } from "../../../web/companion/private-view.js";
 import { encodeInvitationTransfer } from "../src/invitation-transfer.js";
@@ -22,7 +23,7 @@ const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
 
 test("browser client configuration is pinned to approved MVP origins and builds", () => {
   assert.equal(DEFAULT_API_ORIGIN, "https://api.test.guiltyparty.app");
-  assert.deepEqual(HOST_BUILD, { application_id: "host_web", application_version: "0.1.0", build_number: 1 });
+  assert.deepEqual(HOST_BUILD, { application_id: "host_web", application_version: "0.2.0", build_number: 2 });
   assert.deepEqual(COMPANION_BUILD, { application_id: "companion_web", application_version: "0.1.0", build_number: 1 });
   assert.equal(normalizeApiOrigin("https://api.test.guiltyparty.app"), DEFAULT_API_ORIGIN);
   assert.equal(normalizeApiOrigin("http://127.0.0.1:8787"), "http://127.0.0.1:8787");
@@ -45,6 +46,96 @@ test("browser invitation decoder interoperates with the server encoder", () => {
     gameplay_language: "fr-CA",
   });
   assert.throws(() => decodeInvitationTransfer("https://example.test/join"), TypeError);
+});
+
+test("Host accepts only bounded coarse Stage presentation status", () => {
+  const value = {
+    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    asset_available: true,
+    sound_enabled: false,
+    atmosphere_state: "stopped",
+    reduced_motion: true,
+    raw_media_url: "ignored",
+  };
+  assert.deepEqual(sanitizePresentationStatus(value), {
+    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    asset_available: true,
+    sound_enabled: false,
+    atmosphere_state: "stopped",
+    reduced_motion: true,
+  });
+  assert.equal(sanitizePresentationStatus({ ...value, atmosphere_state: "unknown" }), null);
+  assert.deepEqual(sanitizePresentationStatus({
+    ...value,
+    asset_available: false,
+    reduced_motion: false,
+    atmosphere_state: "unknown",
+  }).atmosphere_state, "unknown");
+  assert.equal(sanitizePresentationStatus({ ...value, manifest_revision: "https://example.test" }), null);
+});
+
+test("browser Companion rejects Host-only Stage presentation status", () => {
+  const status = {
+    manifest_revision: "the-stolen-artifact-v2-presentation-r1",
+    asset_available: true,
+    sound_enabled: false,
+    atmosphere_state: "stopped",
+    reduced_motion: true,
+  };
+  const statuses = [];
+  const participantProblems = [];
+  const participant = new ControlConnection({
+    apiOrigin: DEFAULT_API_ORIGIN,
+    context: {
+      session_id: "ses_synthetic",
+      endpoint_id: "end_synthetic_participant",
+      audience: "participant",
+    },
+    onProjection() {},
+    onStatus() {},
+    onProblem(error) { participantProblems.push(error.message); },
+    onPresentationStatus(value) { statuses.push(value); },
+  });
+
+  participant.receive(JSON.stringify({
+    protocol_version: "1.0",
+    type: "presentation_status",
+    message_id: "msg_synthetic_participant_status",
+    session_id: "ses_synthetic",
+    endpoint_id: "end_synthetic_participant",
+    payload: status,
+  }));
+
+  assert.deepEqual(statuses, []);
+  assert.deepEqual(participantProblems, [
+    "The server sent a Host-only message to this player connection.",
+  ]);
+
+  const hostProblems = [];
+  const host = new ControlConnection({
+    apiOrigin: DEFAULT_API_ORIGIN,
+    context: {
+      session_id: "ses_synthetic",
+      endpoint_id: "end_synthetic_host",
+      audience: "host",
+    },
+    onProjection() {},
+    onStatus() {},
+    onProblem(error) { hostProblems.push(error.message); },
+    onPresentationStatus(value) { statuses.push(value); },
+  });
+
+  host.receive(JSON.stringify({
+    protocol_version: "1.0",
+    type: "presentation_status",
+    message_id: "msg_synthetic_host_status",
+    session_id: "ses_synthetic",
+    endpoint_id: "end_synthetic_host",
+    payload: status,
+  }));
+
+  assert.deepEqual(hostProblems, []);
+  assert.deepEqual(statuses, [status]);
 });
 
 test("browser connection ignores stale socket events after a lifecycle restart", () => {

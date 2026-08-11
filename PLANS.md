@@ -27,6 +27,9 @@ Product direction belongs in:
 Approved direction; the interface inventory is complete, the Refined Case File
 visual language was accepted under LPR-DESIGN-001, and the bounded Stage-only
 public presentation-media slice was accepted under LPR-MEDIA-001 on 2026-08-10.
+The exact cleaned Cinematic Gallery image and Cinematic Vault atmosphere were
+subsequently approved for implementation under ADR 0040. Automated and package
+validation proceeds before the required physical LG television rehearsal.
 The owner selected **Guilty Party** as the sole public mobile app name and
 directed the project on 2026-08-09 to improve the owner-tested product
 experience before TestFlight or Google Play testing. Layout, navigation, and
@@ -200,8 +203,9 @@ The first remote service uses the smallest accepted Cloudflare shape:
 - the existing Rust `gp_scenario` engine through a versioned WebAssembly
   boundary with native/WebAssembly parity evidence
 - the canonical control-plane v1 contracts under `contracts/`
-- one embedded original scenario fixture; D1, R2, Queues, Containers, and
-  Cloudflare Realtime are not required for this test
+- one embedded original scenario family with immutable content versions 1 and
+  2, pinned per session; D1, R2, Queues, Containers, and Cloudflare Realtime
+  are not required for this test
 
 The Worker service does not host or own app UI implementation. It supplies the
 Host, Stage, and Companion agent with a versioned contract, test fixtures, safe

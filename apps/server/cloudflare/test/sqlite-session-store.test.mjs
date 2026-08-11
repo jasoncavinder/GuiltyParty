@@ -48,7 +48,14 @@ function configuredStore() {
     hostRoomId: "room_host_0123456789abcdef",
     hostOrigin: "https://host.example.test",
     gameplayLanguage: "en",
-    endpoint: { platform: "browser", capabilities: ["host_control"] },
+    scenarioId: "the-stolen-artifact",
+    scenarioVersion: 2,
+    endpoint: {
+      platform: "browser",
+      capabilities: ["host_control"],
+      features: ["host_presentation_status_v1"],
+      client_build: { application_id: "host_web", application_version: "0.2.0", build_number: 2 },
+    },
     invitationDigest: "f".repeat(64),
     invitationExpiresAtUnixMs: 50_000,
     sessionExpiresAtUnixMs: expires,
@@ -207,4 +214,88 @@ test("invalid resume context does not consume a valid credential", () => {
   const { store } = configuredStore();
   assert.equal(resume(store, { participantId: "par_wrong_0123456789abcdef" }).code, "invalid_resume_context");
   assert.equal(resume(store, { nowUnixMs: 2_001 }).ok, true);
+});
+
+test("endpoint registration preserves bounded feature and build negotiation inputs", () => {
+  const { store } = configuredStore();
+  assert.deepEqual(store.scenarioReference(), {
+    scenarioId: "the-stolen-artifact",
+    scenarioVersion: 2,
+  });
+  assert.deepEqual(store.endpointRegistration("end_host_0123456789abcdef"), {
+    audience: "host",
+    platform: "browser",
+    capabilities: ["host_control"],
+    features: ["host_presentation_status_v1"],
+    clientBuild: { application_id: "host_web", application_version: "0.2.0", build_number: 2 },
+    revoked: false,
+  });
+  assert.deepEqual(store.endpointRegistration("end_player_0123456789abcdef"), {
+    audience: "participant",
+    platform: "ios_companion",
+    capabilities: ["private_display"],
+    features: [],
+    clientBuild: null,
+    revoked: false,
+  });
+});
+
+test("schema initialization migrates legacy endpoint rows to fail-safe metadata", () => {
+  const storage = new TestSqlStorage();
+  storage.database.exec(`
+    CREATE TABLE endpoint_authorities (
+      endpoint_id TEXT PRIMARY KEY,
+      audience TEXT NOT NULL,
+      participant_id TEXT,
+      room_id TEXT NOT NULL,
+      authority_generation INTEGER NOT NULL,
+      origin TEXT,
+      platform TEXT NOT NULL,
+      capabilities_json TEXT NOT NULL,
+      expires_at_unix_ms INTEGER NOT NULL,
+      revoked_at_unix_ms INTEGER
+    );
+    INSERT INTO endpoint_authorities VALUES (
+      'end_legacy', 'stage', NULL, 'room_legacy', 1, NULL, 'webos',
+      '["public_display"]', 100000, NULL
+    );
+  `);
+  const store = new SqliteSessionStore(storage);
+  store.initializeSchema();
+  assert.deepEqual(store.endpointRegistration("end_legacy"), {
+    audience: "stage",
+    platform: "webos",
+    capabilities: ["public_display"],
+    features: [],
+    clientBuild: null,
+    revoked: false,
+  });
+});
+
+test("schema initialization pins legacy sessions to immutable scenario version one", () => {
+  const storage = new TestSqlStorage();
+  storage.database.exec(`
+    CREATE TABLE session_metadata (
+      singleton INTEGER PRIMARY KEY CHECK (singleton = 1),
+      session_id TEXT NOT NULL UNIQUE,
+      host_room_id TEXT NOT NULL,
+      invitation_digest TEXT NOT NULL,
+      invitation_expires_at_unix_ms INTEGER NOT NULL,
+      invitation_open INTEGER NOT NULL CHECK (invitation_open IN (0, 1)),
+      session_expires_at_unix_ms INTEGER NOT NULL,
+      delete_at_unix_ms INTEGER NOT NULL,
+      created_at_unix_ms INTEGER NOT NULL,
+      ended_at_unix_ms INTEGER
+    );
+    INSERT INTO session_metadata VALUES (
+      1, 'ses_legacy', 'room_legacy', '${"f".repeat(64)}', 50000, 1,
+      100000, 200000, 1000, NULL
+    );
+  `);
+  const store = new SqliteSessionStore(storage);
+  store.initializeSchema();
+  assert.deepEqual(store.scenarioReference(), {
+    scenarioId: "the-stolen-artifact",
+    scenarioVersion: 1,
+  });
 });

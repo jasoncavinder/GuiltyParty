@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.test.guiltyparty.app wss://api.test.guiltyparty.app; img-src 'self'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.test.guiltyparty.app wss://api.test.guiltyparty.app; img-src 'none'; media-src 'none'; script-src 'self'; style-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex, nofollow">
   <title>Guilty Party Stage</title>
@@ -11,12 +11,21 @@
 </head>
 <body>
   <main id="app" class="app-shell">
+    <div class="scene-media" aria-hidden="true">
+      <img id="scene-image" alt="" hidden>
+      <div class="scene-media-scrim"></div>
+    </div>
+    <audio id="scene-atmosphere" hidden></audio>
     <header class="topbar">
       <div>
         <p class="brand">Guilty Party</p>
         <p class="surface-label">Public Stage</p>
       </div>
-      <p id="connection-state" class="connection-state" role="status">Starting</p>
+      <div class="stage-status-controls">
+        <p id="media-status" class="media-status" role="status">Text presentation</p>
+        <button id="sound-toggle" class="secondary-button sound-toggle focusable" type="button" aria-pressed="false" hidden>Enable atmosphere</button>
+        <p id="connection-state" class="connection-state" role="status">Starting</p>
+      </div>
     </header>
 
     <section id="setup-view" class="setup-view" aria-labelledby="setup-title">
@@ -83,7 +92,9 @@
       </div>
     </div>
   </main>
+  <!-- GP_STAGE_MEDIA_REGISTRY -->
   <script src="stage-core.js"></script>
+  <script src="stage-media.js"></script>
   <script src="stage.js"></script>
 </body>
 </html>

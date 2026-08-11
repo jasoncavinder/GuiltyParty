@@ -165,11 +165,7 @@ mod tests {
     use super::*;
     use gp_scenario::{journal::JournalEvent, projection::build_projection};
 
-    fn fixture() -> (Scenario, Vec<JournalEntry>) {
-        let scenario: Scenario = serde_json::from_str(include_str!(
-            "../../../scenarios/the-stolen-artifact-v1.json"
-        ))
-        .unwrap();
+    fn fixture_for(scenario: Scenario) -> (Scenario, Vec<JournalEntry>) {
         let events = vec![
             JournalEvent::ParticipantJoined {
                 participant_id: "participant-1".into(),
@@ -189,6 +185,15 @@ mod tests {
             .map(|(index, event)| JournalEntry::new(&scenario, index as u64 + 1, 0, event))
             .collect();
         (scenario, journal)
+    }
+
+    fn fixture() -> (Scenario, Vec<JournalEntry>) {
+        fixture_for(
+            serde_json::from_str(include_str!(
+                "../../../scenarios/the-stolen-artifact-v2.json"
+            ))
+            .unwrap(),
+        )
     }
 
     #[test]
@@ -232,5 +237,25 @@ mod tests {
             serde_json::from_slice(&process_request(&serde_json::to_vec(&request).unwrap()))
                 .unwrap();
         assert_eq!(response["code"], "replay_failed");
+    }
+
+    #[test]
+    fn published_version_one_remains_replayable_after_version_two_is_added() {
+        let scenario: Scenario = serde_json::from_str(include_str!(
+            "../../../scenarios/the-stolen-artifact-v1.json"
+        ))
+        .unwrap();
+        let (scenario, journal) = fixture_for(scenario);
+        let request = json!({
+            "abi_version": ENGINE_ABI_VERSION,
+            "scenario": scenario,
+            "journal": journal,
+            "audience": { "kind": "stage" }
+        });
+        let response: serde_json::Value =
+            serde_json::from_slice(&process_request(&serde_json::to_vec(&request).unwrap()))
+                .unwrap();
+        assert_eq!(response["ok"], true);
+        assert_eq!(response["projection"]["scenario_version"], 1);
     }
 }

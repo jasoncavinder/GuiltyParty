@@ -4,8 +4,8 @@
 
 Partially verified on 2026-08-07 HST. The product package installs, launches,
 creates a 120-second transaction, displays its non-secret pairing code, and
-polls context-free pending state on the physical webOS TV 5.6 target. Full
-The protected deployed-service rehearsal verifies Host-approved bearer,
+polls context-free pending state on the physical webOS TV 5.6 target. The
+protected deployed-service rehearsal verifies Host-approved bearer,
 single-use ticket, and WebSocket upgrade boundaries; physical-TV projection and
 lifecycle verification remains pending interactive Host approval. webOS TV 6.0
 simulator transport also reaches pending. webOS TV 22–24 and 26 simulators fail
@@ -18,6 +18,11 @@ No credential, polling secret, bearer, WebSocket ticket, pairing proof, private
 projection, hardware identifier, or unpublished scenario content was recorded.
 
 ## Baseline
+
+This section records the original transport-evidence build and is intentionally
+historical. The current presentation-media candidate is `0.2.0` / build `3`;
+it preserves this transport boundary but requires the separate simulator and
+physical gates in the [current build runbook](webos-stage-build-and-test.md).
 
 - Source branch: `feature/webos-stage-mvp`
 - Stage application: `com.guiltyparty.stage`, version `0.1.1`

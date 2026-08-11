@@ -112,7 +112,7 @@ For the accepted opaque-origin webOS boundary, approved asset bytes are
 digest-verified and embedded by the package build rather than loaded through a
 server-derived, relative-file, or network media URL.
 
-[Proposed ADR 0040](../adr/0040-bundled-stage-presentation-media.md) defines the
+[ADR 0040](../adr/0040-bundled-stage-presentation-media.md) defines the accepted
 bounded first public Stage proof. Private playback, remote delivery, live
 communications, recording, and processing remain under their separate audience,
 consent, routing, retention, and provider decisions.

@@ -145,10 +145,11 @@ async function createHost() {
       endpoint: {
         platform: "browser",
         capabilities: ["host_control", "private_display"],
+        features: ["host_presentation_status_v1"],
         client_build: {
           application_id: "host_web",
-          application_version: "0.1.0",
-          build_number: 1,
+          application_version: "0.2.0",
+          build_number: 2,
         },
       },
     }),
@@ -201,11 +202,12 @@ async function pairStage(host) {
       protocol_version: "1.0",
       endpoint: {
         platform: "webos",
-        capabilities: ["public_display"],
+        capabilities: ["public_display", "public_audio_output"],
+        features: ["stage_presentation_media_v1"],
         client_build: {
           application_id: "stage_webos",
-          application_version: "0.1.0",
-          build_number: 1,
+          application_version: "0.2.0",
+          build_number: 3,
         },
       },
     }),

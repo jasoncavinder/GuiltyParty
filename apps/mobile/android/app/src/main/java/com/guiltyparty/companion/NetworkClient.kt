@@ -105,6 +105,7 @@ class NetworkClient {
                         GPV1FeatureIdentifier("touch_input"),
                     ),
                     clientBuild = clientBuild(),
+                    features = null,
                     platform = GPV1FeatureIdentifier("android_companion"),
                 ),
                 kind = "participant",

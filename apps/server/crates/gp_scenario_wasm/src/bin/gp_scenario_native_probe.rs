@@ -4,7 +4,7 @@ use serde_json::json;
 
 fn main() {
     let scenario: Scenario = serde_json::from_str(include_str!(
-        "../../../../scenarios/the-stolen-artifact-v1.json"
+        "../../../../scenarios/the-stolen-artifact-v2.json"
     ))
     .expect("the committed synthetic scenario must parse");
     let events = vec![

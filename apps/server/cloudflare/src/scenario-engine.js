@@ -1,9 +1,16 @@
 import engineModule from "../../target/wasm32-unknown-unknown/release/gp_scenario_wasm.wasm";
-import scenario from "../../scenarios/the-stolen-artifact-v1.json";
+import scenarioV1 from "../../scenarios/the-stolen-artifact-v1.json" with { type: "json" };
+import scenarioV2 from "../../scenarios/the-stolen-artifact-v2.json" with { type: "json" };
+
+import { CURRENT_SCENARIO_REFERENCE } from "./scenario-reference.js";
 
 const ENGINE_ABI_VERSION = 1;
 const MAXIMUM_ENGINE_RESPONSE_BYTES = 1024 * 1024;
 const instance = await WebAssembly.instantiate(engineModule, {});
+const scenarios = new Map([scenarioV1, scenarioV2].map((scenario) => [scenarioKey({
+  scenarioId: scenario.id,
+  scenarioVersion: scenario.version,
+}), scenario]));
 
 export class ScenarioEngine {
   constructor(exports = instance.exports) {
@@ -14,10 +21,18 @@ export class ScenarioEngine {
   }
 
   get scenarioReference() {
-    return { scenarioId: scenario.id, scenarioVersion: scenario.version };
+    return { ...CURRENT_SCENARIO_REFERENCE };
   }
 
-  project(journal, audience) {
+  supports(reference) {
+    return scenarios.has(scenarioKey(reference));
+  }
+
+  project(journal, audience, reference = this.scenarioReference) {
+    const scenario = scenarios.get(scenarioKey(reference));
+    if (!scenario) {
+      return { ok: false, code: "scenario_unavailable", title: "Scenario unavailable" };
+    }
     return this.process({
       abi_version: ENGINE_ABI_VERSION,
       scenario,
@@ -62,6 +77,10 @@ export class ScenarioEngine {
 }
 
 export const scenarioEngine = new ScenarioEngine();
+
+function scenarioKey(reference) {
+  return `${reference?.scenarioId ?? ""}\u0000${reference?.scenarioVersion ?? ""}`;
+}
 
 function engineAudience(authority) {
   if (authority.audience === "participant") {

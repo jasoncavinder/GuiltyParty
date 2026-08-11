@@ -14,12 +14,20 @@ import {
 } from "./constants.js";
 import { validClientBuild } from "./client-build.js";
 import { offeredSubprotocols } from "./friends-auth.js";
+import {
+  decorateStageProjection,
+  eligibleHostStatusRegistration,
+  eligibleStageRegistration,
+  PRESENTATION_MANIFEST_REVISION,
+  sanitizePresentationStatus,
+} from "./presentation-media.js";
 import { scenarioEngine } from "./scenario-engine.js";
 import { SessionCore, SessionFault } from "./session-core.js";
 import { SqliteSessionStore } from "./sqlite-session-store.js";
 import { fanOutWebSockets } from "./websocket-fanout.js";
 
 const INTERNAL_PREFIX = "/internal/session/";
+const FEATURE_IDENTIFIER_PATTERN = /^[a-z][a-z0-9_.-]{0,127}$/u;
 
 export class GameSession extends DurableObject {
   constructor(ctx, env) {
@@ -27,6 +35,8 @@ export class GameSession extends DurableObject {
     this.store = new SqliteSessionStore(this.ctx.storage);
     this.operationTail = Promise.resolve();
     this.messageRates = new Map();
+    this.clientBuildPolicy = env.CLIENT_BUILD_POLICY_JSON;
+    this.presentationStatus = null;
     this.ready = this.ctx.blockConcurrencyWhile(async () => {
       this.store.initializeSchema();
     });
@@ -86,6 +96,8 @@ export class GameSession extends DurableObject {
       hostRoomId: value.host_room_id,
       hostOrigin: value.host_origin,
       gameplayLanguage: value.gameplay_language,
+      scenarioId: value.scenario_id,
+      scenarioVersion: value.scenario_version,
       endpoint: value.endpoint,
       invitationDigest: value.invitation_digest,
       invitationExpiresAtUnixMs: value.invitation_expires_at_unix_ms,
@@ -114,8 +126,10 @@ export class GameSession extends DurableObject {
       const participantId = participant ? randomIdentifier("par") : null;
       const roomId = randomIdentifier("room");
       const journal = await this.store.loadJournal();
+      const scenarioReference = this.store.scenarioReference();
       const canonicalEntries = participant
         ? admissionEntries({
+            scenarioReference,
             journal,
             participantId,
             endpointId,
@@ -125,10 +139,11 @@ export class GameSession extends DurableObject {
           })
         : [];
       if (canonicalEntries.length > 0) {
-        const replay = scenarioEngine.project([...journal, ...canonicalEntries], {
-          audience: "host",
-          participantId: null,
-        });
+        const replay = scenarioEngine.project(
+          [...journal, ...canonicalEntries],
+          { audience: "host", participantId: null },
+          scenarioReference,
+        );
         if (!replay.ok) {
           return {
             ok: false,
@@ -393,6 +408,10 @@ export class GameSession extends DurableObject {
         for (const socket of this.ctx.getWebSockets(`endpoint:${value.endpoint_id}`)) {
           socket.close(1008, "Endpoint revoked");
         }
+        if (this.presentationStatus?.endpointId === value.endpoint_id) {
+          this.presentationStatus = null;
+          await this.broadcastPresentationStatus(unknownPresentationStatus());
+        }
       }
     } else if (value.action === "end_session") {
       result = this.store.endSession(authority, now);
@@ -463,6 +482,10 @@ export class GameSession extends DurableObject {
       await this.sendProjection(socket, attachment, envelope.message_id);
       return;
     }
+    if (envelope.type === "report_presentation_status") {
+      await this.reportPresentationStatus(socket, attachment, envelope);
+      return;
+    }
     if (envelope.type === "submit_command") {
       await this.submitCommand(socket, attachment, envelope);
       return;
@@ -482,7 +505,7 @@ export class GameSession extends DurableObject {
 
   async sendProjection(socket, attachment, correlationId) {
     const journal = await this.store.loadJournal();
-    const result = scenarioEngine.project(journal, attachment);
+    const result = scenarioEngine.project(journal, attachment, this.store.scenarioReference());
     if (!result.ok) {
       sendError(socket, attachment, correlationId, result.code, result.title);
       return;
@@ -491,6 +514,7 @@ export class GameSession extends DurableObject {
       socket.close(1008, "Authority no longer valid");
       return;
     }
+    const projection = this.projectionForAttachment(result.projection, attachment);
     socket.send(JSON.stringify({
       protocol_version: PROTOCOL_VERSION,
       type: "projection",
@@ -499,8 +523,34 @@ export class GameSession extends DurableObject {
       session_id: attachment.sessionId,
       endpoint_id: attachment.endpointId,
       server_sequence: result.server_sequence,
-      payload: { projection: projectionWithLanguage(result.projection, this.store.gameplayLanguage()) },
+      payload: { projection },
     }));
+    this.sendCurrentPresentationStatus(socket, attachment);
+  }
+
+  async reportPresentationStatus(socket, attachment, envelope) {
+    const registration = this.store.endpointRegistration(attachment.endpointId);
+    const status = sanitizePresentationStatus(envelope.payload);
+    if (
+      !status ||
+      !eligibleStageRegistration(registration, this.clientBuildPolicy) ||
+      registration.revoked
+    ) {
+      sendError(
+        socket,
+        attachment,
+        envelope.message_id,
+        "presentation_status_forbidden",
+        "Presentation status unavailable",
+      );
+      return;
+    }
+    this.presentationStatus = {
+      status,
+      connectionId: attachment.connectionId,
+      endpointId: attachment.endpointId,
+    };
+    await this.broadcastPresentationStatus(status);
   }
 
   async submitCommand(socket, attachment, envelope) {
@@ -513,7 +563,7 @@ export class GameSession extends DurableObject {
       result = await this.serializeOperation(async () => {
         const journal = await this.store.loadJournal();
         const core = new SessionCore({
-          ...scenarioEngine.scenarioReference,
+          ...this.store.scenarioReference(),
           store: this.store,
         });
         await core.load(async () => {});
@@ -533,8 +583,9 @@ export class GameSession extends DurableObject {
           },
           createEvent: async (command) => {
             const event = eventForCommand(command, attachment);
-            const candidate = journalEntry(journal.length + 1, Date.now(), event);
-            const replay = scenarioEngine.project([...journal, candidate], attachment);
+            const scenarioReference = this.store.scenarioReference();
+            const candidate = journalEntry(scenarioReference, journal.length + 1, Date.now(), event);
+            const replay = scenarioEngine.project([...journal, candidate], attachment, scenarioReference);
             if (!replay.ok) {
               throw new SessionFault("command_rejected", "Command is not valid in the current state");
             }
@@ -570,11 +621,12 @@ export class GameSession extends DurableObject {
         socket.close(1008, "Authority no longer valid");
         return;
       }
-      const result = scenarioEngine.project(journal, attachment);
+      const result = scenarioEngine.project(journal, attachment, this.store.scenarioReference());
       if (!result.ok) {
         socket.close(1011, "Projection unavailable");
         return;
       }
+      const projection = this.projectionForAttachment(result.projection, attachment);
       socket.send(JSON.stringify({
         protocol_version: PROTOCOL_VERSION,
         type: "projection",
@@ -582,9 +634,50 @@ export class GameSession extends DurableObject {
         session_id: attachment.sessionId,
         endpoint_id: attachment.endpointId,
         server_sequence: result.server_sequence,
-        payload: { projection: projectionWithLanguage(result.projection, this.store.gameplayLanguage()) },
+        payload: { projection },
       }));
     });
+  }
+
+  projectionForAttachment(projection, attachment) {
+    const withLanguage = projectionWithLanguage(projection, this.store.gameplayLanguage());
+    if (attachment.audience !== "stage") return withLanguage;
+    const registration = this.store.endpointRegistration(attachment.endpointId);
+    return decorateStageProjection(withLanguage, registration, this.clientBuildPolicy);
+  }
+
+  sendCurrentPresentationStatus(socket, attachment) {
+    if (attachment.audience !== "host") return;
+    const registration = this.store.endpointRegistration(attachment.endpointId);
+    if (!eligibleHostStatusRegistration(registration, this.clientBuildPolicy)) return;
+    this.sendPresentationStatus(
+      socket,
+      attachment,
+      this.presentationStatus?.status ?? unknownPresentationStatus(),
+    );
+  }
+
+  async broadcastPresentationStatus(status) {
+    await fanOutWebSockets(this.ctx.getWebSockets(), async (socket) => {
+      const attachment = socket.deserializeAttachment();
+      if (!validAttachment(attachment) || attachment.audience !== "host") return;
+      const authority = authorityFromAttachment(attachment);
+      if (!this.store.validateAuthority(authority, Date.now()).ok) return;
+      const registration = this.store.endpointRegistration(attachment.endpointId);
+      if (!eligibleHostStatusRegistration(registration, this.clientBuildPolicy)) return;
+      this.sendPresentationStatus(socket, attachment, status);
+    });
+  }
+
+  sendPresentationStatus(socket, attachment, status) {
+    socket.send(JSON.stringify({
+      protocol_version: PROTOCOL_VERSION,
+      type: "presentation_status",
+      message_id: crypto.randomUUID(),
+      session_id: attachment.sessionId,
+      endpoint_id: attachment.endpointId,
+      payload: status,
+    }));
   }
 
   serializeOperation(operation) {
@@ -604,7 +697,25 @@ export class GameSession extends DurableObject {
   }
 
   async webSocketError(socket) {
+    await this.clearPresentationStatusForSocket(socket);
     socket.close(1011, "WebSocket failure");
+  }
+
+  async webSocketClose(socket) {
+    await this.clearPresentationStatusForSocket(socket);
+  }
+
+  async clearPresentationStatusForSocket(socket) {
+    const attachment = socket.deserializeAttachment();
+    if (
+      !validAttachment(attachment) ||
+      attachment.audience !== "stage" ||
+      this.presentationStatus?.connectionId !== attachment.connectionId
+    ) {
+      return;
+    }
+    this.presentationStatus = null;
+    await this.broadcastPresentationStatus(unknownPresentationStatus());
   }
 
   async alarm() {
@@ -741,6 +852,7 @@ function eventForCommand(command, authority) {
 }
 
 function admissionEntries({
+  scenarioReference,
   journal,
   participantId,
   endpointId,
@@ -749,12 +861,12 @@ function admissionEntries({
   timestampUnixMs,
 }) {
   return [
-    journalEntry(journal.length + 1, timestampUnixMs, {
+    journalEntry(scenarioReference, journal.length + 1, timestampUnixMs, {
       type: "participant_joined",
       participant_id: participantId,
       name: displayName,
     }),
-    journalEntry(journal.length + 2, timestampUnixMs, {
+    journalEntry(scenarioReference, journal.length + 2, timestampUnixMs, {
       type: "endpoint_registered",
       endpoint_id: endpointId,
       participant_id: participantId,
@@ -763,8 +875,7 @@ function admissionEntries({
   ];
 }
 
-function journalEntry(sequenceNumber, timestampUnixMs, event) {
-  const reference = scenarioEngine.scenarioReference;
+function journalEntry(reference, sequenceNumber, timestampUnixMs, event) {
   return {
     scenario_id: reference.scenarioId,
     scenario_version: reference.scenarioVersion,
@@ -835,6 +946,7 @@ function validSessionConfiguration(value) {
     validIdentifier(value.host_room_id) &&
     validHttpsOrigin(value.host_origin) &&
     validGameplayLanguage(value.gameplay_language) &&
+    scenarioEngine.supports({ scenarioId: value.scenario_id, scenarioVersion: value.scenario_version }) &&
     validEndpoint(value.endpoint) &&
     /^[a-f0-9]{64}$/u.test(value.invitation_digest) &&
     validTimeline(value.created_at_unix_ms, value.invitation_expires_at_unix_ms) &&
@@ -922,7 +1034,14 @@ function validEndpoint(value) {
     typeof value.platform === "string" &&
     Array.isArray(value.capabilities) &&
     value.capabilities.length <= 32 &&
-    value.capabilities.every((item) => typeof item === "string" && item.length <= 128)
+    new Set(value.capabilities).size === value.capabilities.length &&
+    value.capabilities.every((item) => FEATURE_IDENTIFIER_PATTERN.test(item)) &&
+    (value.features === undefined ||
+      (Array.isArray(value.features) &&
+        value.features.length <= 32 &&
+        new Set(value.features).size === value.features.length &&
+        value.features.every((item) => FEATURE_IDENTIFIER_PATTERN.test(item)))) &&
+    (value.client_build === undefined || validClientBuild(value.client_build))
   );
 }
 
@@ -936,6 +1055,16 @@ function validGameplayLanguage(value) {
 
 function projectionWithLanguage(projection, gameplayLanguage) {
   return { ...projection, gameplay_language: gameplayLanguage };
+}
+
+function unknownPresentationStatus() {
+  return {
+    manifest_revision: PRESENTATION_MANIFEST_REVISION,
+    asset_available: false,
+    sound_enabled: false,
+    atmosphere_state: "unknown",
+    reduced_motion: false,
+  };
 }
 
 function validDisplayName(value) {

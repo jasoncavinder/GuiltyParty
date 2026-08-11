@@ -42,6 +42,11 @@
       "expected_valid": true
     },
     {
+      "file": "positive/stage-pairing-create-request-display-only.json",
+      "definition": "StagePairingCreateRequest",
+      "expected_valid": true
+    },
+    {
       "file": "positive/stage-pairing-create-response.json",
       "definition": "StagePairingCreateResponse",
       "expected_valid": true
@@ -87,6 +92,21 @@
       "expected_valid": true
     },
     {
+      "file": "positive/stage-media-projection.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/report-presentation-status.json",
+      "definition": "ClientEnvelope",
+      "expected_valid": true
+    },
+    {
+      "file": "positive/presentation-status.json",
+      "definition": "ServerEnvelope",
+      "expected_valid": true
+    },
+    {
       "file": "privacy/stage-projection.json",
       "definition": "ServerEnvelope",
       "expected_valid": true
@@ -113,6 +133,11 @@
     },
     {
       "file": "negative/unknown-message-type.json",
+      "definition": "ClientEnvelope",
+      "expected_valid": false
+    },
+    {
+      "file": "negative/report-presentation-status-unknown.json",
       "definition": "ClientEnvelope",
       "expected_valid": false
     },
@@ -154,7 +179,14 @@
         "private_objective",
         "has_voted",
         "authorized_characters",
-        "is_public"
+        "is_public",
+        "url",
+        "uri",
+        "path",
+        "src",
+        "source",
+        "bytes",
+        "data"
       ],
       "forbidden_values": [
         "SYNTHETIC_OWN_PRIVATE_CLUE",
@@ -175,6 +207,27 @@
         ],
         "has_voted": [
           "/payload/projection/participants/0"
+        ]
+      }
+    },
+    {
+      "file": "positive/stage-media-projection.json",
+      "forbidden_member_names": [
+        "private_objective",
+        "has_voted",
+        "authorized_characters",
+        "is_public",
+        "url",
+        "uri",
+        "path",
+        "src",
+        "source",
+        "bytes",
+        "data"
+      ],
+      "member_scope": {
+        "presentation": [
+          "/payload/projection/active_scene"
         ]
       }
     }

@@ -27,3 +27,10 @@ or device.
 Schema validity never grants authority. The server authenticates the
 connection, authorizes every command, and builds a recipient-specific
 projection before serialization.
+
+An eligible, feature-negotiated Stage may receive a bounded logical
+`presentation` decoration inside its already-authorized public scene. It never
+contains a URL, path, bytes, or private audience. The Stage may report coarse
+ephemeral availability, mute, playback, and reduced-motion status; the server
+relays that status only to an independently eligible Host. Presentation status
+is not retained in the journal and does not affect canonical replay.

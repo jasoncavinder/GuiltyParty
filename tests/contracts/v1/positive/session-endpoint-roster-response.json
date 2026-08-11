@@ -8,6 +8,12 @@
       "display_name": null,
       "platform": "browser",
       "capabilities": ["host_control", "private_display"],
+      "features": ["host_presentation_status_v1"],
+      "client_build": {
+        "application_id": "host_web",
+        "application_version": "0.2.0",
+        "build_number": 2
+      },
       "authority_generation": 1,
       "revoked": false
     },

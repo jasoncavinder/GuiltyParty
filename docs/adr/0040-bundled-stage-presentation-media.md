@@ -2,7 +2,7 @@
 
 ## Status
 
-Proposed
+Accepted
 
 ## Date
 
@@ -30,7 +30,11 @@ Content Security Policy that disallows images and other media in its flattened
 runtime document. Any implementation must preserve those controls deliberately
 rather than bypassing them for presentation.
 
-# Proposed Decision
+# Decision
+
+The owner accepted this boundary and the exact digest-matched Cinematic Gallery
+image and Cinematic Vault atmosphere asset on 2026-08-10 HST. Acceptance does
+not substitute for the simulator and physical-television gates below.
 
 ## Scope
 
@@ -66,6 +70,12 @@ The proof publishes a new immutable content version of the original synthetic
 scenario rather than modifying `the-stolen-artifact` version 1. The scenario
 truth document may continue using scenario schema version 1; its published
 content version becomes 2.
+
+Each session persists its selected scenario identifier and content version.
+New sessions select version 2 after this decision; migration of a pre-existing
+session record without those columns pins it to version 1. The service keeps
+both immutable bundles available so a deployment cannot reinterpret an active
+or retained version-1 journal as version 2.
 
 A separate first-party presentation manifest is bound to:
 

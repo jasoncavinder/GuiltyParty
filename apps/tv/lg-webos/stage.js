@@ -7,6 +7,7 @@
     authority: null,
     ticket: null,
     projection: null,
+    serverFeatures: [],
     sequence: new core.SequenceTracker()
   };
   var connection = null;
@@ -39,6 +40,10 @@
     sceneNarrative: document.getElementById("scene-narrative"),
     cluesList: document.getElementById("clues-list"),
     castList: document.getElementById("cast-list"),
+    sceneImage: document.getElementById("scene-image"),
+    sceneAtmosphere: document.getElementById("scene-atmosphere"),
+    soundToggle: document.getElementById("sound-toggle"),
+    mediaStatus: document.getElementById("media-status"),
     outcomePanel: document.getElementById("outcome-panel"),
     outcomeResolution: document.getElementById("outcome-resolution"),
     connectionOverlay: document.getElementById("connection-overlay"),
@@ -48,6 +53,15 @@
     stayButton: document.getElementById("stay-button"),
     exitButton: document.getElementById("exit-button")
   };
+  var media = new window.GuiltyPartyStageMedia.StageMediaController({
+    registry: window.GuiltyPartyStageMediaRegistry || null,
+    image: elements.sceneImage,
+    audio: elements.sceneAtmosphere,
+    soundButton: elements.soundToggle,
+    statusElement: elements.mediaStatus,
+    matchMedia: typeof window.matchMedia === "function" ? window.matchMedia.bind(window) : null,
+    onStatus: reportPresentationStatus
+  });
 
   elements.retryButton.addEventListener("click", beginPairing);
   elements.stayButton.addEventListener("click", hideExitDialog);
@@ -63,19 +77,26 @@
 
   function beginPairing() {
     resetRuntime(true);
+    state.serverFeatures = [];
     setConnectionState("Pairing", "pairing");
     showSetup("Preparing a Stage code…", "This display receives public story information only.", false);
-    requestJson("/api/v1/stage-pairings", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        protocol_version: core.PROTOCOL_VERSION,
-        endpoint: {
-          platform: "webos",
-          capabilities: ["public_display"],
-          client_build: core.STAGE_BUILD
-        }
-      })
+    requestJson("/api/protocol", { method: "GET" }).then(function (compatibilityResult) {
+      var compatibility = core.validateCompatibility(compatibilityResult.body);
+      var supportsPresentation = compatibility.features.indexOf(core.STAGE_PRESENTATION_FEATURE) >= 0;
+      state.serverFeatures = compatibility.features;
+      return requestJson("/api/v1/stage-pairings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          protocol_version: core.PROTOCOL_VERSION,
+          endpoint: {
+            platform: "webos",
+            capabilities: ["public_display", "public_audio_output"],
+            features: supportsPresentation ? [core.STAGE_PRESENTATION_FEATURE] : [],
+            client_build: core.STAGE_BUILD
+          }
+        })
+      });
     }).then(function (result) {
       var transaction = core.validatePairingCreate(result.body, Date.now());
       state.pairing = transaction;
@@ -208,6 +229,7 @@
     socket.onerror = function () {
       if (generation !== connectionGeneration || connection !== socket) return;
       connectionIsUncertain = true;
+      media.suspend();
       setConnectionState("Connection uncertain", "uncertain");
       showReconnect("Connection uncertain", "The Stage is waiting for a confirmed server connection.");
     };
@@ -218,6 +240,7 @@
       clearTimeout(stableTimer);
       stableTimer = null;
       if (shuttingDown || suspended) return;
+      media.suspend();
       if (core.terminalSocketClose(event.code)) {
         terminalState("Stage access ended", "Pair this television again if the session is still available.");
         return;
@@ -270,7 +293,10 @@
     }
     recordAuthenticatedActivity();
     sequenceResult = state.sequence.accept(envelope.sequence);
-    if (sequenceResult === "duplicate") return;
+    if (sequenceResult === "duplicate") {
+      media.resume();
+      return;
+    }
     if (sequenceResult === "resync") {
       restartConnection("Refreshing public state", "The Stage rejected a regressed sequence and will request a complete projection.");
       return;
@@ -299,6 +325,7 @@
       }
       if (action === "uncertain" && !connectionIsUncertain) {
         connectionIsUncertain = true;
+        media.suspend();
         setConnectionState("Connection uncertain", "uncertain");
         showReconnect("Connection uncertain", "The last public view remains visible while the Stage verifies current state.");
       }
@@ -323,6 +350,7 @@
   }
 
   function restartConnection(title, message) {
+    media.suspend();
     setConnectionState("Reconnecting", "uncertain");
     showReconnect(title, message);
     closeSocket(1011, "Fresh public state required");
@@ -346,9 +374,11 @@
     if (projection.active_scene) {
       elements.sceneTitle.textContent = projection.active_scene.name;
       elements.sceneNarrative.textContent = projection.active_scene.public_narrative;
+      media.apply(projection.active_scene.presentation || null);
     } else {
       elements.sceneTitle.textContent = "Waiting for the story to begin";
       elements.sceneNarrative.textContent = "The Host will begin when everyone is ready.";
+      media.clear(false);
     }
     clearChildren(elements.cluesList);
     if (projection.revealed_clues.length === 0) {
@@ -434,6 +464,7 @@
   function handleVisibilityChange() {
     suspended = document.visibilityState === "hidden";
     if (suspended) {
+      media.suspend();
       clearTimeout(reconnectTimer);
       reconnectTimer = null;
       closeSocket(1000, "Application suspended");
@@ -449,6 +480,7 @@
   }
 
   function handleOffline() {
+    media.suspend();
     closeSocket(1000, "Network unavailable");
     setConnectionState("Offline", "offline");
     showReconnect("Network unavailable", "The Stage will reconnect when this television is online.");
@@ -513,6 +545,7 @@
     stableTimer = null;
     reconnectAttempt = 0;
     closeSocket(1000, "Runtime reset");
+    media.terminate();
     core.clearSensitiveState(state);
     hideReconnect();
     if (!preserveSetup) clearProjectionView();
@@ -563,6 +596,27 @@
     elements.scenarioTitle.textContent = "";
     elements.sceneNarrative.textContent = "";
     elements.outcomeResolution.textContent = "";
+    media.clear(true);
+  }
+
+  function reportPresentationStatus(status) {
+    var authority = state.authority;
+    if (
+      !authority ||
+      state.serverFeatures.indexOf(core.STAGE_PRESENTATION_FEATURE) < 0 ||
+      !connection ||
+      connection.readyState !== WebSocket.OPEN
+    ) return;
+    try {
+      connection.send(JSON.stringify({
+        protocol_version: core.PROTOCOL_VERSION,
+        type: "report_presentation_status",
+        message_id: messageIdentifier(),
+        session_id: authority.session_id,
+        endpoint_id: authority.endpoint_id,
+        payload: status
+      }));
+    } catch (ignore) {}
   }
 
   function showReconnect(title, message) {

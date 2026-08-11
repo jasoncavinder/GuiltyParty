@@ -56,6 +56,14 @@ remains blocked by the operational and client acceptance gates below.
 - The implemented loop covers character assignment, scene advancement, public
   and private clues, voting, deterministic outcome, bounded idempotency, full
   projection refresh, and broadcast updates.
+- For the synthetic scenario content version 2 only, an exact approved and
+  feature-negotiated Stage build may receive bounded public presentation asset
+  identifiers. Media bytes remain packaged locally; ephemeral coarse Stage
+  status is relayed only to an independently negotiated Host and is never
+  journaled.
+- Session metadata pins the selected scenario identifier and content version.
+  Existing records that predate that metadata migrate to immutable version 1;
+  new sessions use version 2, and both bundles remain replayable.
 
 ## Dependency Boundary
 

@@ -4,11 +4,13 @@
 
 This runbook builds and sideloads the dependency-free Remote Friends MVP public
 Stage. It does not create a Stage website, configure Cloudflare, distribute
-through the LG store, enable a media plane, or authorize named-friend testing.
+through the LG store, enable live communications media, or authorize
+named-friend testing.
 
-The package contains only first-party HTML, CSS, JavaScript, and original
-project-owned icon artwork. It has no npm runtime, framework, SDK, font, remote
-asset, analytics, logging, media, AI, or persistence dependency.
+The package contains only first-party HTML, CSS, JavaScript, original
+project-owned icon artwork, and the two exact public presentation assets
+approved under ADR 0040. It has no npm runtime, framework, SDK, font, remote
+asset, analytics, logging, live-media provider, AI, or persistence dependency.
 
 ## Prerequisites
 
@@ -44,18 +46,21 @@ older-runtime-compatible inline package tree at
 `.tmp/lg-webos-stage-app`, validates that generated app, and writes:
 
 ```text
-.tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
+.tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
 ```
 
 Inspect the artifact without installing it:
 
 ```sh
-ares-package -I .tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
-shasum -a 256 .tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
+ares-package -I .tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
+shasum -a 256 .tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
 ```
 
 The expected package ID is `com.guiltyparty.stage`; the application and client
-version are `0.1.1`, and the client build number is `2`.
+version are `0.2.0`, and the client build number is `3`. The build accepts only
+the two registry entries and digests recorded in
+[the provenance record](../legal/bundled-stage-media-provenance.md), validates
+their PNG/WAV structure, and embeds them into the opaque-origin document.
 
 ## Simulator launch
 
@@ -94,7 +99,7 @@ the developer-key interaction:
 
 ```sh
 ares-install -d '<configured-target>' \
-  .tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
+  .tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
 ares-launch -d '<configured-target>' com.guiltyparty.stage
 ```
 
@@ -105,7 +110,7 @@ remove this exact application ID and retry the install:
 ```sh
 ares-install -r com.guiltyparty.stage -d '<configured-target>'
 ares-install -d '<configured-target>' \
-  .tmp/webos-packages/com.guiltyparty.stage_0.1.1_all.ipk
+  .tmp/webos-packages/com.guiltyparty.stage_0.2.0_all.ipk
 ```
 
 Removal terminates the Stage and intentionally loses all in-memory authority.
@@ -130,15 +135,25 @@ private content, or device credential.
    clue, individual vote, credential, private message, or another endpoint's
    state appears.
 7. Exercise directional focus, Select, and Back at 1920 by 1080.
-8. Suspend and resume the app; verify a fresh ticket and full authorized public
-   projection are obtained.
-9. Remove and restore network access; verify the UI reports uncertainty and
-   reconnect uses bounded full-jitter backoff with a fresh ticket.
-10. Revoke the Stage and end the session; verify the public projection clears
-    and pairing is required again.
-11. Terminate and relaunch the app; verify a new code appears and prior authority
-    cannot resume.
-12. End every synthetic session created for testing.
+8. Advance to the bound discovery scene. Confirm the cleaned Cinematic Gallery
+   artwork appears without a watch-like object and that all essential scene
+   information remains present as text.
+9. Confirm atmosphere starts muted, the television user can enable and mute it
+   with the focusable control, the eight-second WAV loops without overlapping,
+   and the Host receives only coarse availability/mute/playback/motion status.
+10. Confirm image or audio failure leaves a complete text presentation, and
+    reduced-motion mode removes nonessential transitions without hiding state.
+11. Suspend and resume the app; verify audio stops immediately, a fresh ticket
+    and full authorized public projection are obtained, and sound resumes only
+    under the current in-process user choice after fresh authorization.
+12. Remove and restore network access; verify audio stops, the UI reports
+    uncertainty, and reconnect uses bounded full-jitter backoff with a fresh
+    ticket.
+13. Revoke the Stage and end the session; verify media sources and the public
+    projection clear and pairing is required again.
+14. Terminate and relaunch the app; verify sound is muted, a new code appears,
+    and prior authority cannot resume.
+15. End every synthetic session created for testing.
 
 Then run the deployed-environment rehearsals from a protected operator shell.
 Use hidden input so the Host proof is not placed in shell history:
@@ -167,10 +182,20 @@ Record only:
 - TLS success or exact fail-closed error;
 - selected WebSocket subprotocol and close-code visibility;
 - suspend/resume, network-loss, reconnect, revocation, session-end, and restart
-  outcomes; and
+  outcomes;
+- image and WAV decode, mute, looping, focus, reduced-motion, fallback, and
+  coarse Host-status outcomes for the exact package build; and
 - known limitations and owner interaction still required.
 
 Never record raw request/response headers when credentials may be present.
+
+## Build 0.2.0 (3) evidence status
+
+Automated contract, server-boundary, Stage-core, media-controller, digest,
+format, CSP, generated-document-size, and package-allowlist checks are required
+before review. Simulator launch and physical LG webOS 5.6 verification remain
+open until they are performed against the exact reviewed package. Evidence for
+the earlier text-only build below does not satisfy the new media gates.
 
 ## 2026-08-08 Physical Rehearsal Evidence
 

@@ -148,6 +148,8 @@ test("Host creates a bounded session and receives HttpOnly cookie authority", as
   assert.equal(captured.path, "/internal/session/create");
   assert.equal(captured.body.host_origin, allowedOrigin);
   assert.equal(captured.body.gameplay_language, "en-US");
+  assert.equal(captured.body.scenario_id, "the-stolen-artifact");
+  assert.equal(captured.body.scenario_version, 2);
   assert.equal(captured.body.invitation_digest, await sha256Hex(body.pairing_code));
   assert.equal(JSON.stringify(captured).includes(body.pairing_code), false);
   assert.equal(

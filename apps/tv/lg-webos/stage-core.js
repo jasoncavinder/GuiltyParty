@@ -5,10 +5,11 @@
   var PROTOCOL_VERSION = "1.0";
   var CONTROL_SUBPROTOCOL = "guiltyparty.control.v1";
   var API_ORIGIN = "https://api.test.guiltyparty.app";
+  var STAGE_PRESENTATION_FEATURE = "stage_presentation_media_v1";
   var STAGE_BUILD = {
     application_id: "stage_webos",
-    application_version: "0.1.1",
-    build_number: 2
+    application_version: "0.2.0",
+    build_number: 3
   };
   var RECONNECT_SECONDS = [1, 2, 4, 8, 15, 30];
   var HEARTBEAT_INTERVAL_MS = 15000;
@@ -46,6 +47,15 @@
     websocket_transport: true,
     websocket_ticket_endpoint: true,
     token: true
+  };
+  var PRESENTATION_SOURCE_KEYS = {
+    url: true,
+    uri: true,
+    path: true,
+    src: true,
+    source: true,
+    bytes: true,
+    data: true
   };
 
   function isSafeInteger(value, minimum) {
@@ -85,12 +95,70 @@
     return isString(value, 1, 128);
   }
 
+  function validLogicalIdentifier(value) {
+    return typeof value === "string" && /^[a-z][a-z0-9_.-]{0,127}$/.test(value);
+  }
+
+  function copyPresentation(value) {
+    var output;
+    if (!value || typeof value !== "object" || hasForbiddenKey(value, PRESENTATION_SOURCE_KEYS)) return null;
+    if (
+      !validLogicalIdentifier(value.manifest_revision) ||
+      value.audience !== "public_stage" ||
+      !validLogicalIdentifier(value.scene_image_id)
+    ) return null;
+    output = {
+      manifest_revision: value.manifest_revision,
+      audience: "public_stage",
+      scene_image_id: value.scene_image_id
+    };
+    if (typeof value.atmosphere_audio_id !== "undefined") {
+      if (
+        !validLogicalIdentifier(value.atmosphere_audio_id) ||
+        value.audio_behavior !== "loop_while_scene_active"
+      ) return null;
+      output.atmosphere_audio_id = value.atmosphere_audio_id;
+      output.audio_behavior = "loop_while_scene_active";
+    } else if (typeof value.audio_behavior !== "undefined") {
+      return null;
+    }
+    return output;
+  }
+
   function copyScene(value) {
+    var output;
+    var presentation;
     if (value === null) return null;
     if (!value || typeof value !== "object" || !validIdentifier(value.id) || !isString(value.name, 0, 1000) || !isString(value.public_narrative, 0, 10000)) {
       throw new Error("Invalid public scene");
     }
-    return { id: value.id, name: value.name, public_narrative: value.public_narrative };
+    output = { id: value.id, name: value.name, public_narrative: value.public_narrative };
+    if (typeof value.presentation !== "undefined") {
+      presentation = copyPresentation(value.presentation);
+      if (presentation) output.presentation = presentation;
+    }
+    return output;
+  }
+
+  function validateCompatibility(value) {
+    var index;
+    var features = [];
+    if (
+      !value ||
+      value.preferred_protocol_version !== PROTOCOL_VERSION ||
+      value.required_upgrade !== false ||
+      !Array.isArray(value.supported_protocol_majors) ||
+      value.supported_protocol_majors.indexOf(1) < 0 ||
+      !Array.isArray(value.features) ||
+      value.features.length > 128
+    ) throw new Error("Invalid compatibility response");
+    for (index = 0; index < value.features.length; index += 1) {
+      if (!validLogicalIdentifier(value.features[index]) || features.indexOf(value.features[index]) >= 0) {
+        throw new Error("Invalid compatibility feature");
+      }
+      features.push(value.features[index]);
+    }
+    return { features: features };
   }
 
   function copyClues(value) {
@@ -347,6 +415,7 @@
     HEARTBEAT_INTERVAL_MS: HEARTBEAT_INTERVAL_MS,
     PROTOCOL_VERSION: PROTOCOL_VERSION,
     STAGE_BUILD: STAGE_BUILD,
+    STAGE_PRESENTATION_FEATURE: STAGE_PRESENTATION_FEATURE,
     SequenceTracker: SequenceTracker,
     clearSensitiveState: clearSensitiveState,
     connectionHealthAction: connectionHealthAction,
@@ -357,6 +426,7 @@
     terminalHttpStatus: terminalHttpStatus,
     terminalSocketClose: terminalSocketClose,
     validateEnvelope: validateEnvelope,
+    validateCompatibility: validateCompatibility,
     validateJoin: validateJoin,
     validatePairingCreate: validatePairingCreate,
     validatePending: validatePending,
