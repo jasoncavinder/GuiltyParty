@@ -13,6 +13,9 @@ Thumbs.db
 !.env.example
 *.local
 
+# Unpublished local scenario work
+local-scenarios/
+
 # Logs and temporary files
 *.log
 logs/
