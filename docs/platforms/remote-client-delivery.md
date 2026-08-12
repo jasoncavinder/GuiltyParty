@@ -3,8 +3,9 @@
 ## Status
 
 The dependency-free Browser Host and Browser Companion fallback are implemented
-as reviewable static assets. The Companion fallback remains on the reviewed
-2026-08-07 promotion. The Host was reconciled to reviewed `dev` commit
+as reviewable static assets. The deployed Companion fallback remains on the
+reviewed 2026-08-07 promotion while the protocol `1.1` Refined Case File player
+update awaits merge and manual promotion. The Host was reconciled to reviewed `dev` commit
 `4d82f5229addddd9efd4337c42bb7083c54ba4a7` on 2026-08-11 HST so its shared
 client accepts additive protocol 1.x minor versions. Branch previews and
 automatic GitHub deployments remain disabled.
@@ -106,8 +107,8 @@ Host creation and the complete synthetic Android rehearsal then passed.
 Future preferred-protocol promotions must compare the deployed shared-client
 digest with the reviewed build output and smoke Host compatibility discovery
 before beginning a device session. This is an artifact-reconciliation gate; it
-does not require the protocol `1.0` Browser Companion fallback to negotiate the
-participant voting feature before its separately planned product refinement.
+also applies when promoting the protocol `1.1` Browser Companion fallback and
+its negotiated `participant_vote_targets_v1` feature.
 
 The Pages production aliases returned the reviewed assets with `no-store`,
 the committed CSP, and the committed referrer, permissions, framing,
@@ -125,15 +126,19 @@ Before inviting a named tester:
    permissions, framing, and content-type headers.
 2. Create a session through the Browser Host and confirm the operator proof is
    cleared.
-3. join two synthetic browser participants through separate browser profiles;
-   confirm each receives only its own private objective and authorized clues.
+3. Join two synthetic browser participants through separate browser profiles;
+   confirm each negotiates protocol `1.1`, receives only its own private
+   objective and authorized clues, and can choose only projected vote targets.
 4. Reload all three browser tabs and confirm their HttpOnly-cookie contexts
    recover automatically without a credential in a URL or browser storage.
-5. Rotate and close invitations, approve a synthetic Stage code, list and
+5. Exercise not-open, open, submitting, recorded, closed, and resolved voting;
+   background, manually protect, reload, and reconnect one player; confirm
+   stale private content is absent until a fresh authorized projection arrives.
+6. Rotate and close invitations, approve a synthetic Stage code, list and
    revoke an endpoint, complete the deterministic story, and end the session.
-6. Repeat negative-origin requests and the automated remote game, Stage
+7. Repeat negative-origin requests and the automated remote game, Stage
    boundary, lifecycle, hibernation, deletion, and ticket rehearsals.
-7. Record the Pages deployment identifiers and physical-client evidence in the
+8. Record the Pages deployment identifiers and physical-client evidence in the
    readiness record without copying private content or credentials.
 
 Client builds send `application_id`, `application_version`, and `build_number`.
@@ -142,3 +147,9 @@ The committed external-test policy currently admits build 1 or later for
 `stage_webos`. Application version is display metadata; build number controls
 admission. Raising a minimum is a reviewed compatibility operation, not an
 identity or authorization mechanism.
+
+The refined Browser Companion identifies as `companion_web` version `0.2.0`,
+build `2`. It advertises protocol `1.1` and
+`participant_vote_targets_v1` only after compatibility discovery. Cookie-based
+recovery returns the endpoint's retained negotiated protocol version so a page
+reload cannot silently downgrade its WebSocket envelopes.

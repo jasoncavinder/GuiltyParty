@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="color-scheme" content="dark">
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#171217">
   <meta name="referrer" content="no-referrer">
   <meta name="robots" content="noindex, nofollow">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src https://api.test.guiltyparty.app wss://api.test.guiltyparty.app http://127.0.0.1:* ws://127.0.0.1:* http://localhost:* ws://localhost:*; img-src 'self' data:; style-src 'self'; script-src 'self'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
@@ -11,15 +12,21 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header><a class="brand" href="/" aria-label="Guilty Party Play home"><span>G</span> Guilty Party</a><span id="connection-badge" class="badge">Private player view</span></header>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="Guilty Party play home"><span aria-hidden="true">G</span> Guilty Party</a>
+    <span id="connection-badge" class="badge">Private player view</span>
+  </header>
+
   <main>
     <section id="join-panel" class="join-card" aria-labelledby="join-title">
-      <p class="kicker">Private player view</p>
-      <h1 id="join-title">Join the story.</h1>
-      <p class="lede">Paste the invitation sent by your Host. Use a nickname—this early test does not use permanent accounts.</p>
+      <div class="folio" aria-hidden="true">Player file · private</div>
+      <p class="kicker">Your invitation</p>
+      <h1 id="join-title">Enter the story.</h1>
+      <p class="lede">Join from the invitation sent by your Host. This owner test uses a nickname instead of a permanent account.</p>
       <form id="join-form" class="stack">
-        <label>Invitation transfer<textarea id="invitation" rows="4" required placeholder="GP1.…" autocomplete="off" spellcheck="false"></textarea></label>
-        <label>Your nickname<input id="display-name" required minlength="1" maxlength="80" autocomplete="nickname"></label>
+        <label>Your nickname<input id="display-name" required minlength="1" maxlength="80" autocomplete="nickname" placeholder="How the group knows you"></label>
+        <label>Invitation transfer<textarea id="invitation" rows="4" required placeholder="GP1.…" autocomplete="off" spellcheck="false" aria-describedby="invitation-help"></textarea></label>
+        <p id="invitation-help" class="field-note">Paste the complete GP1 invitation. It is cleared after every join attempt.</p>
         <button class="primary" type="submit">Join private session</button>
       </form>
       <p id="join-status" class="status" role="status">Checking for an in-progress session…</p>
@@ -28,22 +35,81 @@
 
     <section id="game" class="game hidden" aria-label="Player game view">
       <div class="story-head">
-        <div><p class="kicker">Now playing</p><h1 id="scenario-title">Guilty Party</h1><p id="session-meta" class="muted"></p></div>
+        <div>
+          <p class="kicker">Now playing</p>
+          <h1 id="scenario-title">Guilty Party</h1>
+          <p id="session-meta" class="muted"></p>
+        </div>
         <button id="leave-view" class="quiet" type="button">Hide private view</button>
       </div>
-      <article id="character-card" class="card character-card">
-        <p class="kicker">Your character</p><h2 id="character-name">Waiting for the Host</h2><p id="private-objective" class="objective">Your private objective will appear here after assignment.</p>
-      </article>
-      <div class="grid">
-        <article class="card"><p class="kicker">Current scene</p><h2 id="scene-name">The room is gathering</h2><p id="scene-copy" class="muted">Stay close. The Host will begin shortly.</p></article>
-        <article class="card"><p class="kicker">Evidence</p><h2>What you know</h2><div id="clues" class="empty">No clues revealed to you.</div></article>
+
+      <div class="game-layout">
+        <aside class="context-rail" aria-label="Session context">
+          <article class="card scene-card">
+            <p class="kicker">Current scene</p>
+            <h2 id="scene-name">The room is gathering</h2>
+            <p id="scene-copy" class="muted">Stay close. The Host will begin shortly.</p>
+          </article>
+          <article class="card session-card">
+            <p class="kicker">Session</p>
+            <dl class="session-facts">
+              <div><dt>Language</dt><dd id="gameplay-language">English</dd></div>
+              <div><dt>Players</dt><dd id="player-count">—</dd></div>
+              <div><dt>Votes cast</dt><dd id="vote-count">—</dd></div>
+            </dl>
+          </article>
+          <fieldset class="appearance-card">
+            <legend>Appearance</legend>
+            <div id="appearance-options" class="segmented" role="radiogroup" aria-label="Color appearance">
+              <button type="button" role="radio" aria-checked="true" tabindex="0" data-theme="system">System</button>
+              <button type="button" role="radio" aria-checked="false" tabindex="-1" data-theme="light">Light</button>
+              <button type="button" role="radio" aria-checked="false" tabindex="-1" data-theme="dark">Dark</button>
+            </div>
+            <p>Applies only to this open page.</p>
+          </fieldset>
+        </aside>
+
+        <div class="private-file">
+          <article id="character-card" class="card character-card">
+            <p class="kicker">Your character</p>
+            <h2 id="character-name">Waiting for the Host</h2>
+            <p id="private-objective" class="objective">Your private objective will appear here after assignment.</p>
+          </article>
+
+          <article class="card evidence-card">
+            <p class="kicker">Evidence</p>
+            <h2>What you know</h2>
+            <div id="clues" class="empty">No clues revealed to you.</div>
+          </article>
+
+          <article id="vote-card" class="card vote-card" data-state="not-open">
+            <p class="kicker">The accusation</p>
+            <h2 id="vote-title">Voting has not opened</h2>
+            <p id="vote-detail" class="muted">The Host will open the accusation when the story is ready.</p>
+            <div id="vote-options" class="vote-options" role="radiogroup" aria-label="Characters available for your vote"></div>
+            <button id="cast-vote" class="primary hidden" type="button" disabled>Cast vote</button>
+            <p id="vote-status" class="status" role="status"></p>
+          </article>
+
+          <article id="outcome-card" class="card outcome hidden">
+            <p class="kicker">Case resolved</p>
+            <h2 id="outcome-copy"></h2>
+          </article>
+        </div>
       </div>
-      <article id="vote-card" class="card hidden"><p class="kicker">The accusation</p><h2>Cast your vote</h2><p>Your vote can be submitted once. Choose the character you believe is guilty.</p><div id="vote-options" class="vote-options"></div><p id="vote-status" class="status" role="status"></p></article>
-      <article id="outcome-card" class="card outcome hidden"><p class="kicker">Case resolved</p><h2 id="outcome-copy"></h2></article>
-      <p id="game-status" class="status" role="status"></p>
+      <p id="game-status" class="status connection-status" role="status"></p>
     </section>
   </main>
-  <div id="privacy-cover" class="privacy-cover" aria-hidden="true"><span>G</span><p>Private game view hidden</p></div>
+
+  <div id="privacy-cover" class="privacy-cover" aria-hidden="true">
+    <div class="privacy-panel">
+      <span aria-hidden="true">G</span>
+      <p class="kicker">Privacy protected</p>
+      <h2>Private game view hidden</h2>
+      <p id="privacy-message">Reveal only when no one else can see your screen.</p>
+      <button id="reveal-private-view" class="primary" type="button">Reveal private view</button>
+    </div>
+  </div>
   <script type="module" src="app.js"></script>
 </body>
 </html>

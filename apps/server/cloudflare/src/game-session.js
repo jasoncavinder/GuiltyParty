@@ -305,7 +305,14 @@ export class GameSession extends DurableObject {
     if (!validation.ok) {
       return internalProblem(401, validation.code, "Invalid authority");
     }
-    return internalJson({ authorized: true });
+    const registration = this.store.endpointRegistration(authority.endpointId);
+    if (!registration || registration.revoked || registration.audience !== authority.audience) {
+      return internalProblem(401, "invalid_authority", "Invalid authority");
+    }
+    return internalJson({
+      authorized: true,
+      protocol_version: registration.protocolVersion ?? PROTOCOL_VERSION,
+    });
   }
 
   async listEndpoints(request) {
