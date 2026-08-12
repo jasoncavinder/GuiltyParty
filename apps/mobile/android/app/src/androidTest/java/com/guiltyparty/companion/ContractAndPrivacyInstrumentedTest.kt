@@ -92,6 +92,71 @@ class ContractAndPrivacyInstrumentedTest {
     }
 
     @Test
+    fun protocolElevenRequiresCompatibilityAndServerAuthorizedVoteChoices() {
+        val client = NetworkClient()
+        client.validateCompatibility(fixture("positive/compatibility-response.json"))
+        val incompatible = JSONObject(fixture("positive/compatibility-response.json"))
+            .put("features", org.json.JSONArray(listOf("stage_presentation_media_v1")))
+        assertEquals(
+            FailureKind.PROTOCOL_VIOLATION,
+            assertThrows(CompanionFailure::class.java) {
+                client.validateCompatibility(incompatible.toString())
+            }.kind,
+        )
+
+        val authority = authority(protocolVersion = CompanionEnvironment.PROTOCOL_VERSION)
+        val incoming = ControlPlaneCodec.decodeServerEvent(
+            fixture("positive/participant-voting-open.json"),
+            authority,
+        ) as IncomingControlEvent.Projection
+        val projection = ControlPlaneCodec.participantProjection(incoming.value, authority)
+
+        assertEquals(ParticipantVotingPhase.OPEN, projection.votingPhase)
+        assertEquals(
+            listOf("Curator", "Collector"),
+            projection.voteTargets.map { it.name },
+        )
+        assertEquals(
+            listOf("character-synthetic-curator", "character-synthetic-collector"),
+            projection.voteTargets.map { it.id },
+        )
+    }
+
+    @Test
+    fun explicitVotingStatesRemainDistinctAndDuplicateTargetIdsFailClosed() {
+        val authority = authority(protocolVersion = CompanionEnvironment.PROTOCOL_VERSION)
+        val expected = listOf(
+            "positive/participant-voting-not-open.json" to ParticipantVotingPhase.NOT_OPEN,
+            "positive/participant-voting-open.json" to ParticipantVotingPhase.OPEN,
+            "positive/participant-voting-recorded.json" to ParticipantVotingPhase.OPEN,
+            "positive/participant-voting-closed.json" to ParticipantVotingPhase.CLOSED,
+            "positive/participant-voting-resolved.json" to ParticipantVotingPhase.RESOLVED,
+        )
+        expected.forEach { (path, phase) ->
+            val event = ControlPlaneCodec.decodeServerEvent(fixture(path), authority)
+                as IncomingControlEvent.Projection
+            assertEquals(phase, ControlPlaneCodec.participantProjection(event.value, authority).votingPhase)
+        }
+
+        val duplicate = JSONObject(fixture("positive/participant-voting-open.json"))
+        val targets = duplicate.getJSONObject("payload").getJSONObject("projection")
+            .getJSONArray("vote_targets")
+        targets.put(
+            JSONObject()
+                .put("character_id", "character-synthetic-curator")
+                .put("character_name", "Duplicate synthetic label"),
+        )
+        val event = ControlPlaneCodec.decodeServerEvent(duplicate.toString(), authority)
+            as IncomingControlEvent.Projection
+        assertEquals(
+            FailureKind.RECIPIENT_BOUNDARY_VIOLATION,
+            assertThrows(CompanionFailure::class.java) {
+                ControlPlaneCodec.participantProjection(event.value, authority)
+            }.kind,
+        )
+    }
+
+    @Test
     fun joinAndResumeKeepAuthorityOutOfUrlsAndBodies() {
         val client = NetworkClient()
         val endpoint = ServerEndpoint.parse("https://api.test.guiltyparty.app", false)
@@ -111,6 +176,11 @@ class ContractAndPrivacyInstrumentedTest {
             as GPV1JoinRequest.Participant
         assertEquals("android_companion", decodedJoin.value.endpoint.platform.value)
         assertEquals("companion_android", decodedJoin.value.endpoint.clientBuild?.applicationId?.value)
+        assertEquals(CompanionEnvironment.PROTOCOL_VERSION, decodedJoin.value.protocolVersion.value)
+        assertEquals(
+            listOf(CompanionEnvironment.PARTICIPANT_VOTING_FEATURE),
+            decodedJoin.value.endpoint.features?.map { it.value },
+        )
 
         val credential = resumeCredential()
         val resume = client.buildResumeRequest(credential)
@@ -189,13 +259,23 @@ class ContractAndPrivacyInstrumentedTest {
                 "version", "token", "pending_replacement_token", "session_id", "endpoint_id",
                 "participant_id", "expires_at_unix_ms", "primary_authority_generation",
                 "last_server_sequence", "last_authenticated_unix_ms", "pending_idempotency_ids",
-                "gameplay_language", "server_origin",
+                "gameplay_language", "server_origin", "protocol_version",
             ),
             encoded.keys().asSequence().toSet(),
         )
         assertFalse(encoded.toString().contains("private_objective"))
         assertFalse(encoded.toString().contains("revealed_clues"))
         assertFalse(encoded.toString().contains("target_character"))
+    }
+
+    @Test
+    fun legacyCredentialWithoutProtocolMetadataResumesAsProtocolTen() {
+        val encoded = JSONObject(KeystoreResumeCredentialStore.encodeCredential(resumeCredential()))
+        encoded.remove("protocol_version")
+
+        val decoded = KeystoreResumeCredentialStore.decodeCredential(encoded.toString())
+
+        assertEquals(CompanionEnvironment.LEGACY_PROTOCOL_VERSION, decoded.protocolVersion)
     }
 
     @Test
@@ -216,7 +296,9 @@ class ContractAndPrivacyInstrumentedTest {
         requireNotNull(request.body).writeTo(it)
     }.readUtf8()
 
-    private fun authority() = SessionAuthority(
+    private fun authority(
+        protocolVersion: String = CompanionEnvironment.LEGACY_PROTOCOL_VERSION,
+    ) = SessionAuthority(
         sessionId = "session-synthetic-001",
         endpointId = "endpoint-synthetic-player-001",
         participantId = "participant-synthetic-001",
@@ -225,6 +307,7 @@ class ContractAndPrivacyInstrumentedTest {
         primaryAuthorityGeneration = 3,
         gameplayLanguage = "en",
         serverEndpoint = ServerEndpoint.parse("https://api.test.guiltyparty.app", false),
+        protocolVersion = protocolVersion,
     )
 
     private fun resumeCredential() = StoredResumeCredential(
@@ -240,5 +323,6 @@ class ContractAndPrivacyInstrumentedTest {
         pendingIdempotencyIds = listOf("idempotency-synthetic-001"),
         gameplayLanguage = "en",
         serverOrigin = "https://api.test.guiltyparty.app",
+        protocolVersion = CompanionEnvironment.LEGACY_PROTOCOL_VERSION,
     )
 }

@@ -155,6 +155,46 @@ single live join manually; normal application admission, projection, resume,
 and terminal behavior then passed. Temporary invitations, clipboard values,
 UI dumps, and app credentials were cleared after the run.
 
+## Player-Experience Refinement Addendum
+
+On 2026-08-11 HST, the Android `0.2.0` (2) refinement candidate was built from
+`feature/android-player-refinement` after the protocol `1.1` voting contract
+and iOS/iPadOS adaptation merged to `dev`. This addendum contains synthetic,
+non-secret evidence only.
+
+The candidate:
+
+- performs compatibility discovery before every fresh join and requires
+  protocol `1.1` plus `participant_vote_targets_v1`;
+- advertises the negotiated feature, persists only the non-secret negotiated
+  protocol alongside the existing protected resume metadata, and continues to
+  resume a legacy stored credential as protocol `1.0`;
+- validates every server envelope against the authority's negotiated protocol;
+- accepts explicit voting phase and target choices only from the recipient's
+  authorized projection, rejects inconsistent or duplicate target state, and
+  never restores raw identifier entry;
+- uses the Refined Case File light, dark, and system appearances, system fonts,
+  Android string resources, human-readable BCP 47 gameplay-language names, a
+  compact player flow, and an expanded tablet context rail;
+- keeps the development origin inside a collapsed debug-only panel; and
+- preserves `FLAG_SECURE`, fresh-projection recovery, terminal clearing,
+  encrypted no-backup resume storage, and the existing no-cache transport.
+
+Automated and virtual-device evidence:
+
+| Check | Result |
+| --- | --- |
+| Offline Android gate | Passed debug APK, unsigned release APK, instrumented-test APK, 11 local unit tests, lint, and release lint-vital with strict dependency verification |
+| Medium Phone AVD | Passed 13/13 instrumented tests on Android 17 preview/API 37.1; real Compose selected the compact layout |
+| Pixel Tablet AVD | Passed 13/13 instrumented tests on Android 17 preview/API 37.1; real Compose selected the expanded layout |
+| Contract/privacy additions | Passed protocol compatibility, explicit vote-choice mapping, protected protocol metadata, legacy credential migration, recipient filtering, and authority/header checks |
+| Visual inspection | Join presentation inspected on both AVD profiles; warm case-file palette, system typography, bounded phone composition, centered tablet composition, and ordinary hidden developer controls were present |
+
+The live Remote Friends protocol `1.1` join, direct vote, reconnect, privacy,
+and session-end rehearsal remains a post-merge gate. This addendum does not
+claim physical Android, TalkBack, switch access, stable Android 13, camera,
+media, store, or external-test evidence.
+
 ## Remaining Gates
 
 - Physical Android phone and tablet evidence remains unavailable. The owner

@@ -28,11 +28,21 @@ object ControlPlaneCodec {
             ?: throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
         return when (envelope) {
             is GPV1ServerEnvelope.Projection -> {
-                validateContext(envelope.value.sessionId.value, envelope.value.endpointId.value, authority)
+                validateContext(
+                    envelope.value.sessionId.value,
+                    envelope.value.endpointId.value,
+                    envelope.value.protocolVersion.value,
+                    authority,
+                )
                 IncomingControlEvent.Projection(envelope.value)
             }
             is GPV1ServerEnvelope.CommandResult -> {
-                validateContext(envelope.value.sessionId.value, envelope.value.endpointId.value, authority)
+                validateContext(
+                    envelope.value.sessionId.value,
+                    envelope.value.endpointId.value,
+                    envelope.value.protocolVersion.value,
+                    authority,
+                )
                 IncomingControlEvent.CommandResult(envelope.value)
             }
             is GPV1ServerEnvelope.Error -> {
@@ -40,7 +50,7 @@ object ControlPlaneCodec {
                     ?: throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
                 val endpoint = envelope.value.endpointId?.value
                     ?: throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
-                validateContext(session, endpoint, authority)
+                validateContext(session, endpoint, envelope.value.protocolVersion.value, authority)
                 IncomingControlEvent.Error(envelope.value)
             }
             is GPV1ServerEnvelope.AiSuggestion,
@@ -58,7 +68,7 @@ object ControlPlaneCodec {
                 messageId = GPV1MessageIdentifier(identifier("msg")),
                 payload = GPV1GetProjectionEnvelopePayload,
                 primaryAuthorityGeneration = null,
-                protocolVersion = GPV1ProtocolVersion("1.0"),
+                protocolVersion = GPV1ProtocolVersion(authority.protocolVersion),
                 serverSequence = null,
                 sessionId = GPV1Identifier(authority.sessionId),
                 type = "get_projection",
@@ -70,10 +80,7 @@ object ControlPlaneCodec {
     fun voteCommand(authority: SessionAuthority, targetCharacterId: String): Pair<OutboundCommand, String> {
         val target = targetCharacterId.trim()
         if (target.codePointCount(0, target.length) !in 1..128) {
-            throw CompanionFailure(
-                FailureKind.COMMAND_REJECTED,
-                "Enter the target character identifier supplied for this test.",
-            )
+            throw CompanionFailure(FailureKind.VOTING_CHOICE_UNAVAILABLE)
         }
         val command = OutboundCommand(
             messageId = identifier("msg"),
@@ -99,7 +106,7 @@ object ControlPlaneCodec {
                     ),
                 ),
                 primaryAuthorityGeneration = authority.primaryAuthorityGeneration,
-                protocolVersion = GPV1ProtocolVersion("1.0"),
+                protocolVersion = GPV1ProtocolVersion(authority.protocolVersion),
                 serverSequence = null,
                 sessionId = GPV1Identifier(authority.sessionId),
                 type = "submit_command",
@@ -112,7 +119,12 @@ object ControlPlaneCodec {
         envelope: GPV1ProjectionEnvelope,
         authority: SessionAuthority,
     ): ParticipantProjection {
-        validateContext(envelope.sessionId.value, envelope.endpointId.value, authority)
+        validateContext(
+            envelope.sessionId.value,
+            envelope.endpointId.value,
+            envelope.protocolVersion.value,
+            authority,
+        )
         val projection = envelope.payload.projection
         val ownMatches = projection.participants.filter {
             it.participantId.value == authority.participantId
@@ -130,6 +142,40 @@ object ControlPlaneCodec {
         if (language != authority.gameplayLanguage) {
             throw CompanionFailure(FailureKind.RECIPIENT_BOUNDARY_VIOLATION)
         }
+        val votingPhase: ParticipantVotingPhase
+        val voteTargets: List<ProjectedVoteTarget>
+        if (authority.protocolVersion == CompanionEnvironment.PROTOCOL_VERSION) {
+            votingPhase = when (projection.votingPhase?.value) {
+                "not_open" -> ParticipantVotingPhase.NOT_OPEN
+                "open" -> ParticipantVotingPhase.OPEN
+                "closed" -> ParticipantVotingPhase.CLOSED
+                "resolved" -> ParticipantVotingPhase.RESOLVED
+                else -> throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
+            }
+            if (projection.votingOpen != (votingPhase == ParticipantVotingPhase.OPEN) ||
+                (votingPhase == ParticipantVotingPhase.RESOLVED) != (projection.outcome != null)
+            ) {
+                throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
+            }
+            voteTargets = projection.voteTargets.orEmpty().map {
+                ProjectedVoteTarget(it.characterId.value, it.characterName)
+            }
+            if (voteTargets.map { it.id }.toSet().size != voteTargets.size ||
+                (voteTargets.isNotEmpty() &&
+                    (votingPhase != ParticipantVotingPhase.OPEN ||
+                        own.characterName == null || own.hasVoted))
+            ) {
+                throw CompanionFailure(FailureKind.RECIPIENT_BOUNDARY_VIOLATION)
+            }
+        } else {
+            if (authority.protocolVersion != CompanionEnvironment.LEGACY_PROTOCOL_VERSION ||
+                projection.votingPhase != null || projection.voteTargets != null
+            ) {
+                throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
+            }
+            votingPhase = ParticipantVotingPhase.UNAVAILABLE
+            voteTargets = emptyList()
+        }
         return ParticipantProjection(
             scenarioTitle = projection.scenarioTitle,
             gameplayLanguage = language,
@@ -141,15 +187,24 @@ object ControlPlaneCodec {
             scene = projection.activeScene?.let {
                 ProjectedScene(it.name, it.publicNarrative)
             },
-            votingOpen = projection.votingOpen,
+            votingPhase = votingPhase,
+            voteTargets = voteTargets,
             ownVoteRecorded = own.hasVoted,
             votesCast = projection.votesCast,
             publicOutcome = projection.outcome?.publicResolution,
         )
     }
 
-    private fun validateContext(sessionId: String, endpointId: String, authority: SessionAuthority) {
-        if (sessionId != authority.sessionId || endpointId != authority.endpointId) {
+    private fun validateContext(
+        sessionId: String,
+        endpointId: String,
+        protocolVersion: String,
+        authority: SessionAuthority,
+    ) {
+        if (sessionId != authority.sessionId ||
+            endpointId != authority.endpointId ||
+            protocolVersion != authority.protocolVersion
+        ) {
             throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
         }
     }

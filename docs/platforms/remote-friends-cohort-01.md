@@ -37,7 +37,7 @@ human review.
 | Surface | Candidate | Delivery boundary before friends join |
 | --- | --- | --- |
 | iOS/iPadOS Companion | `companion_ios` 0.3.0 (4) | Owner-only internal TestFlight installation, then a named external TestFlight group; exact uploaded build remains `TBD` |
-| Android Companion | `companion_android` 0.1.0 (1) | Owner-only Play internal installation, then a named Play closed track; exact uploaded app bundle remains `TBD` |
+| Android Companion | `companion_android` 0.2.0 (2) | Owner-only Play internal installation, then a named Play closed track; exact uploaded app bundle remains `TBD` |
 | Browser Companion fallback | Reviewed test deployment | Existing approved `play.test.guiltyparty.app`; no store membership required |
 | Browser Host | Reviewed test deployment | Owner-operated `host.test.guiltyparty.app`; not distributed as a participant app |
 | Packaged LG Stage | 0.1.1 (2) | Owner-sideloaded physical Stage; not distributed through a television store |

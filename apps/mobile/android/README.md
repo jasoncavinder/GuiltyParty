@@ -10,7 +10,7 @@ or store-ready release.
 
 - application ID: `app.guiltyparty.companion`
 - debug application ID: `app.guiltyparty.companion.debug`
-- version: `0.1.0` (1)
+- version: `0.2.0` (2)
 - minimum Android: Android 13/API 33
 - compile and target SDK: API 36
 - Java bytecode level: 17
@@ -111,16 +111,20 @@ visible throughout an unencrypted session. Release manifests and endpoint
 validation require HTTPS/WSS. This field does not perform NSD discovery,
 install a local certificate, or broaden the accepted LAN trust model.
 
-Before a live Android handshake, deploy a reviewed test-service configuration
-that admits client build `companion_android` 0.1.0 (1). Never place a pairing
-proof, bearer, resume credential, or invitation in a URL.
+Before a live Android handshake, use a reviewed test-service configuration
+that advertises protocol `1.1`, the `participant_vote_targets_v1` feature, and
+admits client build `companion_android` 0.2.0 (2). Never place a pairing proof,
+bearer, resume credential, or invitation in a URL.
 
 ## Implemented Slice
 
 - strict manual/paste `GP1.` invitation intake and ephemeral nickname
 - participant join with `private_display` and `touch_input` capabilities
 - recipient-bound private projection display
-- server-authoritative idempotent `cast_vote`
+- compatibility discovery before fresh admission, followed by protocol `1.1`
+  and `participant_vote_targets_v1` negotiation
+- direct server-authorized character-name voting with server-authoritative,
+  idempotent `cast_vote`; raw target identifiers are not player input
 - endpoint-bound rotating resumption after temporary loss or process restart
 - sequence, generation, context, and recipient validation
 - 5-second negotiation, 15-second projection heartbeat, 30-second privacy
@@ -129,7 +133,12 @@ proof, bearer, resume credential, or invitation in a URL.
 - immediate in-memory private-projection purge on background, lock, manual
   hide, uncertain connection, revocation, protocol failure, or session end
 - active-session `FLAG_SECURE` and recents-screenshot protection
-- compact phone and expanded tablet layouts
+- Refined Case File light, dark, and system appearances stored only as a
+  non-secret display preference
+- resource-backed player copy and localized gameplay-language display names
+- compact phone and expanded tablet layouts that collapse at large font scale
+- a collapsed debug-only development-origin panel absent from ordinary release
+  presentation
 
 ## Explicit Exclusions
 

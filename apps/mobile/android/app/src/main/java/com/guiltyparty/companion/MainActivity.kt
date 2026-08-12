@@ -23,9 +23,7 @@ class MainActivity : ComponentActivity() {
                     setRecentsScreenshotEnabled(true)
                 }
             }
-            GuiltyPartyTheme {
-                CompanionApp(controller)
-            }
+            CompanionApp(controller)
         }
     }
 
