@@ -25,6 +25,38 @@ enum ProjectionValidator {
             throw SessionModelError.recipientBoundaryViolation
         }
 
+        let phase: ParticipantVotingPhase
+        let voteTargets: [ProjectedVoteTargetView]
+        if authority.protocolVersion == CompanionEnvironment.protocolVersion {
+            guard let projectedPhase = projection.votingPhase,
+                  let negotiatedPhase = ParticipantVotingPhase(rawValue: projectedPhase.value),
+                  negotiatedPhase != .unavailable,
+                  projection.votingOpen == (negotiatedPhase == .open),
+                  (negotiatedPhase == .resolved) == (projection.outcome != nil)
+            else {
+                throw SessionModelError.protocolViolation
+            }
+            phase = negotiatedPhase
+            voteTargets = (projection.voteTargets ?? []).map {
+                ProjectedVoteTargetView(id: $0.characterId.value, name: $0.characterName)
+            }
+            guard Set(voteTargets.map(\.id)).count == voteTargets.count,
+                  voteTargets.isEmpty
+                    || (phase == .open && own.characterName != nil && !ownVoteRecorded)
+            else {
+                throw SessionModelError.recipientBoundaryViolation
+            }
+        } else {
+            guard authority.protocolVersion == CompanionEnvironment.legacyProtocolVersion,
+                  projection.votingPhase == nil,
+                  projection.voteTargets == nil
+            else {
+                throw SessionModelError.protocolViolation
+            }
+            phase = .unavailable
+            voteTargets = []
+        }
+
         return ParticipantProjection(
             scenarioTitle: projection.scenarioTitle,
             gameplayLanguage: projection.gameplayLanguage?.value ?? authority.gameplayLanguage,
@@ -40,7 +72,8 @@ enum ProjectionValidator {
             scene: projection.activeScene.map {
                 ProjectedScene(name: $0.name, publicNarrative: $0.publicNarrative)
             },
-            votingOpen: projection.votingOpen,
+            votingPhase: phase,
+            voteTargets: voteTargets,
             ownVoteRecorded: ownVoteRecorded,
             votesCast: projection.votesCast,
             publicOutcome: projection.outcome?.publicResolution

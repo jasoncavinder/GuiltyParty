@@ -11,6 +11,7 @@ struct StoredResumeCredential: Codable, Equatable, Sendable {
     let lastServerSequence: Int64
     let pendingIdempotencyIDs: [String]
     let gameplayLanguage: String
+    let protocolVersion: String?
     let pendingReplacementToken: String?
 
     init(
@@ -23,6 +24,7 @@ struct StoredResumeCredential: Codable, Equatable, Sendable {
         lastServerSequence: Int64,
         pendingIdempotencyIDs: [String],
         gameplayLanguage: String,
+        protocolVersion: String? = nil,
         pendingReplacementToken: String? = nil
     ) {
         self.token = token
@@ -34,7 +36,12 @@ struct StoredResumeCredential: Codable, Equatable, Sendable {
         self.lastServerSequence = lastServerSequence
         self.pendingIdempotencyIDs = pendingIdempotencyIDs
         self.gameplayLanguage = gameplayLanguage
+        self.protocolVersion = protocolVersion
         self.pendingReplacementToken = pendingReplacementToken
+    }
+
+    var negotiatedProtocolVersion: String {
+        protocolVersion ?? "1.0"
     }
 
     func updating(
@@ -51,6 +58,7 @@ struct StoredResumeCredential: Codable, Equatable, Sendable {
             lastServerSequence: lastServerSequence ?? self.lastServerSequence,
             pendingIdempotencyIDs: pendingIdempotencyIDs ?? self.pendingIdempotencyIDs,
             gameplayLanguage: gameplayLanguage,
+            protocolVersion: protocolVersion,
             pendingReplacementToken: pendingReplacementToken
         )
     }
@@ -66,6 +74,7 @@ struct StoredResumeCredential: Codable, Equatable, Sendable {
             lastServerSequence: lastServerSequence,
             pendingIdempotencyIDs: pendingIdempotencyIDs,
             gameplayLanguage: gameplayLanguage,
+            protocolVersion: protocolVersion,
             pendingReplacementToken: replacementToken
         )
     }

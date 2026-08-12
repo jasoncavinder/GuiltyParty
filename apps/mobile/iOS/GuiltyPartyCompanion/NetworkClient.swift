@@ -1,13 +1,17 @@
 import Foundation
 
 enum CompanionEnvironment {
+    static let compatibilityURL = URL(string: "https://api.test.guiltyparty.app/api/protocol")!
     static let joinURL = URL(string: "https://api.test.guiltyparty.app/api/v1/join")!
     static let resumeURL = URL(string: "https://api.test.guiltyparty.app/api/v1/resume")!
     static let webSocketURL = URL(string: "wss://api.test.guiltyparty.app/ws/v1")!
     static let controlSubprotocol = "guiltyparty.control.v1"
+    static let legacyProtocolVersion = "1.0"
+    static let protocolVersion = "1.1"
+    static let participantVotingFeature = "participant_vote_targets_v1"
     static let applicationID = "companion_ios"
-    static let applicationVersion = "0.2.0"
-    static let buildNumber: Int64 = 3
+    static let applicationVersion = "0.3.0"
+    static let buildNumber: Int64 = 4
     static let maximumResponseBytes = 262_144
 
     static func shortRequestConfiguration() -> URLSessionConfiguration {
@@ -39,6 +43,47 @@ enum CompanionEnvironment {
     }
 }
 
+enum CompatibilityClient {
+    static func request() -> URLRequest {
+        var request = URLRequest(
+            url: CompanionEnvironment.compatibilityURL,
+            cachePolicy: .reloadIgnoringLocalAndRemoteCacheData,
+            timeoutInterval: 15
+        )
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        request.setValue("no-store", forHTTPHeaderField: "Cache-Control")
+        return request
+    }
+
+    static func discover() async throws {
+        let session = URLSession(
+            configuration: CompanionEnvironment.shortRequestConfiguration(),
+            delegate: RejectingRedirectDelegate(),
+            delegateQueue: nil
+        )
+        defer { session.invalidateAndCancel() }
+        let (data, response) = try await session.data(for: request())
+        guard data.count <= CompanionEnvironment.maximumResponseBytes,
+              let http = response as? HTTPURLResponse,
+              http.statusCode == 200
+        else {
+            throw SessionModelError.unsupportedTransport
+        }
+        try validate(data)
+    }
+
+    static func validate(_ data: Data) throws {
+        let compatibility = try JSONDecoder().decode(GPV1CompatibilityResponse.self, from: data)
+        guard compatibility.requiredUpgrade == false,
+              compatibility.supportedProtocolMajors.contains(1),
+              compatibility.preferredProtocolVersion.value == CompanionEnvironment.protocolVersion,
+              compatibility.features.map(\.value).contains(CompanionEnvironment.participantVotingFeature)
+        else {
+            throw SessionModelError.unsupportedTransport
+        }
+    }
+}
+
 final class RejectingRedirectDelegate: NSObject, URLSessionTaskDelegate, @unchecked Sendable {
     func urlSession(
         _ session: URLSession,
@@ -66,6 +111,7 @@ enum JoinClient {
                 GPV1FeatureIdentifier("touch_input")
             ],
             clientBuild: CompanionEnvironment.clientBuild(),
+            features: [GPV1FeatureIdentifier(CompanionEnvironment.participantVotingFeature)],
             platform: GPV1FeatureIdentifier("ios_companion")
         )
         let body = GPV1JoinRequest.participant(
@@ -73,7 +119,7 @@ enum JoinClient {
                 displayName: nickname,
                 endpoint: endpoint,
                 kind: "participant",
-                protocolVersion: try GPV1ProtocolVersion("1.0")
+                protocolVersion: try GPV1ProtocolVersion(CompanionEnvironment.protocolVersion)
             )
         )
 
@@ -93,6 +139,7 @@ enum JoinClient {
     }
 
     static func join(invitation: Invitation, displayName: String) async throws -> ParticipantSessionAdmission {
+        try await CompatibilityClient.discover()
         let request = try request(invitation: invitation, displayName: displayName)
         let session = URLSession(
             configuration: CompanionEnvironment.shortRequestConfiguration(),
@@ -128,6 +175,7 @@ enum JoinClient {
                 from: data
               ),
               joined.sessionId.value == invitation.sessionID,
+              joined.protocolVersion.value == CompanionEnvironment.protocolVersion,
               let participantID = joined.participantId?.value,
               joined.authorityExpiresAtUnixMs > nowUnixMilliseconds,
               joined.resumeExpiresAtUnixMs > nowUnixMilliseconds
@@ -143,7 +191,8 @@ enum JoinClient {
                 bearer: joined.token.value,
                 expiresAtUnixMilliseconds: joined.authorityExpiresAtUnixMs,
                 primaryAuthorityGeneration: joined.primaryAuthorityGeneration,
-                gameplayLanguage: invitation.gameplayLanguage
+                gameplayLanguage: invitation.gameplayLanguage,
+                protocolVersion: joined.protocolVersion.value
             ),
             resumeCredential: StoredResumeCredential(
                 token: joined.resumeToken.value,
@@ -154,7 +203,8 @@ enum JoinClient {
                 primaryAuthorityGeneration: joined.primaryAuthorityGeneration,
                 lastServerSequence: joined.serverSequence,
                 pendingIdempotencyIDs: [],
-                gameplayLanguage: invitation.gameplayLanguage
+                gameplayLanguage: invitation.gameplayLanguage,
+                protocolVersion: joined.protocolVersion.value
             )
         )
     }
@@ -174,7 +224,7 @@ enum ResumeClient {
             participantId: GPV1Identifier(credential.participantID),
             pendingIdempotencyIds: try credential.pendingIdempotencyIDs.map(GPV1MessageIdentifier.init),
             primaryAuthorityGeneration: credential.primaryAuthorityGeneration,
-            protocolVersion: try GPV1ProtocolVersion("1.0"),
+            protocolVersion: try GPV1ProtocolVersion(credential.negotiatedProtocolVersion),
             sessionId: GPV1Identifier(credential.sessionID)
         )
         var request = URLRequest(
@@ -245,6 +295,7 @@ enum ResumeClient {
               resumed.sessionId.value == previous.sessionID,
               resumed.endpointId.value == previous.endpointID,
               resumed.participantId.value == previous.participantID,
+              resumed.protocolVersion.value == previous.negotiatedProtocolVersion,
               resumed.resumeToken.value == replacementToken,
               resumed.primaryAuthorityGeneration > previous.primaryAuthorityGeneration,
               resumed.authorityExpiresAtUnixMs > nowUnixMilliseconds,
@@ -265,7 +316,8 @@ enum ResumeClient {
                 bearer: resumed.token.value,
                 expiresAtUnixMilliseconds: resumed.authorityExpiresAtUnixMs,
                 primaryAuthorityGeneration: resumed.primaryAuthorityGeneration,
-                gameplayLanguage: previous.gameplayLanguage
+                gameplayLanguage: previous.gameplayLanguage,
+                protocolVersion: resumed.protocolVersion.value
             ),
             resumeCredential: StoredResumeCredential(
                 token: resumed.resumeToken.value,
@@ -276,7 +328,8 @@ enum ResumeClient {
                 primaryAuthorityGeneration: resumed.primaryAuthorityGeneration,
                 lastServerSequence: resumed.serverSequence,
                 pendingIdempotencyIDs: [],
-                gameplayLanguage: previous.gameplayLanguage
+                gameplayLanguage: previous.gameplayLanguage,
+                protocolVersion: resumed.protocolVersion.value
             )
         )
     }
@@ -296,9 +349,13 @@ enum HTTPFailureClassifier {
             return .connectionUnavailable
         }
         if code == "unsupported_client_build" || code == "upgrade_required" {
-            return .commandRejected("This development build is no longer supported by the test service.")
+            return .commandRejected(
+                String(localized: "This development build is no longer supported by the test service.")
+            )
         }
-        return .commandRejected(problem?.title ?? "The session could not be joined.")
+        return .commandRejected(
+            problem?.title ?? String(localized: "The session could not be joined.")
+        )
     }
 }
 
@@ -480,6 +537,7 @@ enum ControlPlaneCodec {
         switch envelope {
         case .projection(let projection):
             try validateContext(
+                protocolVersion: projection.protocolVersion.value,
                 sessionID: projection.sessionId.value,
                 endpointID: projection.endpointId.value,
                 authority: authority
@@ -487,6 +545,7 @@ enum ControlPlaneCodec {
             return .projection(projection)
         case .commandResult(let result):
             try validateContext(
+                protocolVersion: result.protocolVersion.value,
                 sessionID: result.sessionId.value,
                 endpointID: result.endpointId.value,
                 authority: authority
@@ -499,6 +558,7 @@ enum ControlPlaneCodec {
                 throw SessionModelError.protocolViolation
             }
             try validateContext(
+                protocolVersion: error.protocolVersion.value,
                 sessionID: sessionID,
                 endpointID: endpointID,
                 authority: authority
@@ -515,7 +575,7 @@ enum ControlPlaneCodec {
                 endpointId: GPV1Identifier(authority.endpointID),
                 messageId: GPV1MessageIdentifier(messageID),
                 payload: GPV1GetProjectionEnvelopePayload(),
-                protocolVersion: try GPV1ProtocolVersion("1.0"),
+                protocolVersion: try GPV1ProtocolVersion(authority.protocolVersion),
                 sessionId: GPV1Identifier(authority.sessionID),
                 type: "get_projection"
             )
@@ -524,11 +584,15 @@ enum ControlPlaneCodec {
     }
 
     private static func validateContext(
+        protocolVersion: String,
         sessionID: String,
         endpointID: String,
         authority: SessionAuthority
     ) throws {
-        guard sessionID == authority.sessionID, endpointID == authority.endpointID else {
+        guard protocolVersion == authority.protocolVersion,
+              sessionID == authority.sessionID,
+              endpointID == authority.endpointID
+        else {
             throw SessionModelError.protocolViolation
         }
     }
@@ -550,7 +614,9 @@ struct CommandFactory: Sendable {
     func castVote(targetCharacterID: String) throws -> OutboundCommand {
         let target = targetCharacterID.trimmingCharacters(in: .whitespacesAndNewlines)
         guard (1...128).contains(target.unicodeScalars.count) else {
-            throw SessionModelError.commandRejected("Enter the target character identifier supplied for this test.")
+            throw SessionModelError.commandRejected(
+                String(localized: "That voting choice is not available.")
+            )
         }
         return OutboundCommand(
             messageID: identifier(prefix: "msg"),
@@ -579,7 +645,7 @@ struct CommandFactory: Sendable {
                 messageId: GPV1MessageIdentifier(command.messageID),
                 payload: GPV1SubmitCommandEnvelopePayload(command: .castVote(vote)),
                 primaryAuthorityGeneration: authority.primaryAuthorityGeneration,
-                protocolVersion: try GPV1ProtocolVersion("1.0"),
+                protocolVersion: try GPV1ProtocolVersion(authority.protocolVersion),
                 sessionId: GPV1Identifier(authority.sessionID),
                 type: "submit_command"
             )

@@ -116,6 +116,18 @@ final class GeneratedContractTests: XCTestCase {
         XCTAssertNoThrow(try JSONEncoder().encode(response))
     }
 
+    func testGeneratedCompatibilityModelAdvertisesParticipantVoting() throws {
+        let response = try JSONDecoder().decode(
+            GPV1CompatibilityResponse.self,
+            from: fixture("compatibility-response")
+        )
+
+        XCTAssertEqual(response.preferredProtocolVersion.value, "1.1")
+        XCTAssertFalse(response.requiredUpgrade)
+        XCTAssertTrue(response.features.map(\.value).contains("participant_vote_targets_v1"))
+        XCTAssertNoThrow(try JSONEncoder().encode(response))
+    }
+
     func testAdditiveFieldsRemainCompatible() throws {
         let decoded = try JSONDecoder().decode(
             GPV1ClientEnvelope.self,
@@ -217,10 +229,64 @@ final class ProjectionBoundaryTests: XCTestCase {
         }
     }
 
-    private func participantEnvelope() throws -> GPV1ProjectionEnvelope {
+    func testNegotiatedParticipantVotingStatesMapToSafePlayerChoices() throws {
+        let cases: [(String, ParticipantVotingPhase, Int, Bool)] = [
+            ("participant-voting-not-open", .notOpen, 0, false),
+            ("participant-voting-open", .open, 2, false),
+            ("participant-voting-recorded", .open, 0, true),
+            ("participant-voting-closed", .closed, 0, true),
+            ("participant-voting-resolved", .resolved, 0, true),
+        ]
+
+        for (name, expectedPhase, expectedTargetCount, expectedVoteRecorded) in cases {
+            let projection = try ProjectionValidator.participantProjection(
+                from: participantEnvelope(named: name),
+                authority: authority(protocolVersion: "1.1")
+            )
+            XCTAssertEqual(projection.votingPhase, expectedPhase, name)
+            XCTAssertEqual(projection.voteTargets.count, expectedTargetCount, name)
+            XCTAssertEqual(projection.ownVoteRecorded, expectedVoteRecorded, name)
+        }
+
+        let open = try ProjectionValidator.participantProjection(
+            from: participantEnvelope(named: "participant-voting-open"),
+            authority: authority(protocolVersion: "1.1")
+        )
+        XCTAssertEqual(open.voteTargets.map(\.name), ["Curator", "Collector"])
+
+        let resolved = try ProjectionValidator.participantProjection(
+            from: participantEnvelope(named: "participant-voting-resolved"),
+            authority: authority(protocolVersion: "1.1")
+        )
+        XCTAssertEqual(resolved.publicOutcome, "The Curator was selected.")
+    }
+
+    func testVotingExtensionCannotCrossNegotiatedProtocolBoundary() throws {
+        XCTAssertThrowsError(
+            try ProjectionValidator.participantProjection(
+                from: participantEnvelope(named: "participant-voting-open"),
+                authority: authority()
+            )
+        ) { error in
+            XCTAssertEqual(error as? SessionModelError, .protocolViolation)
+        }
+
+        XCTAssertThrowsError(
+            try ProjectionValidator.participantProjection(
+                from: participantEnvelope(),
+                authority: authority(protocolVersion: "1.1")
+            )
+        ) { error in
+            XCTAssertEqual(error as? SessionModelError, .protocolViolation)
+        }
+    }
+
+    private func participantEnvelope(
+        named fixtureName: String = "participant-projection"
+    ) throws -> GPV1ProjectionEnvelope {
         let decoded = try JSONDecoder().decode(
             GPV1ServerEnvelope.self,
-            from: fixture("participant-projection")
+            from: fixture(fixtureName)
         )
         guard case .projection(let envelope) = decoded else {
             throw SessionModelError.invalidResponse
@@ -381,6 +447,34 @@ final class SessionStateMachineTests: XCTestCase {
 }
 
 final class CommandAndRequestTests: XCTestCase {
+    func testCompatibilityDiscoveryRequiresVotingFeatureAndNoUpgrade() throws {
+        let request = CompatibilityClient.request()
+        XCTAssertEqual(request.url, CompanionEnvironment.compatibilityURL)
+        XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+        XCTAssertNil(request.value(forHTTPHeaderField: "Origin"))
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Cache-Control"), "no-store")
+        XCTAssertNoThrow(try CompatibilityClient.validate(fixture("compatibility-response")))
+
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: fixture("compatibility-response"))
+                as? [String: Any]
+        )
+        object["features"] = ["stage_presentation_media_v1"]
+        XCTAssertThrowsError(
+            try CompatibilityClient.validate(
+                JSONSerialization.data(withJSONObject: object)
+            )
+        )
+
+        object["features"] = ["participant_vote_targets_v1"]
+        object["required_upgrade"] = true
+        XCTAssertThrowsError(
+            try CompatibilityClient.validate(
+                JSONSerialization.data(withJSONObject: object)
+            )
+        )
+    }
+
     func testHostPresentationStatusIsRejectedByPlayerCompanion() throws {
         let data = Data(
             #"{"protocol_version":"1.0","type":"presentation_status","message_id":"message-host-status-001","session_id":"session-synthetic-001","endpoint_id":"endpoint-synthetic-player-001","payload":{"manifest_revision":"the-stolen-artifact-v2-presentation-r2","asset_available":true,"sound_enabled":true,"atmosphere_state":"playing","reduced_motion":false}}"#.utf8
@@ -433,8 +527,64 @@ final class CommandAndRequestTests: XCTestCase {
             ["private_display", "touch_input"]
         )
         XCTAssertEqual(participant.endpoint.clientBuild?.applicationId.value, "companion_ios")
-        XCTAssertEqual(participant.endpoint.clientBuild?.applicationVersion, "0.2.0")
-        XCTAssertEqual(participant.endpoint.clientBuild?.buildNumber, 3)
+        XCTAssertEqual(participant.endpoint.clientBuild?.applicationVersion, "0.3.0")
+        XCTAssertEqual(participant.endpoint.clientBuild?.buildNumber, 4)
+        XCTAssertEqual(participant.protocolVersion.value, "1.1")
+        XCTAssertEqual(
+            (participant.endpoint.features ?? []).map(\.value),
+            ["participant_vote_targets_v1"]
+        )
+    }
+
+    func testFreshJoinPinsProtocolOnePointOneIntoAuthorityAndRecovery() throws {
+        let invitation = Invitation(
+            sessionID: "session-synthetic-001",
+            pairingProof: "pairing-proof-1234",
+            expiresAtUnixMilliseconds: 2_000_000_000_000,
+            gameplayLanguage: "en"
+        )
+        let joined = try GPV1RemoteNativeJoinResponse(
+            authorityExpiresAtUnixMs: 2_000_000_000_000,
+            authorityTransport: "bearer",
+            endpointId: GPV1Identifier("endpoint-synthetic-player-001"),
+            participantId: GPV1Identifier("participant-synthetic-001"),
+            primaryAuthorityGeneration: 3,
+            protocolVersion: GPV1ProtocolVersion("1.1"),
+            resumeExpiresAtUnixMs: 2_000_000_000_000,
+            resumeToken: GPV1Token("synthetic-device-only-resume-token"),
+            roomId: GPV1Identifier("room-synthetic-001"),
+            serverSequence: 8,
+            sessionId: GPV1Identifier(invitation.sessionID),
+            token: GPV1Token("synthetic-authority-token-never-use-as-a-real-secret"),
+            websocketTransport: "authorization_header"
+        )
+        let data = try JSONEncoder().encode(
+            GPV1RemoteFriendsJoinResponse.authorizationHeader(joined)
+        )
+
+        let admission = try JoinClient.decodeResponse(
+            data,
+            invitation: invitation,
+            cacheControl: "private, no-store",
+            nowUnixMilliseconds: 1_000
+        )
+
+        XCTAssertEqual(admission.authority.protocolVersion, "1.1")
+        XCTAssertEqual(admission.resumeCredential.negotiatedProtocolVersion, "1.1")
+        XCTAssertEqual(admission.resumeCredential.lastServerSequence, 8)
+
+        var object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+        object["protocol_version"] = "1.0"
+        XCTAssertThrowsError(
+            try JoinClient.decodeResponse(
+                JSONSerialization.data(withJSONObject: object),
+                invitation: invitation,
+                cacheControl: "no-store",
+                nowUnixMilliseconds: 1_000
+            )
+        )
     }
 
     func testResumeRequestUsesDedicatedHeaderAndContainsOnlyOpaqueMetadata() throws {
@@ -462,8 +612,9 @@ final class CommandAndRequestTests: XCTestCase {
         let decoded = try JSONDecoder().decode(GPV1ParticipantResumeRequest.self, from: body)
         XCTAssertEqual(decoded.endpointId.value, credential.endpointID)
         XCTAssertEqual(decoded.pendingIdempotencyIds.map(\.value), credential.pendingIdempotencyIDs)
-        XCTAssertEqual(decoded.clientBuild.applicationVersion, "0.2.0")
-        XCTAssertEqual(decoded.clientBuild.buildNumber, 3)
+        XCTAssertEqual(decoded.clientBuild.applicationVersion, "0.3.0")
+        XCTAssertEqual(decoded.clientBuild.buildNumber, 4)
+        XCTAssertEqual(decoded.protocolVersion.value, "1.0")
     }
 
     func testResumeRequestRequiresDurablyStagedReplacement() throws {
@@ -548,6 +699,25 @@ final class CommandAndRequestTests: XCTestCase {
         XCTAssertFalse(text.contains("privateObjective"))
         XCTAssertFalse(text.contains("revealedClues"))
         XCTAssertFalse(text.contains("targetCharacterID"))
+    }
+
+    func testLegacyStoredCredentialDefaultsToProtocolOnePointZero() throws {
+        let data = try JSONEncoder().encode(resumeCredential())
+        let decoded = try JSONDecoder().decode(StoredResumeCredential.self, from: data)
+
+        XCTAssertNil(decoded.protocolVersion)
+        XCTAssertEqual(decoded.negotiatedProtocolVersion, "1.0")
+    }
+
+    func testNegotiatedProtocolVersionIsPersistedAsOpaqueRecoveryMetadata() throws {
+        let data = try JSONEncoder().encode(resumeCredential(protocolVersion: "1.1"))
+        let object = try XCTUnwrap(
+            JSONSerialization.jsonObject(with: data) as? [String: Any]
+        )
+
+        XCTAssertEqual(object["protocolVersion"] as? String, "1.1")
+        let decoded = try JSONDecoder().decode(StoredResumeCredential.self, from: data)
+        XCTAssertEqual(decoded.negotiatedProtocolVersion, "1.1")
     }
 
     func testKeychainPolicyIsDeviceOnlyNonSynchronizingAndUnlockedOnly() {
@@ -680,7 +850,7 @@ final class CommandAndRequestTests: XCTestCase {
     func testCastVoteEnvelopeCarriesCurrentGenerationAndNoCredential() throws {
         let factory = CommandFactory()
         let command = try factory.castVote(targetCharacterID: "character-synthetic-002")
-        let data = try factory.encode(command, authority: authority())
+        let data = try factory.encode(command, authority: authority(protocolVersion: "1.1"))
         let text = try XCTUnwrap(String(data: data, encoding: .utf8))
         XCTAssertFalse(text.contains("synthetic-memory-only-bearer"))
         let envelope = try JSONDecoder().decode(GPV1ClientEnvelope.self, from: data)
@@ -688,6 +858,7 @@ final class CommandAndRequestTests: XCTestCase {
             return XCTFail("Expected submit command")
         }
         XCTAssertEqual(submit.primaryAuthorityGeneration, 3)
+        XCTAssertEqual(submit.protocolVersion.value, "1.1")
         XCTAssertEqual(submit.idempotencyId.value, command.idempotencyID)
         guard case .castVote(let vote) = submit.payload.command else {
             return XCTFail("Expected cast vote")
@@ -775,7 +946,7 @@ private func fixture(_ name: String) throws -> Data {
     return try Data(contentsOf: url)
 }
 
-private func authority() -> SessionAuthority {
+private func authority(protocolVersion: String = "1.0") -> SessionAuthority {
     SessionAuthority(
         sessionID: "session-synthetic-001",
         endpointID: "endpoint-synthetic-player-001",
@@ -783,11 +954,12 @@ private func authority() -> SessionAuthority {
         bearer: "synthetic-memory-only-bearer",
         expiresAtUnixMilliseconds: 2_000_000_000_000,
         primaryAuthorityGeneration: 3,
-        gameplayLanguage: "en"
+        gameplayLanguage: "en",
+        protocolVersion: protocolVersion
     )
 }
 
-private func resumeCredential() -> StoredResumeCredential {
+private func resumeCredential(protocolVersion: String? = nil) -> StoredResumeCredential {
     StoredResumeCredential(
         token: "synthetic-device-only-resume-token",
         sessionID: "session-synthetic-001",
@@ -798,6 +970,7 @@ private func resumeCredential() -> StoredResumeCredential {
         lastServerSequence: 8,
         pendingIdempotencyIDs: ["idempotency-synthetic-001"],
         gameplayLanguage: "en",
+        protocolVersion: protocolVersion,
         pendingReplacementToken: "synthetic-device-only-rotated-resume-token"
     )
 }
@@ -810,7 +983,8 @@ private func projection(assigned: Bool) -> ParticipantProjection {
         privateObjective: assigned ? "Synthetic private objective" : nil,
         clues: [],
         scene: nil,
-        votingOpen: false,
+        votingPhase: .notOpen,
+        voteTargets: [],
         ownVoteRecorded: false,
         votesCast: 0,
         publicOutcome: nil

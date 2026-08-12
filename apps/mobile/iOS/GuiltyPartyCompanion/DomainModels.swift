@@ -12,14 +12,14 @@ enum CompanionPhase: Equatable, Sendable {
 
     var title: String {
         switch self {
-        case .manualRejoin: "Join a private session"
-        case .joining: "Joining"
-        case .waitingForAssignment: "Waiting for assignment"
-        case .connected: "Connected"
-        case .reconnecting: "Reconnecting"
-        case .rejoined: "Rejoined"
-        case .expiredOrRevoked: "Invitation or access expired"
-        case .sessionEnded: "Session ended"
+        case .manualRejoin: String(localized: "Join a private session")
+        case .joining: String(localized: "Joining")
+        case .waitingForAssignment: String(localized: "Waiting for assignment")
+        case .connected: String(localized: "Connected")
+        case .reconnecting: String(localized: "Reconnecting")
+        case .rejoined: String(localized: "Rejoined")
+        case .expiredOrRevoked: String(localized: "Invitation or access expired")
+        case .sessionEnded: String(localized: "Session ended")
         }
     }
 }
@@ -33,13 +33,13 @@ enum PrivacyInterruption: Equatable, Sendable {
     var message: String {
         switch self {
         case .backgroundOrLock:
-            "Private content is hidden while Guilty Party is inactive."
+            String(localized: "Private content is hidden while Guilty Party is inactive.")
         case .capture:
-            "Screen recording or mirroring is active. Private content and actions remain hidden."
+            String(localized: "Screen recording or mirroring is active. Private content and actions remain hidden.")
         case .connectionUncertain:
-            "The connection is uncertain. A fresh private view is required."
+            String(localized: "The connection is uncertain. A fresh private view is required.")
         case .manual:
-            "Your private view is hidden."
+            String(localized: "Your private view is hidden.")
         }
     }
 }
@@ -59,6 +59,7 @@ struct SessionAuthority: Sendable {
     let expiresAtUnixMilliseconds: Int64
     let primaryAuthorityGeneration: Int64
     let gameplayLanguage: String
+    let protocolVersion: String
 }
 
 struct ParticipantSessionAdmission: Sendable {
@@ -77,6 +78,19 @@ struct ProjectedClueView: Equatable, Identifiable, Sendable {
     let description: String
 }
 
+enum ParticipantVotingPhase: String, Equatable, Sendable {
+    case unavailable
+    case notOpen = "not_open"
+    case open
+    case closed
+    case resolved
+}
+
+struct ProjectedVoteTargetView: Equatable, Identifiable, Sendable {
+    let id: String
+    let name: String
+}
+
 struct ParticipantProjection: Equatable, Sendable {
     let scenarioTitle: String
     let gameplayLanguage: String
@@ -84,7 +98,8 @@ struct ParticipantProjection: Equatable, Sendable {
     let privateObjective: String?
     let clues: [ProjectedClueView]
     let scene: ProjectedScene?
-    let votingOpen: Bool
+    let votingPhase: ParticipantVotingPhase
+    let voteTargets: [ProjectedVoteTargetView]
     let ownVoteRecorded: Bool
     let votesCast: Int64
     let publicOutcome: String?
@@ -113,24 +128,24 @@ enum SessionModelError: Error, Equatable, Sendable {
     var userMessage: String {
         switch self {
         case .invalidInvitation:
-            "That invitation is malformed or unsupported. Ask the Host for a fresh GP1 invitation."
+            String(localized: "That invitation is malformed or unsupported. Ask the Host for a fresh GP1 invitation.")
         case .expiredInvitation:
-            "That invitation has expired. Ask the Host to rotate it."
+            String(localized: "That invitation has expired. Ask the Host to rotate it.")
         case .invalidDisplayName:
-            "Use a nickname with 1 to 80 visible characters."
+            String(localized: "Use a nickname with 1 to 80 visible characters.")
         case .invalidResponse, .protocolViolation, .recipientBoundaryViolation,
              .staleSocketEvent, .sequenceRegression, .sequenceGap:
-            "The server response could not be applied safely. Rejoin with a fresh invitation."
+            String(localized: "The server response could not be applied safely. Rejoin with a fresh invitation.")
         case .unsupportedTransport:
-            "This server did not offer the required native connection transport."
+            String(localized: "This server did not offer the required native connection transport.")
         case .connectionUnavailable:
-            "The private connection is not ready."
+            String(localized: "The private connection is not ready.")
         case .commandRejected(let title):
             title
         case .expiredOrRevoked:
-            "This invitation or device access is no longer valid. Ask the Host for an active invitation."
+            String(localized: "This invitation or device access is no longer valid. Ask the Host for an active invitation.")
         case .sessionEnded:
-            "The session has ended."
+            String(localized: "The session has ended.")
         }
     }
 }

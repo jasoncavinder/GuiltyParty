@@ -4,7 +4,9 @@ import Foundation
 @MainActor
 final class CompanionSession: ObservableObject {
     @Published private(set) var state = SessionStateMachine()
-    @Published private(set) var statusMessage = "Paste or enter an active GP1 invitation."
+    @Published private(set) var statusMessage = String(
+        localized: "Paste or enter an active GP1 invitation."
+    )
     @Published private(set) var screenshotWarningIsPresented = false
     @Published private(set) var advertisedGameplayLanguage: String?
 
@@ -45,19 +47,20 @@ final class CompanionSession: ObservableObject {
             resumeCredential = credential
             advertisedGameplayLanguage = credential.gameplayLanguage
             state.beginJoin()
-            statusMessage = "Recovering this device's private session…"
+            statusMessage = String(localized: "Recovering this device's private session…")
             if automaticallyResume {
                 beginCredentialResumeIfNeeded()
             }
         } catch {
             try? credentialStore.delete()
-            statusMessage = "Saved session access could not be read safely. Join with a fresh invitation."
+            statusMessage = String(localized: "Saved session access could not be read safely. Join with a fresh invitation.")
         }
     }
 
     var phase: CompanionPhase { state.phase }
     var projection: ParticipantProjection? { state.projection }
     var privacyInterruption: PrivacyInterruption? { state.privacyInterruption }
+    var voteSubmissionIsPending: Bool { !pendingCommands.isEmpty }
 
     var canCastVote: Bool {
         guard let projection else { return false }
@@ -65,8 +68,9 @@ final class CompanionSession: ObservableObject {
             && !captureIsActive
             && !manuallyShielded
             && !state.needsFreshProjection
-            && projection.votingOpen
+            && projection.votingPhase == .open
             && !projection.ownVoteRecorded
+            && !projection.voteTargets.isEmpty
             && pendingCommands.isEmpty
     }
 
@@ -79,7 +83,7 @@ final class CompanionSession: ObservableObject {
         reconnectBackoff.reset()
         hasOpenedConnection = false
         state.beginJoin()
-        statusMessage = "Validating the invitation and joining privately…"
+        statusMessage = String(localized: "Validating the invitation and joining privately…")
 
         do {
             let invitation = try InvitationDecoder.decode(invitationPayload)
@@ -93,13 +97,19 @@ final class CompanionSession: ObservableObject {
             handleTerminalOrJoinError(error)
         } catch {
             state.requireManualRejoin()
-            statusMessage = "The session could not be reached. Check your connection and try a fresh invitation."
+            statusMessage = String(localized: "The session could not be reached. Check your connection and try a fresh invitation.")
         }
     }
 
     func castVote(targetCharacterID: String) async {
-        guard canCastVote, let authority, let socket else {
+        guard canCastVote, let projection, let authority, let socket else {
             statusMessage = SessionModelError.connectionUnavailable.userMessage
+            return
+        }
+        guard projection.voteTargets.contains(where: { $0.id == targetCharacterID }) else {
+            statusMessage = SessionModelError.commandRejected(
+                String(localized: "That voting choice is no longer available.")
+            ).userMessage
             return
         }
         do {
@@ -107,7 +117,7 @@ final class CompanionSession: ObservableObject {
             let data = try commandFactory.encode(command, authority: authority)
             pendingCommands[command.messageID] = command
             try recordPendingIdempotencyID(command.idempotencyID)
-            statusMessage = "Submitting your private vote…"
+            statusMessage = String(localized: "Submitting your private vote…")
             try await socket.send(data)
         } catch let error as SessionModelError {
             statusMessage = error.userMessage
@@ -167,7 +177,7 @@ final class CompanionSession: ObservableObject {
         reconnectBackoff.reset()
         hasOpenedConnection = false
         state.requireManualRejoin()
-        statusMessage = "Paste or enter an active GP1 invitation."
+        statusMessage = String(localized: "Paste or enter an active GP1 invitation.")
     }
 
     private func connect(isRejoin: Bool) {
@@ -188,8 +198,8 @@ final class CompanionSession: ObservableObject {
             baselineServerSequence: resumeCredential?.lastServerSequence
         )
         statusMessage = isRejoin
-            ? "Reconnecting. Private content stays hidden until the server sends a fresh view."
-            : "Opening the private game connection…"
+            ? String(localized: "Reconnecting. Private content stays hidden until the server sends a fresh view.")
+            : String(localized: "Opening the private game connection…")
 
         let request = WebSocketRequestBuilder.request(authority: authority)
         let socket = FirstPartyWebSocket(request: request) { [weak self] event in
@@ -212,8 +222,8 @@ final class CompanionSession: ObservableObject {
             let wasRejoin = hasOpenedConnection
             hasOpenedConnection = true
             statusMessage = wasRejoin
-                ? "Connected again. Requesting a fresh private view…"
-                : "Connected. Requesting your private view…"
+                ? String(localized: "Connected again. Requesting a fresh private view…")
+                : String(localized: "Connected. Requesting your private view…")
             startReceiveLoop(socketID: eventSocketID)
             startHeartbeatLoop(socketID: eventSocketID)
             startNegotiationDeadline(socketID: eventSocketID)
@@ -402,10 +412,10 @@ final class CompanionSession: ObservableObject {
             recordAuthenticatedActivity(socketID: eventSocketID, establishesPrivateView: true)
             advertisedGameplayLanguage = nextProjection.gameplayLanguage
             statusMessage = state.phase == .rejoined
-                ? "Rejoined with a fresh server-authorized private view."
+                ? String(localized: "Rejoined with a fresh server-authorized private view.")
                 : nextProjection.hasAssignment
-                    ? "Your private view is current."
-                    : "Connected. Waiting for the Host to assign your character."
+                    ? String(localized: "Your private view is current.")
+                    : String(localized: "Connected. Waiting for the Host to assign your character.")
             if state.phase == .rejoined {
                 Task { [weak self] in
                     try? await Task.sleep(for: .seconds(2))
@@ -453,7 +463,7 @@ final class CompanionSession: ObservableObject {
             else {
                 throw SessionModelError.protocolViolation
             }
-            statusMessage = "Your vote was accepted. Waiting for the refreshed private view…"
+            statusMessage = String(localized: "Your vote was accepted. Waiting for the refreshed private view…")
         case .rejected(let result):
             guard result.idempotencyId.value == pending.idempotencyID else {
                 throw SessionModelError.protocolViolation
@@ -558,7 +568,7 @@ final class CompanionSession: ObservableObject {
             return
         }
         state.beginJoin()
-        statusMessage = "Recovering this device's private session…"
+        statusMessage = String(localized: "Recovering this device's private session…")
         do {
             if credential.pendingReplacementToken == nil {
                 credential = credential.stagingReplacementToken(try ResumeCredentialToken.generate())
@@ -573,14 +583,14 @@ final class CompanionSession: ObservableObject {
         } catch let error as SessionModelError {
             if error == .connectionUnavailable {
                 state.interrupt(.connectionUncertain)
-                statusMessage = "Session recovery is waiting for a secure connection."
+                statusMessage = String(localized: "Session recovery is waiting for a secure connection.")
                 scheduleCredentialResume()
             } else {
                 handleTerminalOrJoinError(error)
             }
         } catch {
             state.interrupt(.connectionUncertain)
-            statusMessage = "Session recovery is waiting for a secure connection."
+            statusMessage = String(localized: "Session recovery is waiting for a secure connection.")
             scheduleCredentialResume()
         }
     }
@@ -606,7 +616,7 @@ final class CompanionSession: ObservableObject {
         authority = nil
         pendingCommands.removeAll(keepingCapacity: false)
         state.interrupt(.connectionUncertain)
-        statusMessage = "Refreshing this device's private session access…"
+        statusMessage = String(localized: "Refreshing this device's private session access…")
         beginCredentialResumeIfNeeded()
     }
 

@@ -2,12 +2,13 @@
 
 ## Record Metadata
 
-- Date: 2026-08-07 through 2026-08-08 (Pacific/Honolulu)
+- Date: 2026-08-07 through 2026-08-11 (Pacific/Honolulu)
 - Branch: `feature/ios-companion-mvp`
 - Target branch: `dev`
 - Initial product: `GuiltyPartyCompanion` 0.1.0 (1)
 - Post-remediation product: `GuiltyPartyCompanion` 0.1.1 (2)
 - Resumption-checkpoint product: `GuiltyPartyCompanion` 0.2.0 (3)
+- Player-refinement candidate: **Guilty Party** 0.3.0 (4)
 - Minimum OS: iOS/iPadOS 18.0
 - Host: macOS 26.6 Tahoe
 - IDE: Xcode 26.6 (17F113)
@@ -179,9 +180,10 @@ clearing, and the fresh-projection reconnect gate.
 
 ## Limitations and Required Owner Interaction
 
-- The current v1 participant projection does not include vote-target character
-  identifiers. The synthetic test UI accepts an identifier supplied by the test
-  coordinator; canonical validation remains server-side.
+- Fresh protocol `1.1` sessions include only the exact server-authorized vote
+  targets and display their character names directly. A recovered protocol
+  `1.0` installation receives no targets and must use a fresh invitation before
+  voting; canonical validation remains server-side.
 - Physical signing used the owner's existing local Apple Development account
   only through command-line build overrides. No development team, profile,
   certificate, or device identifier is stored in the project or committed.
@@ -196,6 +198,42 @@ clearing, and the fresh-projection reconnect gate.
   storage. Automated contract, server, and native tests and the deployed
   physical-iPhone restart exercise cover the candidate. The duplicate-
   participant defect is closed for automatic same-installation resumption in
-  this tested configuration. Android application work remains blocked until
-  the owner explicitly accepts the checkpoint in
-  `android-entry-checkpoint-evidence.md`.
+  this tested configuration. Android evidence is maintained separately in
+  `android-entry-checkpoint-evidence.md` and its later test records.
+
+## 2026-08-11 Player Refinement Candidate
+
+- Branch: `feature/ios-player-refinement`
+- Candidate: **Guilty Party** 0.3.0 (4)
+- Fresh-session contract: protocol `1.1` with
+  `participant_vote_targets_v1`
+- Legacy installed-session recovery: protocol `1.0` without participant vote
+  targets; a fresh invitation is required before voting
+
+The candidate replaces raw scenario-identifier entry with direct choices from
+the current recipient-specific projection. It adds explicit not-open, open,
+submitted, closed, and resolved presentation; rejects voting fields across an
+unnegotiated protocol boundary; persists only the non-secret negotiated version
+with the existing opaque resume record; and retains the fresh-projection and
+recipient-privacy gates.
+
+The interface adapts the approved Refined Case File visual language using only
+code-native SwiftUI, system fonts, and SF Symbols. It provides persistent
+system/light/dark appearance selection, one ordered compact phone flow, a
+regular-width tablet context rail and primary case-file pane, and a single-
+column accessibility-size fallback. A source-language string catalog now
+records core player copy; no translation claim is made.
+
+| Check | Destination/configuration | Result |
+| --- | --- | --- |
+| `make test` | repository host | Passed: 104 Cloudflare/browser/Stage tests plus contract, parity, Rust unit, and Rust doc checks |
+| `make check-mobile-contracts` | repository host | Passed: deterministic outputs match; Swift and Kotlin suites each passed 43 fixtures |
+| XCTest | iPhone 17 Pro, iOS 26.5 simulator, Debug | Passed: 50 tests |
+| XCTest | iPad Pro 13-inch (M5), iOS 26.5 simulator, Debug | Passed: 50 tests |
+| App build | generic iOS Simulator, Release | Passed with project warnings treated as errors |
+| App build | generic physical iOS device, Debug, unsigned | Passed with project warnings treated as errors |
+| Join-layout launch | iPhone 17 Pro (dark) and iPad Pro 13-inch (M5) (light), iOS 26.5 simulators | Passed for bounded layout, readable contrast, and first-party appearance styling |
+
+The visual launch covered the join state only. A complete live protocol `1.1`
+session, direct vote, privacy interruption, appearance, orientation, Dynamic
+Type, VoiceOver, and physical-iPhone exercise remain post-merge owner evidence.

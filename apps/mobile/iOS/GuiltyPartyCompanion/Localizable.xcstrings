@@ -1,0 +1,93 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Appearance" : {
+      "comment" : "Menu label for choosing the app appearance."
+    },
+    "Cast private vote" : {
+      "comment" : "Button that submits the player's selected vote."
+    },
+    "Choose the character you believe is responsible." : {
+      "comment" : "Instructions shown while participant voting is open."
+    },
+    "Clues revealed to you" : {
+      "comment" : "Heading for clues authorized for the current participant."
+    },
+    "Dark appearance" : {
+      "comment" : "Dark appearance choice."
+    },
+    "Gameplay language: %@" : {
+      "comment" : "The human-readable language used by the current session."
+    },
+    "Guilty Party" : {
+      "comment" : "Public app and product name."
+    },
+    "Hide private view" : {
+      "comment" : "Action that immediately protects all private content."
+    },
+    "Join private session" : {
+      "comment" : "Button that joins using the supplied private invitation."
+    },
+    "Join with an invitation" : {
+      "comment" : "Heading for the invitation join form."
+    },
+    "Light appearance" : {
+      "comment" : "Light appearance choice."
+    },
+    "No clues have been revealed to you yet." : {
+      "comment" : "Empty state for the participant clue list."
+    },
+    "Outcome" : {
+      "comment" : "Heading for the public scenario outcome."
+    },
+    "Private" : {
+      "comment" : "Badge indicating participant-private content."
+    },
+    "Private objective" : {
+      "comment" : "Label for the current participant's private objective."
+    },
+    "Private view protected" : {
+      "comment" : "Privacy shield heading."
+    },
+    "Rejoin manually" : {
+      "comment" : "Action that discards current access and returns to joining."
+    },
+    "Request a fresh private view" : {
+      "comment" : "Action that requests new authorized participant content."
+    },
+    "Screenshot detected" : {
+      "comment" : "Warning title shown after the system reports a screenshot."
+    },
+    "Session language" : {
+      "comment" : "Label for the current gameplay language."
+    },
+    "Submitting vote…" : {
+      "comment" : "Progress text while a private vote is being submitted."
+    },
+    "System appearance" : {
+      "comment" : "Appearance choice that follows the device setting."
+    },
+    "The vote has been resolved." : {
+      "comment" : "Voting state after the deterministic outcome is available."
+    },
+    "Voting" : {
+      "comment" : "Heading and state label for participant voting."
+    },
+    "Voting has not opened yet." : {
+      "comment" : "Voting state before the host opens voting."
+    },
+    "Voting is closed." : {
+      "comment" : "Voting state after submissions close."
+    },
+    "Waiting for assignment" : {
+      "comment" : "Player state before a character is assigned."
+    },
+    "Your private objective will appear after assignment." : {
+      "comment" : "Objective placeholder before character assignment."
+    },
+    "Your vote is recorded" : {
+      "comment" : "Confirmation that the participant's vote is authoritative."
+    }
+  },
+  "version" : "1.0"
+}

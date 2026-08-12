@@ -43,7 +43,7 @@ suffers. Native surfaces should feel related rather than pixel-identical.
 | --- | --- | --- |
 | Browser Host | Creates and ends sessions; manages invitations and Stage pairing; assigns characters; advances scenes and clues; controls voting; shows participants and endpoint status. | Prototype/operator terminology remains prominent; story flow, urgency, confirmations, and recovery need stronger hierarchy; controls are fixture-specific; no presentation-media controls or shared component specification. |
 | LG webOS Stage | Packages and pairs on the physical television; renders public cast, scene, clues, voting status, outcome, reconnect overlay, terminal clearing, and the bounded bundled Cinematic Gallery image and Cinematic Vault atmosphere proof. | Presentation media is still limited to one public proof; visual tokens differ from web; representative overscan, focus, reduced-motion, long-content, and future media-delivery evidence remain. |
-| iOS/iPadOS | Joins remotely; protects private content; resumes endpoint authority; shows assignment, objective, scene, clues, voting, and outcome; provides compact and split tablet layouts. | Primarily system styling; invitation paste and raw vote-target entry are development UX; no final icon/launch identity, camera join, authored media, or complete localization structure; tablet hierarchy needs product design rather than only structural adaptation. |
+| iOS/iPadOS | Joins remotely; protects private content; resumes endpoint authority; uses Refined Case File light/dark/system presentation; shows assignment, objective, scene, clues, direct authorized voting, and outcome; provides a compact flow and deliberate tablet context rail. | Invitation paste remains the development join UX; no final icon/launch identity, camera join, authored private media, translated interface catalog, or complete manual accessibility evidence. |
 | Android phone/tablet | Matches the native control-plane, resumption, privacy, voting, and adaptive-layout baseline; Android secure-window protection is active during private sessions. | Light Material prototype is visually disconnected from other surfaces; development origin and raw vote-target controls remain visible in debug UX; no final identity, camera join, authored media, or complete localization structure; physical-device evidence is unavailable. |
 | Browser player fallback | Joins, receives private projections, votes from valid choices, hides private content, reconnects, and clears at session end without persistent browser storage. | It is visually closer to Host than native apps but lacks a documented shared component/token source; browser capability limitations and fallback messaging need clearer product treatment. |
 
@@ -171,13 +171,14 @@ background capture remain excluded.
    phone, and tablet states plus semantic roles and copy principles; the owner
    approved the Refined Case File visual language while keeping layouts and UX
    open for later full-game and media studies.
-2. **Player-flow refinement — specification proposed 2026-08-11:** joining,
+2. **Player-flow refinement — implementation in progress 2026-08-11:** joining,
    assignment, character, clues, explicit voting state, direct vote choices,
    recovery, privacy, and terminal states on iOS/iPadOS and Android, followed
    by browser-fallback reconciliation. The bounded cross-platform state,
-   hierarchy, contract, and acceptance proposal is in the
-   [Player Experience Specification](../product/player-experience.md) and
-   remains subject to owner review before implementation.
+   hierarchy, contract, and acceptance proposal is accepted in the
+   [Player Experience Specification](../product/player-experience.md). The
+   protocol `1.1` server contract and iOS/iPadOS adaptation are implemented
+   pending review; Android and browser reconciliation remain.
 3. **Host and Stage refinement:** run-of-show and support hierarchy, public
    storytelling presentation, television focus and safe-area behavior.
 4. **Accessibility/localization pass:** automated and manual virtual coverage,
