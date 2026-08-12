@@ -1,6 +1,7 @@
 package com.guiltyparty.companion
 
 import android.app.Activity
+import android.os.Build
 import android.view.WindowInsetsController
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -20,6 +21,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -45,6 +47,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalView
@@ -52,6 +55,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -69,16 +73,23 @@ fun CompanionApp(controller: CompanionController) {
         AppAppearance.LIGHT -> false
         AppAppearance.DARK -> true
     }
-    SideEffect {
-        val window = (view.context as? Activity)?.window
-        val lightBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
-            WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
-        window?.insetsController?.setSystemBarsAppearance(
-            if (effectiveDarkAppearance) 0 else lightBars,
-            lightBars,
-        )
-    }
     GuiltyPartyTheme(appearance) {
+        val systemBarColor = MaterialTheme.colorScheme.background.toArgb()
+        SideEffect {
+            val window = (view.context as? Activity)?.window
+            val lightBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS or
+                WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS
+            window?.insetsController?.setSystemBarsAppearance(
+                if (effectiveDarkAppearance) 0 else lightBars,
+                lightBars,
+            )
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.VANILLA_ICE_CREAM) {
+                @Suppress("DEPRECATION")
+                window?.statusBarColor = systemBarColor
+                @Suppress("DEPRECATION")
+                window?.navigationBarColor = systemBarColor
+            }
+        }
         val snapshot = controller.snapshot
         Surface(
             modifier = Modifier.fillMaxSize(),
@@ -600,27 +611,33 @@ private fun VotingCard(
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         if (phase == ParticipantVotingPhase.OPEN && !recorded) {
-            projection.voteTargets.forEach { target ->
-                val selected = selectedTarget == target.id
-                OutlinedButton(
-                    onClick = { selectedTarget = target.id },
-                    enabled = !votePending,
-                    modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
-                        .testTag("vote_target_choice"),
-                    colors = if (selected) {
-                        ButtonDefaults.outlinedButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                        )
-                    } else {
-                        ButtonDefaults.outlinedButtonColors()
-                    },
-                    border = BorderStroke(
-                        if (selected) 2.dp else 1.dp,
-                        if (selected) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.outline,
-                    ),
-                ) { Text(target.name) }
+            Column(
+                Modifier.fillMaxWidth().selectableGroup(),
+                verticalArrangement = Arrangement.spacedBy(10.dp),
+            ) {
+                projection.voteTargets.forEach { target ->
+                    val selected = selectedTarget == target.id
+                    OutlinedButton(
+                        onClick = { selectedTarget = target.id },
+                        enabled = !votePending,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = 48.dp)
+                            .semantics { this.selected = selected }
+                            .testTag("vote_target_choice"),
+                        colors = if (selected) {
+                            ButtonDefaults.outlinedButtonColors(
+                                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                                contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            )
+                        } else {
+                            ButtonDefaults.outlinedButtonColors()
+                        },
+                        border = BorderStroke(
+                            if (selected) 2.dp else 1.dp,
+                            if (selected) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outline,
+                        ),
+                    ) { Text(target.name) }
+                }
             }
             Button(
                 onClick = {
@@ -644,13 +661,19 @@ private fun AppearancePicker(
         BoxWithConstraints(Modifier.fillMaxWidth()) {
             val stackOptions = maxWidth < 360.dp || fontScale >= 1.3f
             if (stackOptions) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(
+                    Modifier.selectableGroup(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     AppAppearance.entries.forEach { option ->
                         AppearanceButton(option, appearance, onAppearance, Modifier.fillMaxWidth())
                     }
                 }
             } else {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    Modifier.fillMaxWidth().selectableGroup(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     AppAppearance.entries.forEach { option ->
                         AppearanceButton(
                             option,
@@ -679,7 +702,10 @@ private fun AppearanceButton(
     }
     OutlinedButton(
         onClick = { onAppearance(option) },
-        modifier = modifier.heightIn(min = 48.dp),
+        modifier = modifier
+            .heightIn(min = 48.dp)
+            .semantics { selected = current == option }
+            .testTag("appearance_option_${option.persistedValue}"),
         colors = if (current == option) {
             ButtonDefaults.outlinedButtonColors(
                 containerColor = MaterialTheme.colorScheme.primaryContainer,
