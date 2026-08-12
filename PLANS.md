@@ -32,8 +32,9 @@ subsequently approved under ADR 0040, implemented, and physically validated on
 the LG television on 2026-08-11. The bounded
 [Player Experience Specification](docs/product/player-experience.md) is now
 accepted, and its additive server-projected voting-state and vote-choice
-contract is merged. The iOS/iPadOS player-flow refinement is merged, and the
-equivalent Android phone/tablet refinement is implemented pending review.
+contract is merged. The iOS/iPadOS and Android phone/tablet player-flow
+refinements are merged. The Android build subsequently passed its owner-only
+remote protocol `1.1` phone/tablet emulator rehearsal on 2026-08-11 HST.
 The owner selected **Guilty Party** as the sole public mobile app name and
 directed the project on 2026-08-09 to improve the owner-tested product
 experience before TestFlight or Google Play testing. Layout, navigation, and
@@ -90,8 +91,9 @@ in the [Local Product Refinement Roadmap](docs/roadmap/local-product-refinement.
 4. **Completed:** refine the iOS/iPadOS joining, character,
    clue, voting, recovery, privacy, appearance, localization, and
    terminal-session experience.
-5. **Implemented; pending review:** refine the equivalent Android phone/tablet
-   outcomes with native Compose adaptation and a debug-only developer panel.
+5. **Completed:** refine the equivalent Android phone/tablet outcomes with
+   native Compose adaptation and a debug-only developer panel; verify the
+   merged build through the owner-only protocol `1.1` remote rehearsal.
 6. Reconcile the browser fallback's product copy, state meanings, direct vote
    choices, and visual roles within its accepted capability limits.
 7. Verify accessibility and localization behavior across phone, tablet, web,
