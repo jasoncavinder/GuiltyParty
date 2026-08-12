@@ -6,6 +6,7 @@ import java.net.URI
 
 class ServerEndpoint private constructor(
     val origin: String,
+    val compatibilityUrl: String,
     val joinUrl: String,
     val resumeUrl: String,
     val webSocketUrl: String,
@@ -40,6 +41,7 @@ class ServerEndpoint private constructor(
             val authority = uri.rawAuthority
             return ServerEndpoint(
                 origin = normalized,
+                compatibilityUrl = "$normalized/api/protocol",
                 joinUrl = "$normalized/api/v1/join",
                 resumeUrl = "$normalized/api/v1/resume",
                 webSocketUrl = "$socketScheme://$authority/ws/v1",

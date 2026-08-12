@@ -132,11 +132,12 @@ class KeystoreResumeCredentialStore(context: Context) : ResumeCredentialStore {
             put("pending_idempotency_ids", JSONArray(value.pendingIdempotencyIds))
             put("gameplay_language", value.gameplayLanguage)
             put("server_origin", value.serverOrigin)
+            put("protocol_version", value.protocolVersion)
         }.toString()
 
         internal fun decodeCredential(text: String): StoredResumeCredential {
             val value = JSONObject(text)
-            if (value.length() != 13 || value.getInt("version") != 1) {
+            if (value.length() !in 13..14 || value.getInt("version") != 1) {
                 throw CompanionFailure(FailureKind.INVALID_RESPONSE)
             }
             val pending = value.getJSONArray("pending_idempotency_ids")
@@ -157,6 +158,10 @@ class KeystoreResumeCredentialStore(context: Context) : ResumeCredentialStore {
                 },
                 gameplayLanguage = value.getString("gameplay_language"),
                 serverOrigin = value.getString("server_origin"),
+                protocolVersion = value.optString(
+                    "protocol_version",
+                    CompanionEnvironment.LEGACY_PROTOCOL_VERSION,
+                ),
             )
         }
     }

@@ -28,6 +28,9 @@ enum class FailureKind {
     SEQUENCE_GAP,
     CONNECTION_UNAVAILABLE,
     COMMAND_REJECTED,
+    VOTING_CHOICE_UNAVAILABLE,
+    UNSUPPORTED_BUILD,
+    JOIN_FAILED,
     EXPIRED_OR_REVOKED,
     SESSION_ENDED,
 }
@@ -42,7 +45,7 @@ class CompanionFailure(
 val FailureKind.defaultMessage: String
     get() = when (this) {
         FailureKind.INVALID_INVITATION ->
-            "That invitation is malformed or unsupported. Ask the Host for a fresh GP1 invitation."
+            "That invitation is malformed or unsupported. Ask the Host for a fresh invitation."
         FailureKind.EXPIRED_INVITATION ->
             "That invitation has expired. Ask the Host to rotate it."
         FailureKind.INVALID_DISPLAY_NAME ->
@@ -55,6 +58,10 @@ val FailureKind.defaultMessage: String
         -> "The server response could not be applied safely. Rejoin with a fresh invitation."
         FailureKind.CONNECTION_UNAVAILABLE -> "The private connection is not ready."
         FailureKind.COMMAND_REJECTED -> "The action was rejected."
+        FailureKind.VOTING_CHOICE_UNAVAILABLE -> "That voting choice is unavailable."
+        FailureKind.UNSUPPORTED_BUILD ->
+            "This development build is no longer supported by the test service."
+        FailureKind.JOIN_FAILED -> "The session could not be joined."
         FailureKind.EXPIRED_OR_REVOKED ->
             "This invitation or device access is no longer valid. Ask the Host for an active invitation."
         FailureKind.SESSION_ENDED -> "The session has ended."
@@ -78,6 +85,7 @@ class SessionAuthority(
     val primaryAuthorityGeneration: Long,
     val gameplayLanguage: String,
     val serverEndpoint: ServerEndpoint,
+    val protocolVersion: String = CompanionEnvironment.LEGACY_PROTOCOL_VERSION,
 ) {
     override fun toString(): String = "SessionAuthority(<redacted>)"
 }
@@ -95,6 +103,7 @@ class StoredResumeCredential(
     val pendingIdempotencyIds: List<String>,
     val gameplayLanguage: String,
     val serverOrigin: String,
+    val protocolVersion: String = CompanionEnvironment.LEGACY_PROTOCOL_VERSION,
 ) {
     fun withReplacement(token: String): StoredResumeCredential = copy(
         pendingReplacementToken = token,
@@ -122,6 +131,7 @@ class StoredResumeCredential(
         pendingIdempotencyIds: List<String> = this.pendingIdempotencyIds,
         gameplayLanguage: String = this.gameplayLanguage,
         serverOrigin: String = this.serverOrigin,
+        protocolVersion: String = this.protocolVersion,
     ) = StoredResumeCredential(
         token,
         pendingReplacementToken,
@@ -135,6 +145,7 @@ class StoredResumeCredential(
         pendingIdempotencyIds,
         gameplayLanguage,
         serverOrigin,
+        protocolVersion,
     )
 
     override fun toString(): String = "StoredResumeCredential(<redacted>)"
@@ -160,6 +171,21 @@ class ProjectedClue(
     override fun toString(): String = "ProjectedClue(<redacted>)"
 }
 
+enum class ParticipantVotingPhase {
+    UNAVAILABLE,
+    NOT_OPEN,
+    OPEN,
+    CLOSED,
+    RESOLVED,
+}
+
+class ProjectedVoteTarget(
+    val id: String,
+    val name: String,
+) {
+    override fun toString(): String = "ProjectedVoteTarget(<redacted>)"
+}
+
 class ParticipantProjection(
     val scenarioTitle: String,
     val gameplayLanguage: String,
@@ -167,7 +193,8 @@ class ParticipantProjection(
     val privateObjective: String?,
     val clues: List<ProjectedClue>,
     val scene: ProjectedScene?,
-    val votingOpen: Boolean,
+    val votingPhase: ParticipantVotingPhase,
+    val voteTargets: List<ProjectedVoteTarget>,
     val ownVoteRecorded: Boolean,
     val votesCast: Long,
     val publicOutcome: String?,
@@ -186,7 +213,7 @@ class OutboundCommand(
 
 class UiSnapshot(
     val phase: CompanionPhase = CompanionPhase.MANUAL_REJOIN,
-    val statusMessage: String = "Paste or enter an active GP1 invitation.",
+    val statusMessage: String = "Paste or enter an active invitation.",
     val projection: ParticipantProjection? = null,
     val privacyInterruption: PrivacyInterruption? = null,
     val gameplayLanguage: String? = null,

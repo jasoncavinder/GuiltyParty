@@ -20,6 +20,7 @@ class CompanionController(
     private val credentialStore: ResumeCredentialStore = KeystoreResumeCredentialStore(context),
     private val networkClient: NetworkClient = NetworkClient(),
 ) {
+    private val appContext = context.applicationContext
     var snapshot by mutableStateOf(UiSnapshot())
         private set
 
@@ -47,12 +48,13 @@ class CompanionController(
     private var manuallyShielded = false
     private var hasOpenedConnection = false
     private val pendingCommands = mutableMapOf<String, OutboundCommand>()
-    private var statusMessage = "Paste or enter an active GP1 invitation."
+    private var statusMessage = appContext.getString(R.string.status_join_ready)
     private var gameplayLanguage: String? = null
     private var insecureDevelopmentTransport = false
 
     init {
         restoreCredentialIfUsable()
+        publish()
     }
 
     val canCastVote: Boolean
@@ -61,7 +63,8 @@ class CompanionController(
             return appActive &&
                 !manuallyShielded &&
                 !state.needsFreshProjection &&
-                projection.votingOpen &&
+                projection.votingPhase == ParticipantVotingPhase.OPEN &&
+                projection.voteTargets.isNotEmpty() &&
                 !projection.ownVoteRecorded &&
                 pendingCommands.isEmpty()
         }
@@ -82,7 +85,7 @@ class CompanionController(
         hasOpenedConnection = false
         manuallyShielded = false
         state.beginJoin()
-        statusMessage = "Validating the invitation and joining privately…"
+        statusMessage = text(R.string.status_join_validating)
         publish()
 
         try {
@@ -95,11 +98,32 @@ class CompanionController(
             }
             insecureDevelopmentTransport = endpoint.isInsecureDevelopment
             val attempt = nextAdmissionAttempt()
-            admissionCall = networkClient.join(
+            admissionCall = networkClient.discoverCompatibility(
                 endpoint,
-                invitation,
-                displayName,
-                admissionCallback(attempt) { admission -> acceptAdmission(admission, false) },
+                object : CompatibilityCallback {
+                    override fun onSuccess() = onMain {
+                        if (attempt != admissionAttempt) return@onMain
+                        try {
+                            admissionCall = networkClient.join(
+                                endpoint,
+                                invitation,
+                                displayName,
+                                admissionCallback(attempt) { admission ->
+                                    acceptAdmission(admission, false)
+                                },
+                            )
+                        } catch (failure: CompanionFailure) {
+                            admissionCall = null
+                            handleTerminalOrJoinFailure(failure)
+                        }
+                    }
+
+                    override fun onFailure(failure: CompanionFailure) = onMain {
+                        if (attempt != admissionAttempt) return@onMain
+                        admissionCall = null
+                        handleTerminalOrJoinFailure(failure)
+                    }
+                },
             )
         } catch (failure: CompanionFailure) {
             handleTerminalOrJoinFailure(failure)
@@ -110,8 +134,9 @@ class CompanionController(
         assertMainThread()
         val activeAuthority = authority
         val activeSocket = socket
-        if (!canCastVote || activeAuthority == null || activeSocket == null) {
-            statusMessage = FailureKind.CONNECTION_UNAVAILABLE.defaultMessage
+        val authorizedTarget = state.projection?.voteTargets?.any { it.id == targetCharacterId } == true
+        if (!canCastVote || !authorizedTarget || activeAuthority == null || activeSocket == null) {
+            statusMessage = failureText(FailureKind.CONNECTION_UNAVAILABLE)
             publish()
             return
         }
@@ -119,7 +144,7 @@ class CompanionController(
             val (command, encoded) = ControlPlaneCodec.voteCommand(activeAuthority, targetCharacterId)
             pendingCommands[command.messageId] = command
             recordPendingIdempotencyId(command.idempotencyId)
-            statusMessage = "Submitting your private vote…"
+            statusMessage = text(R.string.status_vote_submitting)
             publish()
             if (!activeSocket.send(encoded)) {
                 protectAndReconnect(PrivacyInterruption.CONNECTION_UNCERTAIN)
@@ -165,7 +190,7 @@ class CompanionController(
         hasOpenedConnection = false
         manuallyShielded = false
         state.requireManualRejoin()
-        statusMessage = "Paste or enter an active GP1 invitation."
+        statusMessage = text(R.string.status_join_ready)
         publish()
     }
 
@@ -194,7 +219,7 @@ class CompanionController(
             ServerEndpoint.parse(credential.serverOrigin, BuildConfig.DEBUG).isInsecureDevelopment
         }.getOrDefault(false)
         state.beginJoin()
-        statusMessage = "Recovering this device's private session…"
+        statusMessage = text(R.string.status_recovering)
         publish()
         main.post { beginCredentialResumeIfNeeded() }
     }
@@ -230,9 +255,9 @@ class CompanionController(
         socketId = newSocketId
         state.beginSocket(newSocketId, isRejoin, resumeCredential?.lastServerSequence)
         statusMessage = if (isRejoin) {
-            "Reconnecting. Private content stays hidden until the server sends a fresh view."
+            text(R.string.status_reconnecting)
         } else {
-            "Opening the private game connection…"
+            text(R.string.status_opening_connection)
         }
         publish()
         socket = networkClient.openSocket(activeAuthority, newSocketId, socketCallback)
@@ -251,9 +276,9 @@ class CompanionController(
         val wasRejoin = hasOpenedConnection
         hasOpenedConnection = true
         statusMessage = if (wasRejoin) {
-            "Connected again. Requesting a fresh private view…"
+            text(R.string.status_connected_again)
         } else {
-            "Connected. Requesting your private view…"
+            text(R.string.status_requesting_private_view)
         }
         publish()
         requestFreshProjection(eventSocketId)
@@ -296,11 +321,11 @@ class CompanionController(
                     recordAuthenticatedActivity(eventSocketId, establishesPrivateView = true)
                     gameplayLanguage = projection.gameplayLanguage
                     statusMessage = if (state.phase == CompanionPhase.REJOINED) {
-                        "Rejoined with a fresh server-authorized private view."
+                        text(R.string.status_rejoined)
                     } else if (projection.hasAssignment) {
-                        "Your private view is current."
+                        text(R.string.status_current)
                     } else {
-                        "Connected. Waiting for the Host to assign your character."
+                        text(R.string.status_waiting_assignment)
                     }
                     publish()
                     if (state.phase == CompanionPhase.REJOINED) {
@@ -363,7 +388,7 @@ class CompanionController(
                 ) {
                     throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
                 }
-                statusMessage = "Your vote was accepted. Waiting for the refreshed private view…"
+                statusMessage = text(R.string.status_vote_accepted)
             }
             is GPV1CommandResultBody.Rejected -> {
                 if (payload.value.idempotencyId.value != pending.idempotencyId) {
@@ -407,7 +432,7 @@ class CompanionController(
                 connectionShielded = true
                 stableFuture?.cancel(false)
                 stableFuture = null
-                statusMessage = PrivacyInterruption.CONNECTION_UNCERTAIN.message
+                statusMessage = interruptionText(PrivacyInterruption.CONNECTION_UNCERTAIN)
                 publish()
                 requestFreshProjection(eventSocketId)
             }
@@ -442,7 +467,7 @@ class CompanionController(
         stopSocketAndTimers()
         pendingCommands.clear()
         state.interrupt(reason)
-        statusMessage = reason.message
+        statusMessage = interruptionText(reason)
         publish()
     }
 
@@ -482,7 +507,7 @@ class CompanionController(
             return
         }
         state.beginJoin()
-        statusMessage = "Recovering this device's private session…"
+        statusMessage = text(R.string.status_recovering)
         publish()
         try {
             if (credential.pendingReplacementToken == null) {
@@ -525,7 +550,7 @@ class CompanionController(
     private fun handleResumeFailure(failure: CompanionFailure) {
         if (failure.kind == FailureKind.CONNECTION_UNAVAILABLE) {
             state.interrupt(PrivacyInterruption.CONNECTION_UNCERTAIN)
-            statusMessage = "Session recovery is waiting for a secure connection."
+            statusMessage = text(R.string.status_recovery_waiting)
             publish()
             reconnectFuture?.cancel(false)
             val maximum = reconnectBackoff.nextMaximumDelayMs()
@@ -546,7 +571,7 @@ class CompanionController(
         authority = null
         pendingCommands.clear()
         state.interrupt(PrivacyInterruption.CONNECTION_UNCERTAIN)
-        statusMessage = "Refreshing this device's private session access…"
+        statusMessage = text(R.string.status_refreshing_access)
         publish()
         if (useBackoff) scheduleCredentialResume() else beginCredentialResumeIfNeeded()
     }
@@ -607,7 +632,7 @@ class CompanionController(
         authority = null
         pendingCommands.clear()
         state.requireManualRejoin()
-        statusMessage = FailureKind.PROTOCOL_VIOLATION.defaultMessage
+        statusMessage = failureText(FailureKind.PROTOCOL_VIOLATION)
         publish()
     }
 
@@ -615,7 +640,7 @@ class CompanionController(
         when (failure.kind) {
             FailureKind.EXPIRED_INVITATION,
             FailureKind.EXPIRED_OR_REVOKED,
-            -> transitionToExpiredOrRevoked(failure.safeMessage)
+            -> transitionToExpiredOrRevoked(failureText(failure))
             FailureKind.SESSION_ENDED -> transitionToSessionEnded()
             FailureKind.INVALID_RESPONSE,
             FailureKind.PROTOCOL_VIOLATION,
@@ -623,7 +648,7 @@ class CompanionController(
             -> failProtocol()
             else -> {
                 state.requireManualRejoin()
-                statusMessage = failure.safeMessage
+                statusMessage = failureText(failure)
                 publish()
             }
         }
@@ -635,7 +660,7 @@ class CompanionController(
         authority = null
         pendingCommands.clear()
         state.expireOrRevoke()
-        statusMessage = message ?: FailureKind.EXPIRED_OR_REVOKED.defaultMessage
+        statusMessage = message ?: failureText(FailureKind.EXPIRED_OR_REVOKED)
         publish()
     }
 
@@ -645,7 +670,7 @@ class CompanionController(
         authority = null
         pendingCommands.clear()
         state.endSession()
-        statusMessage = FailureKind.SESSION_ENDED.defaultMessage
+        statusMessage = failureText(FailureKind.SESSION_ENDED)
         publish()
     }
 
@@ -710,6 +735,41 @@ class CompanionController(
     private fun assertMainThread() {
         check(Looper.myLooper() == Looper.getMainLooper())
     }
+
+    private fun text(resource: Int): String = appContext.getString(resource)
+
+    private fun failureText(kind: FailureKind): String = text(
+        when (kind) {
+            FailureKind.INVALID_INVITATION -> R.string.error_invalid_invitation
+            FailureKind.EXPIRED_INVITATION -> R.string.error_expired_invitation
+            FailureKind.INVALID_DISPLAY_NAME -> R.string.error_invalid_name
+            FailureKind.INVALID_RESPONSE,
+            FailureKind.PROTOCOL_VIOLATION,
+            FailureKind.RECIPIENT_BOUNDARY_VIOLATION,
+            FailureKind.SEQUENCE_REGRESSION,
+            FailureKind.SEQUENCE_GAP,
+            -> R.string.error_unsafe_response
+            FailureKind.CONNECTION_UNAVAILABLE -> R.string.error_connection_unavailable
+            FailureKind.COMMAND_REJECTED -> R.string.error_command_rejected
+            FailureKind.VOTING_CHOICE_UNAVAILABLE -> R.string.voting_choice_unavailable
+            FailureKind.UNSUPPORTED_BUILD -> R.string.error_build_unsupported
+            FailureKind.JOIN_FAILED -> R.string.error_join_failed
+            FailureKind.EXPIRED_OR_REVOKED -> R.string.error_access_ended
+            FailureKind.SESSION_ENDED -> R.string.error_session_ended
+        },
+    )
+
+    private fun failureText(failure: CompanionFailure): String =
+        if (failure.safeMessage == failure.kind.defaultMessage) failureText(failure.kind)
+        else failure.safeMessage
+
+    private fun interruptionText(reason: PrivacyInterruption): String = text(
+        when (reason) {
+            PrivacyInterruption.BACKGROUND_OR_LOCK -> R.string.privacy_background
+            PrivacyInterruption.CONNECTION_UNCERTAIN -> R.string.privacy_uncertain
+            PrivacyInterruption.MANUAL -> R.string.privacy_manual
+        },
+    )
 
     companion object {
         private const val LOCAL_CREDENTIAL_BACKSTOP_MS = 24 * 60 * 60 * 1_000L

@@ -1,6 +1,7 @@
 package com.guiltyparty.companion
 
 import guiltyparty.contracts.v1.GPV1ClientBuild
+import guiltyparty.contracts.v1.GPV1CompatibilityResponse
 import guiltyparty.contracts.v1.GPV1EndpointRegistration
 import guiltyparty.contracts.v1.GPV1FeatureIdentifier
 import guiltyparty.contracts.v1.GPV1Identifier
@@ -32,6 +33,11 @@ interface AdmissionCallback {
     fun onFailure(failure: CompanionFailure)
 }
 
+interface CompatibilityCallback {
+    fun onSuccess()
+    fun onFailure(failure: CompanionFailure)
+}
+
 interface SocketCallback {
     fun onOpen(socketId: String)
     fun onText(socketId: String, text: String)
@@ -53,6 +59,50 @@ class NetworkClient {
         .pingInterval(15, TimeUnit.SECONDS)
         .readTimeout(0, TimeUnit.MILLISECONDS)
         .build()
+
+    fun discoverCompatibility(endpoint: ServerEndpoint, callback: CompatibilityCallback): Call {
+        val request = Request.Builder()
+            .url(endpoint.compatibilityUrl)
+            .header("Accept", JSON_MEDIA_TYPE)
+            .header("Cache-Control", "no-store")
+            .get()
+            .build()
+        val call = httpClient.newCall(request)
+        call.enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                callback.onFailure(CompanionFailure(FailureKind.CONNECTION_UNAVAILABLE))
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    try {
+                        val text = responseText(it)
+                        if (!it.isSuccessful) throw CompanionFailure(FailureKind.CONNECTION_UNAVAILABLE)
+                        validateCompatibility(text)
+                        callback.onSuccess()
+                    } catch (failure: CompanionFailure) {
+                        callback.onFailure(failure)
+                    } catch (_: Exception) {
+                        callback.onFailure(CompanionFailure(FailureKind.INVALID_RESPONSE))
+                    }
+                }
+            }
+        })
+        return call
+    }
+
+    internal fun validateCompatibility(text: String) {
+        val compatibility = GPV1CompatibilityResponse.from(ContractJson.parse(text))
+        if (compatibility.requiredUpgrade ||
+            1L !in compatibility.supportedProtocolMajors ||
+            compatibility.preferredProtocolVersion.value != CompanionEnvironment.PROTOCOL_VERSION ||
+            compatibility.features.none { feature ->
+                feature.value == CompanionEnvironment.PARTICIPANT_VOTING_FEATURE
+            }
+        ) {
+            throw CompanionFailure(FailureKind.PROTOCOL_VIOLATION)
+        }
+    }
 
     fun join(
         endpoint: ServerEndpoint,
@@ -105,11 +155,13 @@ class NetworkClient {
                         GPV1FeatureIdentifier("touch_input"),
                     ),
                     clientBuild = clientBuild(),
-                    features = null,
+                    features = listOf(
+                        GPV1FeatureIdentifier(CompanionEnvironment.PARTICIPANT_VOTING_FEATURE),
+                    ),
                     platform = GPV1FeatureIdentifier("android_companion"),
                 ),
                 kind = "participant",
-                protocolVersion = GPV1ProtocolVersion("1.0"),
+                protocolVersion = GPV1ProtocolVersion(CompanionEnvironment.PROTOCOL_VERSION),
             ),
         )
         return Request.Builder()
@@ -134,6 +186,7 @@ class NetworkClient {
         val participant = joined.participantId?.value
             ?: throw CompanionFailure(FailureKind.INVALID_RESPONSE)
         if (joined.sessionId.value != invitation.sessionId ||
+            joined.protocolVersion.value != CompanionEnvironment.PROTOCOL_VERSION ||
             joined.authorityExpiresAtUnixMs <= nowUnixMs ||
             joined.resumeExpiresAtUnixMs <= nowUnixMs
         ) {
@@ -149,6 +202,7 @@ class NetworkClient {
                 joined.primaryAuthorityGeneration,
                 invitation.gameplayLanguage,
                 endpoint,
+                joined.protocolVersion.value,
             ),
             resumeCredential = StoredResumeCredential(
                 joined.resumeToken.value,
@@ -163,6 +217,7 @@ class NetworkClient {
                 emptyList(),
                 invitation.gameplayLanguage,
                 endpoint.origin,
+                joined.protocolVersion.value,
             ),
         )
     }
@@ -211,7 +266,7 @@ class NetworkClient {
             participantId = GPV1Identifier(credential.participantId),
             pendingIdempotencyIds = credential.pendingIdempotencyIds.map(::GPV1MessageIdentifier),
             primaryAuthorityGeneration = credential.primaryAuthorityGeneration,
-            protocolVersion = GPV1ProtocolVersion("1.0"),
+            protocolVersion = GPV1ProtocolVersion(credential.protocolVersion),
             sessionId = GPV1Identifier(credential.sessionId),
         )
         return Request.Builder()
@@ -297,6 +352,7 @@ class NetworkClient {
             resumed.primaryAuthorityGeneration,
             previous.gameplayLanguage,
             endpoint,
+            resumed.protocolVersion.value,
         ),
         resumeCredential = StoredResumeCredential(
             resumed.resumeToken.value,
@@ -311,6 +367,7 @@ class NetworkClient {
             emptyList(),
             previous.gameplayLanguage,
             endpoint.origin,
+            resumed.protocolVersion.value,
         ),
     )
 
@@ -331,6 +388,7 @@ class NetworkClient {
         if (resumed.sessionId.value != previous.sessionId ||
             resumed.endpointId.value != previous.endpointId ||
             resumed.participantId.value != previous.participantId ||
+            resumed.protocolVersion.value != previous.protocolVersion ||
             resumed.resumeToken.value != replacement ||
             resumed.primaryAuthorityGeneration <= previous.primaryAuthorityGeneration ||
             resumed.authorityExpiresAtUnixMs <= nowUnixMs ||
@@ -344,7 +402,7 @@ class NetworkClient {
     }
 
     private fun responseText(response: Response): String {
-        val body = response.body ?: throw CompanionFailure(FailureKind.INVALID_RESPONSE)
+        val body = response.body
         if (body.contentLength() > MAXIMUM_RESPONSE_BYTES) {
             throw CompanionFailure(FailureKind.INVALID_RESPONSE)
         }
@@ -371,14 +429,9 @@ class NetworkClient {
                 CompanionFailure(FailureKind.EXPIRED_OR_REVOKED)
             status == 429 || status >= 500 -> CompanionFailure(FailureKind.CONNECTION_UNAVAILABLE)
             code == "unsupported_client_build" || code == "upgrade_required" ->
-                CompanionFailure(
-                    FailureKind.COMMAND_REJECTED,
-                    "This development build is no longer supported by the test service.",
-                )
-            else -> CompanionFailure(
-                FailureKind.COMMAND_REJECTED,
-                problem?.title ?: "The session could not be joined.",
-            )
+                CompanionFailure(FailureKind.UNSUPPORTED_BUILD)
+            problem?.title != null -> CompanionFailure(FailureKind.COMMAND_REJECTED, problem.title)
+            else -> CompanionFailure(FailureKind.JOIN_FAILED)
         }
     }
 
@@ -401,4 +454,10 @@ class NetworkClient {
         private const val JSON_MEDIA_TYPE = "application/json"
         private val JSON_TYPE = JSON_MEDIA_TYPE.toMediaType()
     }
+}
+
+object CompanionEnvironment {
+    const val LEGACY_PROTOCOL_VERSION = "1.0"
+    const val PROTOCOL_VERSION = "1.1"
+    const val PARTICIPANT_VOTING_FEATURE = "participant_vote_targets_v1"
 }
