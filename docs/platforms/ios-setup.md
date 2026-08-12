@@ -20,8 +20,8 @@ factor.
 - Public display and future store-listing name: `Guilty Party`
 - Durable application identifier: `app.guiltyparty.companion`
 - Minimum deployment target: iOS/iPadOS 18.0
-- Marketing version: `0.2.0`
-- Build number: `3`
+- Marketing version: `0.3.0`
+- Build number: `4`
 - Swift language mode: Swift 6
 - Supported device families: iPhone and iPad
 
@@ -52,8 +52,8 @@ make check-mobile-contracts
 ```
 
 The test target packages shared positive, negative, additive-field, numeric,
-unknown-critical-variant, and privacy fixtures from `tests/contracts/v1/` as
-explicit resources.
+unknown-critical-variant, compatibility, participant-voting-state, and privacy
+fixtures from `tests/contracts/v1/` as explicit resources.
 
 ## Remote Friends Transport
 
@@ -63,7 +63,16 @@ The decoder validates the prefix, bounded base64url payload, exact transfer
 shape, generated invitation model, session identifier, gameplay language, and
 expiry. The app never constructs an invitation URL.
 
-Joining uses the fixed test endpoint:
+Before a fresh join, the app performs an unauthenticated, no-store compatibility
+check against:
+
+```text
+GET https://api.test.guiltyparty.app/api/protocol
+```
+
+The current build requires preferred protocol `1.1` and the additive
+`participant_vote_targets_v1` feature. It then joins through the fixed test
+endpoint:
 
 ```text
 POST https://api.test.guiltyparty.app/api/v1/join
@@ -71,13 +80,14 @@ POST https://api.test.guiltyparty.app/api/v1/join
 
 The native request sends `X-GP-Session-ID`, `Authorization: Pairing ...`, no
 browser `Origin`, a participant endpoint with `private_display` and
-`touch_input`, and this client-build record:
+`touch_input`, advertises `participant_vote_targets_v1`, negotiates protocol
+`1.1`, and supplies this client-build record:
 
 ```json
 {
   "application_id": "companion_ios",
-  "application_version": "0.2.0",
-  "build_number": 3
+  "application_version": "0.3.0",
+  "build_number": 4
 }
 ```
 
@@ -88,6 +98,10 @@ endpoint-bound resume credential. The app stores that value and only the
 minimum opaque resumption metadata in a non-synchronizing
 `kSecAttrAccessibleWhenUnlockedThisDeviceOnly` Keychain item. No projection,
 clue, objective, vote, action payload, or display name is stored there.
+The negotiated protocol version is stored as non-secret recovery metadata.
+Credentials written by earlier builds do not contain that field and therefore
+resume as protocol `1.0`; they are never silently upgraded. A fresh invitation
+is required to obtain direct participant voting.
 
 After an app restart or expired in-memory access bearer, the Companion sends:
 
@@ -140,11 +154,13 @@ validation. The only submitted participant command is `cast_vote`; each command
 uses unique message and endpoint-scoped idempotency identifiers plus the current
 `primary_authority_generation`.
 
-The v1 participant projection exposes a character name but does not expose a
-vote-target character identifier. For this synthetic private-test slice, the
-voting view accepts the target identifier supplied by the test coordinator. The
-app does not infer identifiers or implement scenario truth; the server validates
-the vote and remains canonical.
+For protocol `1.1`, the server supplies a lifecycle state and the exact
+participant-authorized vote targets. The app displays character names, retains
+identifiers only as opaque action values, and submits only a current projected
+choice. Targets are absent before voting opens, after this participant votes,
+and after voting closes. Protocol `1.0` recovery remains read-only for voting;
+the app does not infer identifiers or implement scenario truth. The server
+validates every vote and remains canonical.
 
 ## Privacy and Lifecycle
 
@@ -171,15 +187,21 @@ claim that a screenshot was prevented or deleted.
 
 ## Layout and Accessibility
 
-Compact-width iPhone presentation uses a focused navigation-and-scroll flow.
+Compact-width iPhone presentation uses one focused navigation-and-scroll flow.
 Regular-width iPad presentation uses `NavigationSplitView`, keeping connection,
-scene, language, and privacy controls in a sidebar while private character,
-clue, voting, and outcome content occupies a bounded detail column.
+scene, human-readable session language, and privacy controls in a context rail
+while private character, objective, clue, voting, and outcome content occupies
+a bounded primary column. Accessibility Dynamic Type sizes collapse the tablet
+to the single-column order rather than compressing either column.
 
-Both layouts use semantic system colors and fonts, Dynamic Type, descriptive
-VoiceOver labels and hints, minimum-contrast system materials, keyboard submit
-actions, and text plus symbols for connection/privacy state. The MVP uses no
-custom animation, so Reduce Motion does not lose information or control state.
+Both layouts adapt the approved Refined Case File language with semantic native
+colors, system serif/display and body roles, Dynamic Type, descriptive VoiceOver
+labels and hints, keyboard submit actions, and text plus symbols for
+connection/privacy state. A device-local, non-secret appearance preference lets
+the player follow the system or select light or dark presentation. Player copy
+is localization-catalog ready, while server-authored scenario content continues
+to use the session's advertised BCP 47 gameplay language. The MVP uses no custom
+animation, so Reduce Motion does not lose information or control state.
 
 ## Build and Test
 
@@ -230,8 +252,9 @@ The dated implementation and verification evidence is recorded in
 ## Explicitly Unimplemented
 
 This slice does not include Host Console behavior, accounts or passkeys,
-provider authentication, recovery, notifications or Live Activities, Bonjour or
+provider authentication, account recovery, notifications or Live Activities, Bonjour or
 LAN transport, AirPlay, media or capture inputs, WebRTC, captions, recording,
-transcription, AI Stage Manager behavior, analytics, persistent authority or
-private content, third-party libraries/assets, server configuration, TestFlight,
-or App Store submission.
+transcription, AI Stage Manager behavior, analytics, long-lived account
+authority, persistent private content beyond the bounded device-only resume
+credential, third-party libraries/assets, translated interface catalogs,
+server configuration, TestFlight, or App Store submission.

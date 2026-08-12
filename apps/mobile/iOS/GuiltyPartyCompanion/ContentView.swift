@@ -3,12 +3,19 @@ import UIKit
 
 struct ContentView: View {
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage("appearance") private var appearanceValue = AppAppearance.system.rawValue
     @StateObject private var session = CompanionSession()
+
+    private var appearance: AppAppearance {
+        AppAppearance(rawValue: appearanceValue) ?? .system
+    }
 
     var body: some View {
         ZStack {
+            CaseFileTheme.background.ignoresSafeArea()
             content
-                .tint(.indigo)
+                .tint(CaseFileTheme.accent)
+                .foregroundStyle(CaseFileTheme.text)
                 .background {
                     CaptureStateReader { active in
                         session.setCaptureActive(active)
@@ -21,9 +28,8 @@ struct ContentView: View {
                     .zIndex(100)
             }
         }
-        .onAppear {
-            session.setAppActive(scenePhase == .active)
-        }
+        .preferredColorScheme(appearance.colorScheme)
+        .onAppear { session.setAppActive(scenePhase == .active) }
         .onChange(of: scenePhase) { _, newPhase in
             session.setAppActive(newPhase == .active)
         }
@@ -41,9 +47,7 @@ struct ContentView: View {
                 set: { if !$0 { session.dismissScreenshotWarning() } }
             )
         ) {
-            Button("OK") {
-                session.dismissScreenshotWarning()
-            }
+            Button("OK") { session.dismissScreenshotWarning() }
         } message: {
             Text("This screenshot may contain private game content. Please delete it and do not share it. Guilty Party did not prevent or delete the screenshot.")
         }
@@ -53,9 +57,9 @@ struct ContentView: View {
     private var content: some View {
         switch session.phase {
         case .manualRejoin, .expiredOrRevoked, .sessionEnded:
-            JoinView(session: session)
+            JoinView(session: session, appearanceValue: $appearanceValue)
         case .joining, .waitingForAssignment, .connected, .reconnecting, .rejoined:
-            SessionView(session: session)
+            SessionView(session: session, appearanceValue: $appearanceValue)
         }
     }
 }
@@ -67,6 +71,7 @@ private struct JoinView: View {
     }
 
     @ObservedObject var session: CompanionSession
+    @Binding var appearanceValue: String
     @State private var nickname = ""
     @State private var invitation = ""
     @State private var joinIsPending = false
@@ -77,14 +82,15 @@ private struct JoinView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 24) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Image(systemName: "theatermasks.fill")
-                            .font(.largeTitle)
-                            .accessibilityHidden(true)
+                        Label("PRIVATE PLAYER VIEW", systemImage: "lock.fill")
+                            .font(.caption.weight(.bold))
+                            .tracking(1.4)
+                            .foregroundStyle(CaseFileTheme.privacy)
                         Text("Guilty Party")
-                            .font(.largeTitle.bold())
-                        Text("Private player development build")
+                            .font(.system(.largeTitle, design: .serif, weight: .bold))
+                        Text("Your invitation opens a private case file for this session.")
                             .font(.headline)
-                            .foregroundStyle(.secondary)
+                            .foregroundStyle(CaseFileTheme.mutedText)
                     }
 
                     StatusBanner(
@@ -95,58 +101,74 @@ private struct JoinView: View {
                             : session.phase == .sessionEnded ? "flag.checkered" : "lock.shield"
                     )
 
-                    GroupBox("Join with an invitation") {
-                        VStack(alignment: .leading, spacing: 16) {
-                            TextField("Nickname", text: $nickname)
-                                .textContentType(.nickname)
-                                .textInputAutocapitalization(.words)
-                                .autocorrectionDisabled()
-                                .focused($focusedField, equals: .nickname)
-                                .submitLabel(.next)
-                                .onSubmit {
-                                    focusedField = .invitation
-                                }
-                                .accessibilityLabel("Session nickname")
+                    VStack(alignment: .leading, spacing: 18) {
+                        CardHeading(
+                            eyebrow: "SESSION ACCESS",
+                            title: "Join with an invitation",
+                            systemImage: "envelope.open"
+                        )
 
-                            SecureField("GP1 invitation", text: $invitation)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                                .focused($focusedField, equals: .invitation)
-                                .submitLabel(.join)
-                                .privacySensitive()
-                                .accessibilityLabel("Private GP1 invitation")
-                                .onSubmit(join)
+                        TextField("Nickname", text: $nickname)
+                            .textContentType(.nickname)
+                            .textInputAutocapitalization(.words)
+                            .autocorrectionDisabled()
+                            .focused($focusedField, equals: .nickname)
+                            .submitLabel(.next)
+                            .onSubmit { focusedField = .invitation }
+                            .accessibilityLabel("Session nickname")
 
-                            Text("Paste or enter the complete GP1 transfer. The app clears this field immediately and never writes the invitation to a URL, file, setting, diagnostic, or log.")
-                                .font(.footnote)
-                                .foregroundStyle(.secondary)
+                        SecureField("GP1 invitation", text: $invitation)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+                            .focused($focusedField, equals: .invitation)
+                            .submitLabel(.join)
+                            .privacySensitive()
+                            .accessibilityLabel("Private GP1 invitation")
+                            .onSubmit(join)
 
-                            Button(action: join) {
-                                Label("Join private session", systemImage: "arrow.right.circle.fill")
-                                    .frame(maxWidth: .infinity)
-                            }
-                            .buttonStyle(.borderedProminent)
-                            .controlSize(.large)
-                            .disabled(
-                                joinIsPending
-                                    || nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
-                                    || invitation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        Text("Paste or enter the complete invitation. Guilty Party clears it immediately and does not save it to a URL, file, setting, diagnostic, or log.")
+                            .font(.footnote)
+                            .foregroundStyle(CaseFileTheme.mutedText)
+
+                        Button(action: join) {
+                            Label(
+                                joinIsPending ? "Joining…" : "Join private session",
+                                systemImage: "arrow.right.circle.fill"
                             )
-                            .keyboardShortcut(.defaultAction)
+                            .frame(maxWidth: .infinity)
                         }
-                        .textFieldStyle(.roundedBorder)
-                        .padding(.top, 8)
+                        .buttonStyle(.borderedProminent)
+                        .controlSize(.large)
+                        .disabled(
+                            joinIsPending
+                                || nickname.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                                || invitation.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+                        )
+                        .keyboardShortcut(.defaultAction)
                     }
+                    .textFieldStyle(.roundedBorder)
+                    .caseCard(emphasized: true)
 
-                    Text("Use a nickname. This account-free test does not use analytics, recording, notifications, media, remote AI, or persistent private gameplay storage.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+                    Label(
+                        "This private test uses no analytics, recording, notifications, media, remote AI, or retained private gameplay content.",
+                        systemImage: "hand.raised.fill"
+                    )
+                    .font(.footnote)
+                    .foregroundStyle(CaseFileTheme.mutedText)
                 }
                 .frame(maxWidth: 620, alignment: .leading)
                 .padding(24)
                 .frame(maxWidth: .infinity)
             }
-            .navigationTitle("Guilty Party")
+            .scrollDismissesKeyboard(.interactively)
+            .background(CaseFileTheme.background)
+            .navigationTitle("")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    AppearanceMenu(selection: $appearanceValue)
+                }
+            }
         }
     }
 
@@ -159,8 +181,6 @@ private struct JoinView: View {
         invitation = ""
 
         Task { @MainActor in
-            // Allow SwiftUI to resign and remove the sensitive keyboard input
-            // before the session phase replaces this view.
             await Task.yield()
             await session.join(
                 invitationPayload: oneTimeInvitation,
@@ -173,17 +193,23 @@ private struct JoinView: View {
 
 private struct SessionView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ObservedObject var session: CompanionSession
+    @Binding var appearanceValue: String
+
+    private var usesTwoColumns: Bool {
+        horizontalSizeClass == .regular && !dynamicTypeSize.isAccessibilitySize
+    }
 
     var body: some View {
         Group {
-            if horizontalSizeClass == .regular {
+            if usesTwoColumns {
                 NavigationSplitView {
-                    SessionSidebar(session: session)
+                    SessionContextRail(session: session)
                         .navigationTitle("Guilty Party")
                 } detail: {
-                    PrivateSessionDetail(session: session)
-                        .navigationTitle("Private player view")
+                    SessionDetail(session: session)
+                        .navigationTitle("Private case file")
                 }
             } else {
                 NavigationStack {
@@ -194,49 +220,62 @@ private struct SessionView: View {
                         }
                         .padding()
                     }
+                    .background(CaseFileTheme.background)
                     .navigationTitle("Guilty Party")
-                    .toolbar {
-                        ToolbarItem(placement: .topBarTrailing) {
-                            PrivacyToolbarButton(session: session)
-                        }
-                    }
                 }
             }
+        }
+        .toolbar { sessionToolbar }
+    }
+
+    @ToolbarContentBuilder
+    private var sessionToolbar: some ToolbarContent {
+        ToolbarItemGroup(placement: .topBarTrailing) {
+            PrivacyToolbarButton(session: session)
+            AppearanceMenu(selection: $appearanceValue)
         }
     }
 }
 
-private struct SessionSidebar: View {
+private struct SessionContextRail: View {
     @ObservedObject var session: CompanionSession
 
     var body: some View {
-        List {
-            Section("Connection") {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
                 SessionStatusSection(session: session)
-            }
-            if let projection = session.projection {
-                Section("Current scene") {
-                    Text(projection.scene?.name ?? "The room is gathering")
-                        .font(.headline)
-                    Text(projection.scene?.publicNarrative ?? "Waiting for the Host to begin.")
-                        .foregroundStyle(.secondary)
+                if let projection = session.projection {
+                    VStack(alignment: .leading, spacing: 12) {
+                        CardHeading(
+                            eyebrow: "CURRENT SCENE",
+                            title: projection.scene?.name ?? String(localized: "The room is gathering"),
+                            systemImage: "theatermasks"
+                        )
+                        Text(projection.scene?.publicNarrative ?? String(localized: "Waiting for the Host to begin."))
+                            .foregroundStyle(CaseFileTheme.mutedText)
+                        Divider()
+                        LabeledContent(
+                            "Session language",
+                            value: localizedLanguageName(projection.gameplayLanguage)
+                        )
+                    }
+                    .caseCard()
                 }
-                Section("Session language") {
-                    Text(projection.gameplayLanguage)
-                        .accessibilityLabel("Gameplay language, \(projection.gameplayLanguage)")
+                VStack(alignment: .leading, spacing: 12) {
+                    PrivacyToolbarButton(session: session)
+                    Button("Rejoin manually", role: .destructive) {
+                        session.manualRejoin()
+                    }
                 }
+                .caseCard()
             }
-            Section {
-                PrivacyToolbarButton(session: session)
-                Button("Rejoin manually", role: .destructive) {
-                    session.manualRejoin()
-                }
-            }
+            .padding()
         }
+        .background(CaseFileTheme.background)
     }
 }
 
-private struct PrivateSessionDetail: View {
+private struct SessionDetail: View {
     @ObservedObject var session: CompanionSession
 
     var body: some View {
@@ -246,11 +285,7 @@ private struct PrivateSessionDetail: View {
                 .padding(24)
                 .frame(maxWidth: .infinity)
         }
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                PrivacyToolbarButton(session: session)
-            }
-        }
+        .background(CaseFileTheme.background)
     }
 }
 
@@ -292,7 +327,7 @@ private struct PrivateSessionContent: View {
             } else {
                 StatusBanner(
                     title: session.phase.title,
-                    message: "Private content remains unavailable until a fresh server-authorized projection arrives.",
+                    message: "Private content remains unavailable until a fresh server-authorized view arrives.",
                     systemImage: "lock.fill"
                 )
             }
@@ -307,74 +342,95 @@ private struct ProjectionContent: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .firstTextBaseline) {
-                VStack(alignment: .leading) {
+                VStack(alignment: .leading, spacing: 4) {
                     Text(projection.scenarioTitle)
-                        .font(.title.bold())
-                    Text("Gameplay language: \(projection.gameplayLanguage)")
-                        .foregroundStyle(.secondary)
+                        .font(.system(.largeTitle, design: .serif, weight: .bold))
+                    Text("Gameplay language: \(localizedLanguageName(projection.gameplayLanguage))")
+                        .font(.subheadline)
+                        .foregroundStyle(CaseFileTheme.mutedText)
                 }
                 Spacer()
                 Label("Private", systemImage: "lock.fill")
-                    .font(.caption.bold())
-                    .foregroundStyle(.indigo)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(CaseFileTheme.privacy)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(CaseFileTheme.privacy.opacity(0.12), in: Capsule())
             }
 
-            GroupBox("Your character") {
-                VStack(alignment: .leading, spacing: 10) {
-                    Text(projection.assignedCharacter ?? "Waiting for assignment")
-                        .font(.title2.bold())
-                    Text(projection.privateObjective ?? "Your private objective will appear after assignment.")
-                        .foregroundStyle(projection.privateObjective == nil ? .secondary : .primary)
-                        .accessibilityLabel(
-                            projection.privateObjective == nil
-                                ? "Private objective not assigned"
-                                : "Private objective: \(projection.privateObjective ?? "")"
-                        )
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 6)
+            VStack(alignment: .leading, spacing: 12) {
+                CardHeading(
+                    eyebrow: "YOUR ROLE",
+                    title: projection.assignedCharacter ?? String(localized: "Waiting for assignment"),
+                    systemImage: "person.text.rectangle"
+                )
+                Divider()
+                Text("Private objective")
+                    .font(.caption.weight(.bold))
+                    .tracking(0.8)
+                    .foregroundStyle(CaseFileTheme.privacy)
+                Text(projection.privateObjective ?? String(localized: "Your private objective will appear after assignment."))
+                    .font(.body)
+                    .foregroundStyle(
+                        projection.privateObjective == nil
+                            ? CaseFileTheme.mutedText
+                            : CaseFileTheme.text
+                    )
+                    .accessibilityLabel(
+                        projection.privateObjective == nil
+                            ? "Private objective not assigned"
+                            : "Private objective: \(projection.privateObjective ?? "")"
+                    )
             }
+            .caseCard(emphasized: true)
 
-            GroupBox("Current scene") {
-                VStack(alignment: .leading, spacing: 6) {
-                    Text(projection.scene?.name ?? "The room is gathering")
-                        .font(.headline)
-                    Text(projection.scene?.publicNarrative ?? "Waiting for the Host to begin.")
-                        .foregroundStyle(.secondary)
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.top, 6)
+            VStack(alignment: .leading, spacing: 10) {
+                CardHeading(
+                    eyebrow: "SCENE",
+                    title: projection.scene?.name ?? String(localized: "The room is gathering"),
+                    systemImage: "theatermasks"
+                )
+                Text(projection.scene?.publicNarrative ?? String(localized: "Waiting for the Host to begin."))
+                    .foregroundStyle(CaseFileTheme.mutedText)
             }
+            .caseCard()
 
-            GroupBox("Clues revealed to you") {
+            VStack(alignment: .leading, spacing: 16) {
+                CardHeading(
+                    eyebrow: "EVIDENCE",
+                    title: "Clues revealed to you",
+                    systemImage: "doc.text.magnifyingglass"
+                )
                 if projection.clues.isEmpty {
-                    Text("No clues have been revealed to this participant.")
-                        .foregroundStyle(.secondary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 6)
+                    Text("No clues have been revealed to you yet.")
+                        .foregroundStyle(CaseFileTheme.mutedText)
                 } else {
-                    VStack(alignment: .leading, spacing: 16) {
-                        ForEach(projection.clues) { clue in
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(clue.name).font(.headline)
-                                Text(clue.description).foregroundStyle(.secondary)
-                            }
-                            .accessibilityElement(children: .combine)
+                    ForEach(projection.clues) { clue in
+                        VStack(alignment: .leading, spacing: 5) {
+                            Text(clue.name)
+                                .font(.system(.headline, design: .serif))
+                            Text(clue.description)
+                                .foregroundStyle(CaseFileTheme.mutedText)
                         }
+                        .accessibilityElement(children: .combine)
+                        if clue.id != projection.clues.last?.id { Divider() }
                     }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, 6)
                 }
             }
+            .caseCard()
 
             VotingCard(projection: projection, session: session)
 
             if let outcome = projection.publicOutcome {
-                GroupBox("Public outcome") {
+                VStack(alignment: .leading, spacing: 10) {
+                    CardHeading(
+                        eyebrow: "CASE CLOSED",
+                        title: "Outcome",
+                        systemImage: "checkmark.seal"
+                    )
                     Text(outcome)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(.top, 6)
                 }
+                .caseCard(emphasized: true)
             }
         }
         .privacySensitive()
@@ -384,46 +440,134 @@ private struct ProjectionContent: View {
 private struct VotingCard: View {
     let projection: ParticipantProjection
     @ObservedObject var session: CompanionSession
-    @State private var targetCharacterID = ""
+    @State private var selectedTargetID: String?
 
     var body: some View {
-        GroupBox("Voting") {
-            VStack(alignment: .leading, spacing: 12) {
-                LabeledContent("Voting state", value: projection.votingOpen ? "Open" : "Closed")
-                LabeledContent("Votes cast", value: String(projection.votesCast))
-                LabeledContent("Your vote", value: projection.ownVoteRecorded ? "Recorded" : "Not recorded")
+        VStack(alignment: .leading, spacing: 16) {
+            CardHeading(
+                eyebrow: "DELIBERATION",
+                title: "Voting",
+                systemImage: "checkmark.seal"
+            )
 
-                if projection.votingOpen && !projection.ownVoteRecorded {
-                    Divider()
-                    TextField("Target character identifier", text: $targetCharacterID)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .textFieldStyle(.roundedBorder)
-                        .accessibilityLabel("Vote target character identifier")
-                        .onSubmit(submitVote)
-                    Text("The current v1 participant projection does not include vote-target identifiers. Enter the synthetic target identifier supplied for this private test; the server remains authoritative.")
-                        .font(.footnote)
-                        .foregroundStyle(.secondary)
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 20) {
+                    LabeledContent("Voting", value: votingStateTitle)
+                    Spacer()
+                    LabeledContent("Votes cast", value: String(projection.votesCast))
+                }
+                VStack(alignment: .leading, spacing: 8) {
+                    LabeledContent("Voting", value: votingStateTitle)
+                    LabeledContent("Votes cast", value: String(projection.votesCast))
+                }
+            }
+            .font(.subheadline)
+
+            votingAction
+        }
+        .caseCard(emphasized: projection.votingPhase == .open && !projection.ownVoteRecorded)
+        .onChange(of: projection.voteTargets.map(\.id)) { _, ids in
+            if let selectedTargetID, !ids.contains(selectedTargetID) {
+                self.selectedTargetID = nil
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var votingAction: some View {
+        if projection.ownVoteRecorded {
+            Label("Your vote is recorded", systemImage: "checkmark.circle.fill")
+                .font(.headline)
+                .foregroundStyle(CaseFileTheme.success)
+        } else {
+            switch projection.votingPhase {
+            case .unavailable:
+                Text("Direct voting becomes available after you rejoin with a current invitation.")
+                    .foregroundStyle(CaseFileTheme.mutedText)
+            case .notOpen:
+                Text("Voting has not opened yet.")
+                    .foregroundStyle(CaseFileTheme.mutedText)
+            case .closed:
+                Text("Voting is closed.")
+                    .foregroundStyle(CaseFileTheme.mutedText)
+            case .resolved:
+                Text("The vote has been resolved.")
+                    .foregroundStyle(CaseFileTheme.mutedText)
+            case .open:
+                if projection.voteTargets.isEmpty {
+                    Text("No voting choices are available to this participant.")
+                        .foregroundStyle(CaseFileTheme.mutedText)
+                } else {
+                    Text("Choose the character you believe is responsible.")
+                        .foregroundStyle(CaseFileTheme.mutedText)
+
+                    VStack(spacing: 10) {
+                        ForEach(projection.voteTargets) { target in
+                            Button {
+                                selectedTargetID = target.id
+                            } label: {
+                                HStack {
+                                    Text(target.name)
+                                        .font(.headline)
+                                        .foregroundStyle(CaseFileTheme.text)
+                                    Spacer()
+                                    Image(systemName: selectedTargetID == target.id ? "checkmark.circle.fill" : "circle")
+                                        .foregroundStyle(CaseFileTheme.accent)
+                                }
+                                .padding(14)
+                                .background(
+                                    selectedTargetID == target.id
+                                        ? CaseFileTheme.accent.opacity(0.12)
+                                        : CaseFileTheme.background,
+                                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                )
+                                .overlay {
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(
+                                            selectedTargetID == target.id
+                                                ? CaseFileTheme.accent
+                                                : CaseFileTheme.border,
+                                            lineWidth: 1
+                                        )
+                                }
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(session.voteSubmissionIsPending)
+                            .accessibilityLabel(target.name)
+                            .accessibilityValue(selectedTargetID == target.id ? "Selected" : "Not selected")
+                        }
+                    }
+
                     Button(action: submitVote) {
-                        Label("Cast vote", systemImage: "checkmark.seal.fill")
-                            .frame(maxWidth: .infinity)
+                        Label(
+                            session.voteSubmissionIsPending ? "Submitting vote…" : "Cast private vote",
+                            systemImage: "checkmark.seal.fill"
+                        )
+                        .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(.borderedProminent)
                     .controlSize(.large)
-                    .disabled(!session.canCastVote || targetCharacterID.isEmpty)
+                    .disabled(!session.canCastVote || selectedTargetID == nil)
                     .keyboardShortcut(.defaultAction)
                 }
             }
-            .padding(.top, 6)
+        }
+    }
+
+    private var votingStateTitle: String {
+        if projection.ownVoteRecorded { return String(localized: "Recorded") }
+        switch projection.votingPhase {
+        case .unavailable: return String(localized: "Unavailable")
+        case .notOpen: return String(localized: "Not open")
+        case .open: return String(localized: "Open")
+        case .closed: return String(localized: "Closed")
+        case .resolved: return String(localized: "Resolved")
         }
     }
 
     private func submitVote() {
-        let target = targetCharacterID
-        targetCharacterID = ""
-        Task {
-            await session.castVote(targetCharacterID: target)
-        }
+        guard let selectedTargetID else { return }
+        Task { await session.castVote(targetCharacterID: selectedTargetID) }
     }
 }
 
@@ -435,30 +579,26 @@ private struct PrivacyShield: View {
         VStack(spacing: 16) {
             Image(systemName: reason == .capture ? "record.circle" : "lock.shield.fill")
                 .font(.largeTitle)
-                .foregroundStyle(.indigo)
+                .foregroundStyle(CaseFileTheme.privacy)
                 .accessibilityHidden(true)
             Text("Private view protected")
-                .font(.title2.bold())
+                .font(.system(.title2, design: .serif, weight: .bold))
             Text(reason.message)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
-            Text("A fresh authorized projection is required before any private content or action returns.")
+                .foregroundStyle(CaseFileTheme.mutedText)
+            Text("A fresh authorized view is required before private content or actions return.")
                 .font(.footnote)
                 .multilineTextAlignment(.center)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(CaseFileTheme.mutedText)
             if reason == .manual {
-                Button("Request a fresh private view") {
-                    session.revealPrivateView()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.large)
+                Button("Request a fresh private view") { session.revealPrivateView() }
+                    .buttonStyle(.borderedProminent)
+                    .controlSize(.large)
             }
-            Button("Rejoin manually", role: .destructive) {
-                session.manualRejoin()
-            }
+            Button("Rejoin manually", role: .destructive) { session.manualRejoin() }
         }
         .frame(maxWidth: .infinity, minHeight: 320)
-        .padding(24)
+        .caseCard(emphasized: true)
         .accessibilityElement(children: .contain)
     }
 }
@@ -467,13 +607,51 @@ private struct PrivacyToolbarButton: View {
     @ObservedObject var session: CompanionSession
 
     var body: some View {
-        Button {
-            session.hidePrivateView()
-        } label: {
+        Button { session.hidePrivateView() } label: {
             Label("Hide private view", systemImage: "eye.slash")
         }
         .disabled(session.projection == nil)
-        .accessibilityHint("Clears private content and requires a fresh server projection")
+        .accessibilityHint("Clears private content and requires a fresh server view")
+    }
+}
+
+private struct AppearanceMenu: View {
+    @Binding var selection: String
+
+    var body: some View {
+        Menu {
+            Picker("Appearance", selection: $selection) {
+                ForEach(AppAppearance.allCases) { appearance in
+                    Label(appearance.title, systemImage: appearance.systemImage)
+                        .tag(appearance.rawValue)
+                }
+            }
+        } label: {
+            Label("Appearance", systemImage: "circle.lefthalf.filled")
+        }
+    }
+}
+
+private struct CardHeading: View {
+    let eyebrow: String
+    let title: String
+    let systemImage: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.title3)
+                .foregroundStyle(CaseFileTheme.brass)
+                .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(eyebrow)
+                    .font(.caption2.weight(.bold))
+                    .tracking(1.2)
+                    .foregroundStyle(CaseFileTheme.brass)
+                Text(title)
+                    .font(.system(.title3, design: .serif, weight: .semibold))
+            }
+        }
     }
 }
 
@@ -485,36 +663,46 @@ private struct StatusBanner: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: systemImage)
-                .font(.title2)
-                .foregroundStyle(.indigo)
+                .font(.title3)
+                .foregroundStyle(CaseFileTheme.privacy)
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 4) {
                 Text(title).font(.headline)
-                Text(message).font(.subheadline).foregroundStyle(.secondary)
+                Text(message)
+                    .font(.subheadline)
+                    .foregroundStyle(CaseFileTheme.mutedText)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding()
-        .background(.indigo.opacity(0.1), in: RoundedRectangle(cornerRadius: 14))
+        .padding(16)
+        .background(CaseFileTheme.privacy.opacity(0.09), in: RoundedRectangle(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(CaseFileTheme.privacy.opacity(0.28), lineWidth: 1)
+        }
     }
 }
 
 private struct AppSwitcherPrivacyShield: View {
     var body: some View {
         ZStack {
-            Color(uiColor: .systemBackground).ignoresSafeArea()
+            CaseFileTheme.background.ignoresSafeArea()
             VStack(spacing: 12) {
                 Image(systemName: "lock.shield.fill")
                     .font(.largeTitle)
-                    .foregroundStyle(.indigo)
+                    .foregroundStyle(CaseFileTheme.privacy)
                     .accessibilityHidden(true)
                 Text("Guilty Party")
-                    .font(.title.bold())
+                    .font(.system(.title, design: .serif, weight: .bold))
                 Text("Private view protected")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(CaseFileTheme.mutedText)
             }
             .accessibilityElement(children: .combine)
             .accessibilityLabel("Guilty Party private view protected")
         }
     }
+}
+
+private func localizedLanguageName(_ identifier: String) -> String {
+    Locale.current.localizedString(forIdentifier: identifier) ?? identifier
 }
