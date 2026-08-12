@@ -3,9 +3,11 @@
 ## Status
 
 The dependency-free Browser Host and Browser Companion fallback are implemented
-as reviewable static assets and were manually promoted from reviewed `dev`
-commit `e85b486b1928704382329bbd73d4fa0a4ae28539` on 2026-08-07 HST. Branch
-previews and automatic GitHub deployments remain disabled.
+as reviewable static assets. The Companion fallback remains on the reviewed
+2026-08-07 promotion. The Host was reconciled to reviewed `dev` commit
+`4d82f5229addddd9efd4337c42bb7083c54ba4a7` on 2026-08-11 HST so its shared
+client accepts additive protocol 1.x minor versions. Branch previews and
+automatic GitHub deployments remain disabled.
 
 ## Intended test surfaces
 
@@ -90,6 +92,23 @@ The first manual promotion created these production deployments:
 - Companion fallback: `eed998d9-d960-4cab-9c9f-537967ab2798`
   (`https://eed998d9.guilty-party-play-test.pages.dev`)
 
+The protocol `1.1` Android owner rehearsal exposed a deployment-consistency
+failure: the deployed Host `app.js` was current, but its copied shared
+`control-client.js` still required preferred protocol `1.0`. After the Worker
+correctly advertised preferred protocol `1.1`, Host creation failed closed
+before sending the operator proof. Rebuilding from the clean reviewed tree and
+promoting only `.tmp/remote-clients/host` produced deployment
+`3f67d939-5ba2-46ce-b8b5-2ff1e1fe5412`
+(`https://3f67d939.guilty-party-host-test.pages.dev`). The custom domain served
+the exact reviewed shared-client digest and the committed security headers;
+Host creation and the complete synthetic Android rehearsal then passed.
+
+Future preferred-protocol promotions must compare the deployed shared-client
+digest with the reviewed build output and smoke Host compatibility discovery
+before beginning a device session. This is an artifact-reconciliation gate; it
+does not require the protocol `1.0` Browser Companion fallback to negotiate the
+participant voting feature before its separately planned product refinement.
+
 The Pages production aliases returned the reviewed assets with `no-store`,
 the committed CSP, and the committed referrer, permissions, framing,
 content-type, and indexing protections. The Pages aliases are verification
@@ -119,7 +138,7 @@ Before inviting a named tester:
 
 Client builds send `application_id`, `application_version`, and `build_number`.
 The committed external-test policy currently admits build 1 or later for
-`host_web`, `companion_web`, `companion_ios`, and `stage_webos`. Application
-version is display metadata; build number controls admission. Raising a minimum
-is a reviewed compatibility operation, not an identity or authorization
-mechanism.
+`host_web`, `companion_web`, `companion_ios`, `companion_android`, and
+`stage_webos`. Application version is display metadata; build number controls
+admission. Raising a minimum is a reviewed compatibility operation, not an
+identity or authorization mechanism.

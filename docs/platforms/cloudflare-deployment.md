@@ -370,17 +370,34 @@ post-session credential invalidation. Detailed non-secret evidence is recorded
 in `android-entry-checkpoint-evidence.md` and
 `ios-companion-mvp-test-record.md`.
 
-The Browser Host and Browser Companion fallback remain the separate Pages
-deployments manually promoted from exact reviewed `dev` commit
-`e85b486b1928704382329bbd73d4fa0a4ae28539`. Their production deployment
-identifiers are `5bde1db6-ee32-4834-bd30-732950f261e5` and
-`eed998d9-d960-4cab-9c9f-537967ab2798`, respectively. The 2026-08-08 API
-promotion did not add a Pages deployment. No secret or private runtime value is
-configured in either Pages project. Automated gameplay, packaged-Stage,
-pairing-boundary, and lifecycle rehearsals passed against the promoted API. The
-lifecycle rehearsal required a follow-up correction so its synthetic Host and
-fallback-participant requests declare the supported build metadata enforced by
-PR #25; the deployed service itself was unchanged.
+The 2026-08-11 protocol `1.1` Android rehearsal promotion advanced the API from
+exact merged `dev` commit
+`4d82f5229addddd9efd4337c42bb7083c54ba4a7` to Worker version
+`981a0b5a-822b-4951-af6b-2be89a6c50f9` and deployment
+`b70b82a9-0813-46ce-babe-039068dd3b5e`. Before deployment, `make test`,
+`make check-scenario-wasm`, and `make check-cloudflare` passed. Both the
+`workers.dev` endpoint and `api.test.guiltyparty.app` then reported the existing
+test-gated profile, preferred protocol `1.1`, and
+`participant_vote_targets_v1`.
+
+No secret, binding, route, custom domain, Durable Object migration, retention
+setting, or new Cloudflare resource changed. The Host Pages artifact required a
+separate reconciliation because its deployed shared parser still required
+preferred protocol `1.0`; that Pages evidence and the completed Android
+rehearsal are recorded in `remote-client-delivery.md` and
+`android-companion-mvp-test-record.md` respectively.
+
+The Browser Companion fallback remains on the production Pages deployment
+manually promoted from exact reviewed `dev` commit
+`e85b486b1928704382329bbd73d4fa0a4ae28539`, deployment
+`eed998d9-d960-4cab-9c9f-537967ab2798`. The Browser Host's current production
+deployment is the protocol-reconciled `3f67d939-5ba2-46ce-b8b5-2ff1e1fe5412`
+from commit `4d82f5229addddd9efd4337c42bb7083c54ba4a7`. No secret or private runtime
+value is configured in either Pages project. Automated gameplay,
+packaged-Stage, pairing-boundary, and lifecycle rehearsals passed against the
+promoted API. The lifecycle rehearsal required a follow-up correction so its
+synthetic Host and fallback-participant requests declare the supported build
+metadata enforced by PR #25; the deployed service itself was unchanged.
 
 The first-party WebAssembly module and original scenario are bundled with the
 Worker. Wrangler and its development dependency graph are not bundled. D1, R2,

@@ -190,10 +190,60 @@ Automated and virtual-device evidence:
 | Contract/privacy additions | Passed protocol compatibility, explicit vote-choice mapping, protected protocol metadata, legacy credential migration, recipient filtering, and authority/header checks |
 | Visual inspection | Join presentation inspected on both AVD profiles; warm case-file palette, system typography, bounded phone composition, centered tablet composition, and ordinary hidden developer controls were present |
 
-The live Remote Friends protocol `1.1` join, direct vote, reconnect, privacy,
-and session-end rehearsal remains a post-merge gate. This addendum does not
-claim physical Android, TalkBack, switch access, stable Android 13, camera,
-media, store, or external-test evidence.
+The independent review added matching opaque system-bar colors for light and
+dark appearance on Android 13-14 and selected/selectable-group semantics for
+the vote and appearance choices. The exact remediation passed the Android
+build, unit, lint, and instrumented-test compilation gate; its focused
+selection-semantics test brought the Medium Phone suite to 14/14. This is
+automated semantics evidence, not a manual TalkBack or switch-access claim.
+
+## Protocol 1.1 Owner Rehearsal
+
+On 2026-08-11 HST, exact merged `dev` commit
+`4d82f5229addddd9efd4337c42bb7083c54ba4a7` was built and installed as Guilty
+Party `0.2.0` (2) on fresh Medium Phone and Pixel Tablet AVD application data.
+Both AVDs used the installed Android 17 developer preview/API 37.1 Google Play
+arm64-v8a image. This was an owner-only synthetic rehearsal and does not claim
+physical Android or stable Android 13 behavior.
+
+The same reviewed commit was manually promoted to the existing test-gated
+Cloudflare Worker as version `981a0b5a-822b-4951-af6b-2be89a6c50f9`. Both
+routed API hostnames reported `friends-mvp-development`, preferred protocol
+`1.1`, and `participant_vote_targets_v1`. No secret, binding, domain, Durable
+Object migration, retention setting, or Cloudflare resource changed.
+
+The Browser Host initially failed closed because its deployed shared
+`control-client.js` still required preferred protocol `1.0`. The reviewed Host
+artifact from the same merged commit was therefore promoted as Pages
+deployment `3f67d939-5ba2-46ce-b8b5-2ff1e1fe5412`. The custom domain then served
+the expected digest and security headers, accepted the additive `1.1`
+compatibility response, and created the synthetic session. No Host proof,
+invitation, authority credential, endpoint identifier, or private projection
+is recorded here.
+
+The two Android endpoints then passed:
+
+- fresh protocol `1.1` compatibility discovery, distinct admission, and live
+  Host roster/device updates;
+- separate Alice and Bob assignments with only each endpoint's own private
+  objective;
+- The Gala scene and public muddy-footprints clue on both devices, while the
+  Bob-authorized security-badge clue was omitted entirely from Alice;
+- direct Alice/Bob character-name vote choices with no raw target input, one
+  recorded vote per endpoint, two total votes, and the deterministic public
+  resolution identifying Alice;
+- force-stop/relaunch recovery of the phone as the same participant and
+  endpoint, without a duplicate roster entry or vote and with a fresh
+  server-authorized projection;
+- a fully black active-session ADB screenshot under `FLAG_SECURE`, followed by
+  background-return shielding and successful hide/reveal behavior; the
+  temporary screenshot was deleted immediately after inspection; and
+- explicit Host session end, immediate private-state clearing on both devices,
+  and clean post-termination relaunch without restored authority or content.
+
+The protocol `1.1` Android owner gate is complete. Browser fallback
+reconciliation, manual assistive-technology evidence, stable minimum-OS
+coverage, and physical Android evidence remain separate gates.
 
 ## Remaining Gates
 
