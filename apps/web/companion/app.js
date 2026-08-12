@@ -72,9 +72,11 @@ async function restorePersistedSession() {
 async function joinSession(event) {
   event.preventDefault();
   const invitationInput = $("#invitation");
+  const invitationPayload = invitationInput.value.trim();
+  invitationInput.value = "";
   let transfer;
   try {
-    transfer = decodeInvitationTransfer(invitationInput.value.trim());
+    transfer = decodeInvitationTransfer(invitationPayload);
     if (Date.now() >= transfer.expires_at_unix_ms) {
       throw new Error("That invitation has expired. Ask the Host to rotate it.");
     }
@@ -125,8 +127,6 @@ async function joinSession(event) {
     });
   } catch (error) {
     setStatus("join", present(error), true);
-  } finally {
-    invitationInput.value = "";
   }
 }
 

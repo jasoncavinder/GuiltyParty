@@ -308,7 +308,9 @@ test("browser player presents the complete bounded voting lifecycle", () => {
   assert.equal(votingPresentation({ ...common, phase: "open", submissionPending: true }).kind, "submitting");
   assert.equal(votingPresentation({ ...common, phase: "closed" }).kind, "closed");
   assert.equal(votingPresentation({ ...common, phase: "resolved" }).kind, "resolved");
-  assert.equal(votingPresentation({ ...common, phase: "closed", ownVoteRecorded: true }).kind, "recorded");
+  assert.equal(votingPresentation({ ...common, phase: "open", ownVoteRecorded: true }).kind, "recorded");
+  assert.equal(votingPresentation({ ...common, phase: "closed", ownVoteRecorded: true }).kind, "closed");
+  assert.equal(votingPresentation({ ...common, phase: "resolved", ownVoteRecorded: true }).kind, "resolved");
   assert.notEqual(gameplayLanguageName("fr-CA", "en"), "Language unavailable");
   assert.equal(gameplayLanguageName("not a tag", "en"), "Language unavailable");
 });
@@ -325,6 +327,14 @@ test("browser player UI is responsive, theme-aware, and uses explicit accessible
   assert.match(html, /id="vote-options"[^>]+role="radiogroup"/u);
   assert.match(application, /features: \[PARTICIPANT_VOTING_FEATURE\]/u);
   assert.match(application, /target_character_id: selectedVoteTargetId/u);
+  const invitationClear = application.indexOf('invitationInput.value = "";');
+  const invitationDecode = application.indexOf("decodeInvitationTransfer(invitationPayload)");
+  assert.notEqual(invitationClear, -1);
+  assert.notEqual(invitationDecode, -1);
+  assert.ok(
+    invitationClear < invitationDecode,
+    "invitation input must be cleared before decoding and network admission",
+  );
   assert.doesNotMatch(application, /char_1|char_2|Alice · collector|Bob · investigator/u);
   assert.match(styles, /@media \(min-width: 840px\)/u);
   assert.match(styles, /@media \(max-width: 340px\)/u);

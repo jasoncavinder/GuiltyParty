@@ -52,6 +52,12 @@ export function normalizeParticipantProjection(value, participantId) {
 }
 
 export function votingPresentation({ phase, ownVoteRecorded, voteTargets, submissionPending }) {
+  if (phase === "closed") {
+    return { kind: "closed", title: "Voting is closed", detail: "The Host is preparing the resolution." };
+  }
+  if (phase === "resolved") {
+    return { kind: "resolved", title: "The vote is resolved", detail: "The public outcome is shown below." };
+  }
   if (ownVoteRecorded) {
     return { kind: "recorded", title: "Your vote is recorded", detail: "Individual votes remain private." };
   }
@@ -60,12 +66,6 @@ export function votingPresentation({ phase, ownVoteRecorded, voteTargets, submis
   }
   if (phase === "not_open") {
     return { kind: "not-open", title: "Voting has not opened", detail: "The Host will open the accusation when the story is ready." };
-  }
-  if (phase === "closed") {
-    return { kind: "closed", title: "Voting is closed", detail: "The Host is preparing the resolution." };
-  }
-  if (phase === "resolved") {
-    return { kind: "resolved", title: "The vote is resolved", detail: "The public outcome is shown below." };
   }
   if (phase === "open" && voteTargets.length === 0) {
     return { kind: "unavailable", title: "No choices are available", detail: "Ask the Host to confirm your character assignment." };
