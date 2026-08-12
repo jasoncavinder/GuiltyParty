@@ -32,7 +32,8 @@ remains blocked by the operational and client acceptance gates below.
   its memory-only bearer for a registered, 30-second, single-use secondary
   WebSocket subprotocol credential.
 - `GET /api/v1/session/context` revalidates a browser cookie and returns only
-  the caller's opaque endpoint context for reload recovery.
+  the caller's opaque endpoint context, including its retained negotiated
+  protocol version, for reload recovery.
 - `GET /api/v1/session/endpoints` gives only the Host a credential-free
   operational roster for endpoint support and revocation.
 - `/ws/v1` validates the exact control subprotocol, origin, signed authority,

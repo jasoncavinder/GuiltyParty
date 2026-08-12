@@ -94,8 +94,11 @@ in the [Local Product Refinement Roadmap](docs/roadmap/local-product-refinement.
 5. **Completed:** refine the equivalent Android phone/tablet outcomes with
    native Compose adaptation and a debug-only developer panel; verify the
    merged build through the owner-only protocol `1.1` remote rehearsal.
-6. Reconcile the browser fallback's product copy, state meanings, direct vote
-   choices, and visual roles within its accepted capability limits.
+6. **Completed for source implementation:** reconcile the browser fallback's
+   product copy, state meanings, protocol `1.1` direct vote choices, privacy
+   recovery, responsive layouts, appearance settings, and visual roles within
+   its accepted capability limits. Reviewed deployment and live-session
+   evidence remain part of steps 7 and 10.
 7. Verify accessibility and localization behavior across phone, tablet, web,
    and television layouts with synthetic content.
 8. **Completed for the bounded proof:** implement and physically validate the

@@ -1,4 +1,5 @@
 export const PROTOCOL_VERSION = "1.0";
+export const PARTICIPANT_PROTOCOL_VERSION = "1.1";
 export const CONTROL_SUBPROTOCOL = "guiltyparty.control.v1";
 export const DEFAULT_API_ORIGIN = "https://api.test.guiltyparty.app";
 
@@ -9,11 +10,12 @@ export const HOST_BUILD = Object.freeze({
 });
 
 export const HOST_PRESENTATION_STATUS_FEATURE = "host_presentation_status_v1";
+export const PARTICIPANT_VOTING_FEATURE = "participant_vote_targets_v1";
 
 export const COMPANION_BUILD = Object.freeze({
   application_id: "companion_web",
-  application_version: "0.1.0",
-  build_number: 1,
+  application_version: "0.2.0",
+  build_number: 2,
 });
 
 export class ApiProblem extends Error {
@@ -99,7 +101,7 @@ export async function recoverContext(apiOrigin, audience) {
   }
 }
 
-export async function compatibilityFeatures(apiOrigin) {
+export async function compatibilityProfile(apiOrigin) {
   const value = await apiRequest(apiOrigin, "/api/protocol");
   if (
     !/^1\.[0-9]+$/u.test(value?.preferred_protocol_version ?? "") ||
@@ -113,7 +115,14 @@ export async function compatibilityFeatures(apiOrigin) {
   ) {
     throw new Error("The server compatibility response is not supported.");
   }
-  return new Set(value.features);
+  return Object.freeze({
+    preferredProtocolVersion: value.preferred_protocol_version,
+    features: new Set(value.features),
+  });
+}
+
+export async function compatibilityFeatures(apiOrigin) {
+  return (await compatibilityProfile(apiOrigin)).features;
 }
 
 export function sanitizePresentationStatus(value) {
@@ -143,9 +152,10 @@ export function identifier(prefix) {
 }
 
 export class ControlConnection {
-  constructor({ apiOrigin, context, onProjection, onStatus, onProblem, onPresentationStatus = () => {}, onTerminal = () => {} }) {
+  constructor({ apiOrigin, context, protocolVersion = PROTOCOL_VERSION, onProjection, onStatus, onProblem, onPresentationStatus = () => {}, onTerminal = () => {} }) {
     this.apiOrigin = apiOrigin;
     this.context = context;
+    this.protocolVersion = protocolVersion;
     this.onProjection = onProjection;
     this.onStatus = onStatus;
     this.onProblem = onProblem;
@@ -209,7 +219,7 @@ export class ControlConnection {
 
   requestProjection() {
     this.send({
-      protocol_version: PROTOCOL_VERSION,
+      protocol_version: this.protocolVersion,
       type: "get_projection",
       message_id: identifier("msg"),
       session_id: this.context.session_id,
@@ -221,7 +231,7 @@ export class ControlConnection {
   submit(command) {
     const messageId = identifier("msg");
     const envelope = {
-      protocol_version: PROTOCOL_VERSION,
+      protocol_version: this.protocolVersion,
       type: "submit_command",
       message_id: messageId,
       session_id: this.context.session_id,
@@ -264,7 +274,7 @@ export class ControlConnection {
       return;
     }
     if (
-      envelope?.protocol_version !== PROTOCOL_VERSION ||
+      envelope?.protocol_version !== this.protocolVersion ||
       envelope.session_id !== this.context.session_id ||
       envelope.endpoint_id !== this.context.endpoint_id
     ) {

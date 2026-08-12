@@ -1217,7 +1217,7 @@ test("browser endpoint recovers validated context without exposing its cookie", 
   let captured;
   const env = await friendsEnvironment(async (name, request) => {
     captured = { name, path: new URL(request.url).pathname, method: request.method };
-    return Response.json({ authorized: true });
+    return Response.json({ authorized: true, protocol_version: "1.1" });
   });
   const expiresAt = Date.now() + 60_000;
   const token = await issueAuthorityToken(
@@ -1245,7 +1245,7 @@ test("browser endpoint recovers validated context without exposing its cookie", 
   const validate = ajv.getSchema(`${schema.$id}#/$defs/SessionAuthorityContextResponse`);
   assert.equal(validate(body), true, JSON.stringify(validate.errors));
   assert.deepEqual(body, {
-    protocol_version: "1.0",
+    protocol_version: "1.1",
     session_id: "ses_0123456789abcdef",
     endpoint_id: "end_guest_012345678",
     audience: "participant",

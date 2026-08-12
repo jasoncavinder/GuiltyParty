@@ -11,11 +11,18 @@ import {
   ControlConnection,
   DEFAULT_API_ORIGIN,
   HOST_BUILD,
+  PARTICIPANT_PROTOCOL_VERSION,
+  PARTICIPANT_VOTING_FEATURE,
   decodeInvitationTransfer,
   normalizeApiOrigin,
   sanitizePresentationStatus,
 } from "../../../web/shared/control-client.js";
 import { privateViewShouldBeHidden } from "../../../web/companion/private-view.js";
+import {
+  gameplayLanguageName,
+  normalizeParticipantProjection,
+  votingPresentation,
+} from "../../../web/companion/player-state.js";
 import { encodeInvitationTransfer } from "../src/invitation-transfer.js";
 
 const execFileAsync = promisify(execFile);
@@ -24,7 +31,9 @@ const repository = path.resolve(path.dirname(fileURLToPath(import.meta.url)), ".
 test("browser client configuration is pinned to approved MVP origins and builds", () => {
   assert.equal(DEFAULT_API_ORIGIN, "https://api.test.guiltyparty.app");
   assert.deepEqual(HOST_BUILD, { application_id: "host_web", application_version: "0.2.0", build_number: 2 });
-  assert.deepEqual(COMPANION_BUILD, { application_id: "companion_web", application_version: "0.1.0", build_number: 1 });
+  assert.deepEqual(COMPANION_BUILD, { application_id: "companion_web", application_version: "0.2.0", build_number: 2 });
+  assert.equal(PARTICIPANT_PROTOCOL_VERSION, "1.1");
+  assert.equal(PARTICIPANT_VOTING_FEATURE, "participant_vote_targets_v1");
   assert.equal(normalizeApiOrigin("https://api.test.guiltyparty.app"), DEFAULT_API_ORIGIN);
   assert.equal(normalizeApiOrigin("http://127.0.0.1:8787"), "http://127.0.0.1:8787");
   assert.throws(() => normalizeApiOrigin("http://api.test.guiltyparty.app"), TypeError);
@@ -138,6 +147,36 @@ test("browser Companion rejects Host-only Stage presentation status", () => {
   assert.deepEqual(statuses, [status]);
 });
 
+test("browser connection binds envelopes to its negotiated protocol minor", () => {
+  const projections = [];
+  const problems = [];
+  const connection = new ControlConnection({
+    apiOrigin: DEFAULT_API_ORIGIN,
+    protocolVersion: "1.1",
+    context: {
+      session_id: "ses_synthetic",
+      endpoint_id: "end_synthetic_participant",
+      audience: "participant",
+    },
+    onProjection(value) { projections.push(value); },
+    onStatus() {},
+    onProblem(error) { problems.push(error.message); },
+  });
+  const envelope = {
+    protocol_version: "1.1",
+    type: "projection",
+    message_id: "msg_projection_1",
+    session_id: "ses_synthetic",
+    endpoint_id: "end_synthetic_participant",
+    server_sequence: 1,
+    payload: { projection: { synthetic: true } },
+  };
+  connection.receive(JSON.stringify(envelope));
+  connection.receive(JSON.stringify({ ...envelope, protocol_version: "1.0", server_sequence: 2 }));
+  assert.deepEqual(projections, [{ synthetic: true }]);
+  assert.deepEqual(problems, ["The server sent a message for the wrong session context."]);
+});
+
 test("browser connection ignores stale socket events after a lifecycle restart", () => {
   const originalWebSocket = globalThis.WebSocket;
   class FakeWebSocket {
@@ -206,9 +245,91 @@ test("private view remains covered until the player explicitly reveals it", () =
     false,
   );
   assert.equal(
+    privateViewShouldBeHidden({ contextActive: true, documentHidden: false, manuallyHidden: false, projectionCurrent: false }),
+    true,
+  );
+  assert.equal(
     privateViewShouldBeHidden({ contextActive: false, documentHidden: true, manuallyHidden: true }),
     false,
   );
+});
+
+test("browser player validates recipient boundaries and server-authorized vote choices", () => {
+  const projection = {
+    scenario_title: "Synthetic Case",
+    gameplay_language: "fr-CA",
+    active_scene: null,
+    revealed_clues: [],
+    participants: [
+      { participant_id: "par_mine", name: "Me", character_name: "The Curator", private_objective: "Protect the archive.", has_voted: false },
+      { participant_id: "par_other", name: "Other", character_name: "The Guest" },
+    ],
+    voting_open: true,
+    voting_phase: "open",
+    vote_targets: [
+      { character_id: "char_curator", character_name: "The Curator" },
+      { character_id: "char_guest", character_name: "The Guest" },
+    ],
+    votes_cast: 0,
+    outcome: null,
+  };
+  const normalized = normalizeParticipantProjection(projection, "par_mine");
+  assert.equal(normalized.ownParticipant.private_objective, "Protect the archive.");
+  assert.deepEqual(normalized.voteTargets, [
+    { id: "char_curator", name: "The Curator" },
+    { id: "char_guest", name: "The Guest" },
+  ]);
+
+  assert.throws(
+    () => normalizeParticipantProjection({
+      ...projection,
+      participants: [projection.participants[0], { ...projection.participants[1], has_voted: false }],
+    }, "par_mine"),
+    /private information for another player/u,
+  );
+  assert.throws(
+    () => normalizeParticipantProjection({
+      ...projection,
+      vote_targets: [projection.vote_targets[0], projection.vote_targets[0]],
+    }, "par_mine"),
+    /outside your authority/u,
+  );
+  assert.throws(
+    () => normalizeParticipantProjection({ ...projection, voting_open: false }, "par_mine"),
+    /inconsistent voting state/u,
+  );
+});
+
+test("browser player presents the complete bounded voting lifecycle", () => {
+  const common = { ownVoteRecorded: false, voteTargets: [], submissionPending: false };
+  assert.equal(votingPresentation({ ...common, phase: "not_open" }).kind, "not-open");
+  assert.equal(votingPresentation({ ...common, phase: "open" }).kind, "unavailable");
+  assert.equal(votingPresentation({ ...common, phase: "open", voteTargets: [{ id: "character", name: "Character" }] }).kind, "open");
+  assert.equal(votingPresentation({ ...common, phase: "open", submissionPending: true }).kind, "submitting");
+  assert.equal(votingPresentation({ ...common, phase: "closed" }).kind, "closed");
+  assert.equal(votingPresentation({ ...common, phase: "resolved" }).kind, "resolved");
+  assert.equal(votingPresentation({ ...common, phase: "closed", ownVoteRecorded: true }).kind, "recorded");
+  assert.notEqual(gameplayLanguageName("fr-CA", "en"), "Language unavailable");
+  assert.equal(gameplayLanguageName("not a tag", "en"), "Language unavailable");
+});
+
+test("browser player UI is responsive, theme-aware, and uses explicit accessible controls", async () => {
+  const [html, application, styles] = await Promise.all([
+    readFile(path.join(repository, "apps/web/companion/index.html"), "utf8"),
+    readFile(path.join(repository, "apps/web/companion/app.js"), "utf8"),
+    readFile(path.join(repository, "apps/web/companion/styles.css"), "utf8"),
+  ]);
+  assert.match(html, /meta name="color-scheme" content="light dark"/u);
+  assert.match(html, /role="radiogroup" aria-label="Color appearance"/u);
+  assert.match(html, /id="reveal-private-view"[^>]+type="button"/u);
+  assert.match(html, /id="vote-options"[^>]+role="radiogroup"/u);
+  assert.match(application, /features: \[PARTICIPANT_VOTING_FEATURE\]/u);
+  assert.match(application, /target_character_id: selectedVoteTargetId/u);
+  assert.doesNotMatch(application, /char_1|char_2|Alice · collector|Bob · investigator/u);
+  assert.match(styles, /@media \(min-width: 840px\)/u);
+  assert.match(styles, /@media \(max-width: 340px\)/u);
+  assert.match(styles, /prefers-reduced-motion: reduce/u);
+  assert.match(styles, /:root\[data-theme="dark"\]/u);
 });
 
 test("browser client sources avoid persistent storage, URL credentials, and third-party assets", async () => {
@@ -219,6 +340,7 @@ test("browser client sources avoid persistent storage, URL credentials, and thir
     "apps/web/companion/index.html",
     "apps/web/companion/app.js",
     "apps/web/companion/private-view.js",
+    "apps/web/companion/player-state.js",
   ];
   const sources = await Promise.all(files.map((file) => readFile(path.join(repository, file), "utf8")));
   const combined = sources.join("\n");
@@ -261,7 +383,7 @@ test("browser client build produces isolated Cloudflare Pages artifacts", async 
   for (const surface of ["host", "play"]) {
     const directory = path.join(repository, ".tmp", "remote-clients", surface);
     const expectedFiles = ["index.html", "app.js", "styles.css", "control-client.js", "_headers", "robots.txt"];
-    if (surface === "play") expectedFiles.push("private-view.js");
+    if (surface === "play") expectedFiles.push("private-view.js", "player-state.js");
     for (const file of expectedFiles) {
       assert.ok((await readFile(path.join(directory, file), "utf8")).length > 0, `${surface}/${file}`);
     }

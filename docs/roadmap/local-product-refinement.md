@@ -45,7 +45,7 @@ suffers. Native surfaces should feel related rather than pixel-identical.
 | LG webOS Stage | Packages and pairs on the physical television; renders public cast, scene, clues, voting status, outcome, reconnect overlay, terminal clearing, and the bounded bundled Cinematic Gallery image and Cinematic Vault atmosphere proof. | Presentation media is still limited to one public proof; visual tokens differ from web; representative overscan, focus, reduced-motion, long-content, and future media-delivery evidence remain. |
 | iOS/iPadOS | Joins remotely; protects private content; resumes endpoint authority; uses Refined Case File light/dark/system presentation; shows assignment, objective, scene, clues, direct authorized voting, and outcome; provides a compact flow and deliberate tablet context rail. | Invitation paste remains the development join UX; no final icon/launch identity, camera join, authored private media, translated interface catalog, or complete manual accessibility evidence. |
 | Android phone/tablet | Uses the Refined Case File light/dark/system presentation, protocol 1.1 direct authorized voting, resource-backed copy, protected resumption, secure-window behavior, a debug-only developer panel, and deliberate compact/expanded layouts. | Invitation paste remains the development join UX; no final icon/launch identity, camera join, authored private media, translated interface catalog, complete manual accessibility evidence, or physical-device evidence. |
-| Browser player fallback | Joins, receives private projections, votes from valid choices, hides private content, reconnects, and clears at session end without persistent browser storage. | It is visually closer to Host than native apps but lacks a documented shared component/token source; browser capability limitations and fallback messaging need clearer product treatment. |
+| Browser player fallback | Uses the Refined Case File system/light/dark presentation; joins with protocol `1.1`; renders only server-authorized direct vote choices; distinguishes voting lifecycle states; protects stale, hidden, and manually covered private views; and adapts across phone, tablet, and desktop widths without persistent browser storage. | Reviewed deployment and a complete live remote rehearsal remain; browser capture prevention, isolated-LAN trust, camera joining, and native-only capabilities remain explicitly unavailable. |
 
 ## Shared Experience Foundation
 
@@ -171,7 +171,7 @@ background capture remain excluded.
    phone, and tablet states plus semantic roles and copy principles; the owner
    approved the Refined Case File visual language while keeping layouts and UX
    open for later full-game and media studies.
-2. **Player-flow refinement — native implementations complete 2026-08-11:** joining,
+2. **Player-flow refinement — source implementations complete 2026-08-11:** joining,
    assignment, character, clues, explicit voting state, direct vote choices,
    recovery, privacy, and terminal states on iOS/iPadOS and Android, followed
    by browser-fallback reconciliation. The bounded cross-platform state,
@@ -179,7 +179,9 @@ background capture remain excluded.
    [Player Experience Specification](../product/player-experience.md). The
    protocol `1.1` server contract and both native-platform adaptations are
    merged. The Android phone/tablet build passed its owner-only remote protocol
-   `1.1` rehearsal; browser reconciliation remains.
+   `1.1` rehearsal. Browser reconciliation now has automated contract/privacy
+   coverage and desktop/320-pixel local rendering evidence; reviewed Pages
+   promotion and a live remote browser-player rehearsal remain.
 3. **Host and Stage refinement:** run-of-show and support hierarchy, public
    storytelling presentation, television focus and safe-area behavior.
 4. **Accessibility/localization pass:** automated and manual virtual coverage,

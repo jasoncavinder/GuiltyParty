@@ -1090,9 +1090,9 @@ async function getSessionContext(request, env) {
   if (!response.ok) {
     return safeInternalFailure(response, "invalid_authority", "Valid session authority required");
   }
-  await response.body?.cancel();
+  const authorized = await response.json();
   return jsonResponse({
-    protocol_version: PROTOCOL_VERSION,
+    protocol_version: authorized.protocol_version ?? PROTOCOL_VERSION,
     session_id: authority.sessionId,
     endpoint_id: authority.endpointId,
     audience: authority.audience,
