@@ -180,8 +180,12 @@ background capture remain excluded.
    protocol `1.1` server contract and both native-platform adaptations are
    merged. The Android phone/tablet build passed its owner-only remote protocol
    `1.1` rehearsal. Browser reconciliation now has automated contract/privacy
-   coverage and desktop/320-pixel local rendering evidence; reviewed Pages
-   promotion and a live remote browser-player rehearsal remain.
+   coverage and desktop/320-pixel local rendering evidence. Reviewed Pages and
+   matching Worker promotion, a live two-profile remote rehearsal, privacy and
+   recovery checks, voting through a unique deterministic outcome, session-end
+   invalidation, 200-percent zoom, keyboard focus, long-content, and
+   right-to-left narrow-layout checks passed on 2026-08-12. A Host-mediated,
+   journaled tie-break remains a focused product/engine follow-up.
 3. **Host and Stage refinement:** run-of-show and support hierarchy, public
    storytelling presentation, television focus and safe-area behavior.
 4. **Accessibility/localization pass:** automated and manual virtual coverage,

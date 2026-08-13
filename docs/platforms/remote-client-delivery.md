@@ -3,12 +3,12 @@
 ## Status
 
 The dependency-free Browser Host and Browser Companion fallback are implemented
-as reviewable static assets. The deployed Companion fallback remains on the
-reviewed 2026-08-07 promotion while the protocol `1.1` Refined Case File player
-update awaits merge and manual promotion. The Host was reconciled to reviewed `dev` commit
-`4d82f5229addddd9efd4337c42bb7083c54ba4a7` on 2026-08-11 HST so its shared
-client accepts additive protocol 1.x minor versions. Branch previews and
-automatic GitHub deployments remain disabled.
+as reviewable static assets. The protocol `1.1` Refined Case File player was
+manually promoted from reviewed `dev` commit
+`ad93c74e5863987c5d5a8aec4a11247a08da4a0a` and passed its complete bounded
+owner rehearsal on 2026-08-12 HST. The Host remains on its reviewed
+protocol-reconciled deployment. Branch previews and automatic GitHub
+deployments remain disabled.
 
 ## Intended test surfaces
 
@@ -93,6 +93,12 @@ The first manual promotion created these production deployments:
 - Companion fallback: `eed998d9-d960-4cab-9c9f-537967ab2798`
   (`https://eed998d9.guilty-party-play-test.pages.dev`)
 
+The refined protocol `1.1` Companion fallback subsequently advanced to
+deployment `1ae763fa-a494-4558-a98d-9d8732f6c8de`
+(`https://1ae763fa.guilty-party-play-test.pages.dev`) from exact reviewed
+commit `ad93c74e5863987c5d5a8aec4a11247a08da4a0a`. The custom origin served the
+same reviewed asset digests and committed security headers.
+
 The protocol `1.1` Android owner rehearsal exposed a deployment-consistency
 failure: the deployed Host `app.js` was current, but its copied shared
 `control-client.js` still required preferred protocol `1.0`. After the Worker
@@ -109,6 +115,16 @@ digest with the reviewed build output and smoke Host compatibility discovery
 before beginning a device session. This is an artifact-reconciliation gate; it
 also applies when promoting the protocol `1.1` Browser Companion fallback and
 its negotiated `participant_vote_targets_v1` feature.
+
+The player rehearsal exposed the complementary Worker-side form of the same
+deployment-consistency risk. Promoting the Pages client without the matching
+Worker recovery change made reload fail closed because recovered endpoint
+context reported protocol `1.0` instead of its retained negotiated protocol
+`1.1`. Worker version `391645d1-4e6f-41f0-b7e7-7881d35e8612` from the same
+reviewed commit corrected recovery without replacing the session or creating a
+duplicate participant. When a browser change includes a server contract or
+recovery change, Pages and Worker promotion plus route convergence are one
+required compatibility gate.
 
 The Pages production aliases returned the reviewed assets with `no-store`,
 the committed CSP, and the committed referrer, permissions, framing,

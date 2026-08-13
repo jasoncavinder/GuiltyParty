@@ -4,8 +4,8 @@
 
 The Remote Friends MVP development service was most recently promoted on
 2026-08-11 HST from reviewed `dev` commit
-`0eedab967c94536eb618c1c0f4e93ba8093f447d` after the Stage MP3 atmosphere
-adoption merged. The deployment remains limited to the synthetic
+`ad93c74e5863987c5d5a8aec4a11247a08da4a0a` for protocol `1.1` browser-player
+reload recovery. The deployment remains limited to the synthetic
 `guilty-party-remote-dev` Worker, its SQLite Durable Object class, the
 `workers.dev` endpoint, the owner-approved `api.test.guiltyparty.app` Custom
 Domain, exact browser origins, and the minimum test authority secrets described
@@ -387,10 +387,27 @@ preferred protocol `1.0`; that Pages evidence and the completed Android
 rehearsal are recorded in `remote-client-delivery.md` and
 `android-companion-mvp-test-record.md` respectively.
 
+The 2026-08-11 HST browser-player recovery promotion advanced the API from that
+version to Worker version `391645d1-4e6f-41f0-b7e7-7881d35e8612` and
+deployment `c896f98a-918c-42ba-9d72-0b493a641638` from exact merged `dev`
+commit `ad93c74e5863987c5d5a8aec4a11247a08da4a0a`. The provider script ETag is
+`709a4f6cf0a38c7ae03b7a8c6b5a03c680f7c38041ef122ec01b8541ce9c8953`.
+A pinned Wrangler 4.119.0 dry run produced `worker.js` SHA-256
+`8868547d16aa1cc09e387bbb84c7f5848c74c27a17d944d3c5963bc9783cd99f` and
+first-party WebAssembly SHA-256
+`583e5621af8a326909da8432eeda710c10d7af298e5a1c33ff2db11fb0072cd0`.
+
+Both routed hostnames reported the existing test-gated health profile and
+preferred protocol `1.1`. No secret, binding, route, custom domain, Durable
+Object migration, retention setting, or new Cloudflare resource changed. The
+promotion supplied the matching endpoint-context recovery behavior required by
+the already-reviewed browser-player Pages artifact. Live reload then restored
+the same participant and private view without a duplicate roster entry.
+
 The Browser Companion fallback remains on the production Pages deployment
 manually promoted from exact reviewed `dev` commit
-`e85b486b1928704382329bbd73d4fa0a4ae28539`, deployment
-`eed998d9-d960-4cab-9c9f-537967ab2798`. The Browser Host's current production
+`ad93c74e5863987c5d5a8aec4a11247a08da4a0a`, deployment
+`1ae763fa-a494-4558-a98d-9d8732f6c8de`. The Browser Host's current production
 deployment is the protocol-reconciled `3f67d939-5ba2-46ce-b8b5-2ff1e1fe5412`
 from commit `4d82f5229addddd9efd4337c42bb7083c54ba4a7`. No secret or private runtime
 value is configured in either Pages project. Automated gameplay,
