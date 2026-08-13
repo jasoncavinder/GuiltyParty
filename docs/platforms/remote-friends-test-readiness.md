@@ -23,8 +23,9 @@ invitation until the project owner records the final decision below.
 
 - API hostname: `api.test.guiltyparty.app`
 - Browser Host origin: `https://host.test.guiltyparty.app`; Pages project
-  `guilty-party-host-test`; deployment
-  `5bde1db6-ee32-4834-bd30-732950f261e5`
+  `guilty-party-host-test`; protocol-reconciled source commit
+  `4d82f5229addddd9efd4337c42bb7083c54ba4a7`; deployment
+  `3f67d939-5ba2-46ce-b8b5-2ff1e1fe5412`
 - Browser Companion origin: `https://play.test.guiltyparty.app`; Pages project
   `guilty-party-play-test`; deployment
   `1ae763fa-a494-4558-a98d-9d8732f6c8de`
