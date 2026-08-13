@@ -2,10 +2,10 @@
 
 ## Status
 
-Source implementation candidate as of 2026-08-11. Automated and local rendering
-checks pass. Merge, reviewed Cloudflare Pages promotion, and a complete live
-remote rehearsal are still required before this record can claim deployed
-acceptance.
+Deployed owner acceptance completed on 2026-08-12 HST from exact reviewed
+`dev` commit `ad93c74e5863987c5d5a8aec4a11247a08da4a0a`. Automated,
+artifact, live two-profile, privacy/recovery, voting, terminal-state, and manual
+layout checks pass within the bounded browser-fallback scope below.
 
 This record covers the dependency-free browser fallback at
 `play.test.guiltyparty.app`. It does not expand the browser's accepted
@@ -63,21 +63,68 @@ The expected localhost API failure was shown because no local Worker was
 started. No invitation, credential, or private content was used for this visual
 check.
 
-## Remaining Acceptance Gates
+An additional representative long-content fixture was rendered with
+right-to-left document direction at 320 by 760 CSS pixels. The document and
+body scroll widths remained 320 pixels, every card remained within the
+viewport, and no element reported horizontal overflow. The fixture was
+disposable and was not committed.
 
-- [ ] merge the reviewed implementation to `dev`
-- [ ] rebuild from the exact clean reviewed commit and manually promote only
+## Deployment Evidence
+
+- Pages project: `guilty-party-play-test`
+- production deployment: `1ae763fa-a494-4558-a98d-9d8732f6c8de`
+- verification alias: `https://1ae763fa.guilty-party-play-test.pages.dev`
+- approved custom origin: `https://play.test.guiltyparty.app`
+- source commit: `ad93c74e5863987c5d5a8aec4a11247a08da4a0a`
+- matching Worker version: `391645d1-4e6f-41f0-b7e7-7881d35e8612`
+- matching Worker deployment: `c896f98a-918c-42ba-9d72-0b493a641638`
+
+The custom-domain HTML, JavaScript, CSS, shared control client, private-view
+module, and player-state module matched the exact reviewed build output. The
+responses retained the committed `no-store`, CSP, permissions, referrer,
+framing, content-type, and indexing protections.
+
+The first reload attempt correctly failed closed because the refined Pages
+client had initially been promoted without the same commit's Worker recovery
+change. The prior Worker returned protocol `1.0` for recovered browser endpoint
+context while the client required the endpoint's retained negotiated protocol
+`1.1`. Promoting the exact merged Worker restored the same participant and
+private projection on reload without a duplicate roster entry. This establishes
+that a browser-player promotion containing a recovery-contract change must
+promote and verify both Pages and Worker artifacts as one compatibility unit.
+
+## Acceptance Results
+
+- [x] merge the reviewed implementation to `dev`
+- [x] rebuild from the exact clean reviewed commit and manually promote only
       `.tmp/remote-clients/play`
-- [ ] verify custom-domain asset digests and committed response headers
-- [ ] complete a live protocol `1.1` session with two isolated browser profiles
-- [ ] confirm each player receives only its own private objective and clues
-- [ ] exercise direct voting through resolved outcome without raw identifiers
-- [ ] background, manually protect, reload, and reconnect a player; verify no
+- [x] verify custom-domain asset digests and committed response headers
+- [x] complete a live protocol `1.1` session with two isolated browser profiles
+- [x] confirm each player receives only its own private objective and clues
+- [x] exercise direct voting through resolved outcome without raw identifiers
+- [x] background, manually protect, reload, and reconnect a player; verify no
       stale private content appears before a fresh projection
-- [ ] verify session end clears the view and recovered cookie context cannot
+- [x] verify session end clears the view and recovered cookie context cannot
       reopen it
-- [ ] manually review keyboard order, focus visibility, 200-percent zoom,
+- [x] manually review keyboard order, focus visibility, 200-percent zoom,
       representative long content, and right-to-left interface layout behavior
-- [ ] record the Pages deployment identifier and owner result here
+- [x] record the Pages deployment identifier and owner result here
 
-No unchecked item is implied by the automated or local rendering evidence.
+The live rehearsal used Safari and Dia as isolated browser profiles with
+synthetic aliases. Both participants joined, received distinct assignments,
+kept objectives and recipient-only clues isolated, and saw only player-facing
+vote choices. One-vote and two-vote counts, vote lockout, voting closure, and a
+unique deterministic outcome all propagated correctly. Manual protection,
+fresh-projection reveal, reload recovery, explicit session end, private-view
+clearing, and post-end recovery rejection passed. At 200-percent browser zoom,
+keyboard order, visible focus, control reachability, and reflow passed.
+
+## Follow-up Finding: Tied Votes
+
+A deliberately split two-player vote closes deterministically with no selected
+outcome. This matches the current engine rule, which returns no outcome for a
+tie, but the player experience does not yet explain or resolve the tie. A
+separate product and engine slice should define a Host-mediated, journaled
+tie-break restricted to the tied choices, or approve another deterministic
+scenario rule. The successful same-target rehearsal proves the existing unique
+outcome path; it does not close this tie-handling gap.

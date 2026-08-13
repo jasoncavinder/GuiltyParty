@@ -8,17 +8,18 @@ invitation until the project owner records the final decision below.
 ## Candidate Deployment
 
 - Reviewed API source commit:
-  `0eedab967c94536eb618c1c0f4e93ba8093f447d`
-- Worker version: `445d7acc-1e3f-4c52-95dd-3027089f2b48`
+  `ad93c74e5863987c5d5a8aec4a11247a08da4a0a`
+- Worker version: `391645d1-4e6f-41f0-b7e7-7881d35e8612`
+- Worker deployment: `c896f98a-918c-42ba-9d72-0b493a641638`
 - Provider script ETag:
-  `5b90c6ad7a2497de8e370bcaeee57611c68c7a6829f4798ae62c04f91b9296b8`
+  `709a4f6cf0a38c7ae03b7a8c6b5a03c680f7c38041ef122ec01b8541ce9c8953`
 - Wrangler 4.119.0 dry-run runtime artifact manifest:
 
   - `worker.js` SHA-256:
-    `3a603336dd6baf004bb652f6bf8cab327618f301f8b31d779c862862201b2c67`
-  - `85b31fdbd5ef4c5f690c397f89cbbb70b9af79d5-gp_scenario_wasm.wasm`
+    `8868547d16aa1cc09e387bbb84c7f5848c74c27a17d944d3c5963bc9783cd99f`
+  - `7560ea7492de1e66444503abcc3cdec40ed29165-gp_scenario_wasm.wasm`
     SHA-256:
-    `3d01663fb738ceaf31f830705f427bfa7d7735bae5f1de17d0edeee230bba9b7`
+    `583e5621af8a326909da8432eeda710c10d7af298e5a1c33ff2db11fb0072cd0`
 
 - API hostname: `api.test.guiltyparty.app`
 - Browser Host origin: `https://host.test.guiltyparty.app`; Pages project
@@ -26,7 +27,7 @@ invitation until the project owner records the final decision below.
   `5bde1db6-ee32-4834-bd30-732950f261e5`
 - Browser Companion origin: `https://play.test.guiltyparty.app`; Pages project
   `guilty-party-play-test`; deployment
-  `eed998d9-d960-4cab-9c9f-537967ab2798`
+  `1ae763fa-a494-4558-a98d-9d8732f6c8de`
 - Packaged Stage transport: opaque `null` Origin plus realtime connect ticket
 - Deployment operator and date: project owner through authenticated Wrangler,
   2026-08-11 HST
@@ -84,6 +85,8 @@ authority, connect tickets, player names, or private scenario content here.
 - [ ] Representative physical Android phone and tablet evidence is recorded.
 - [x] The four active surfaces complete the full original scenario and
       deterministic outcome.
+- [x] Two isolated browser-player profiles complete assignment, recipient-only
+      clues, voting, reload recovery, explicit end, and post-end rejection.
 
 The 2026-08-08 physical rehearsal used a Browser Host, a packaged LG Stage, one
 physical iPhone Companion, and one iPad simulator Companion. Both participant
@@ -136,6 +139,18 @@ physical Android evidence through the named-friends cohort. A similarly narrow
 exception allowing the cohort to gather the second physical Apple result is
 proposed, but remains pending in the cohort go/no-go record. Neither exception
 qualifies a platform for open beta or release.
+
+The 2026-08-12 browser fallback owner rehearsal used Safari and Dia as isolated
+profiles against the exact candidate above. Each player received only its own
+objective and authorized clues. Direct voting exposed player-facing names,
+locked each recorded vote, propagated closure, and produced a deterministic
+public outcome when both votes selected the same character. Manual privacy
+protection, fresh reveal, reload recovery without a duplicate participant,
+session-end clearing, post-end recovery rejection, 200-percent zoom, keyboard
+focus, representative long content, and right-to-left narrow layout checks
+passed. A split two-player vote deterministically closes without an outcome;
+Host-mediated tie handling remains a documented follow-up and is not claimed
+as complete.
 
 ## Automated Deployed-Environment Evidence
 
